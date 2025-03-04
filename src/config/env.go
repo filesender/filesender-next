@@ -2,17 +2,18 @@ package config
 
 import (
 	"bufio"
-	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
 // Attempts to find and load a .env file from current directory or one level up
-func LoadEnv() error {
+func LoadEnv() {
 	cwd, err := os.Getwd()
 	if err != nil {
-		return err
+		log.Println("Error getting working directory")
+		return
 	}
 
 	paths := []string{
@@ -22,11 +23,15 @@ func LoadEnv() error {
 
 	for _, path := range paths {
 		if _, err := os.Stat(path); err == nil {
-			return loadEnvFile(path)
+			err := loadEnvFile(path)
+			if err != nil {
+				log.Println("Error loading .env file: %v", err)
+			}
+			return
 		}
 	}
 
-	return fmt.Errorf(".env file not found")
+	log.Println("No .env file found")
 }
 
 // Load an .env file into environment variables

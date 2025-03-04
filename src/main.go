@@ -13,12 +13,8 @@ import (
 )
 
 func main() {
-	// Load .env file
-	err := config.LoadEnv()
-	if err != nil {
-		log.Fatalf("Loading env file failed: %v", err)
-		return
-	}
+	// Load .env file if any exists
+	config.LoadEnv()
 
 	db_path, exists := os.LookupEnv("DATABASE_PATH")
 	if !exists {
