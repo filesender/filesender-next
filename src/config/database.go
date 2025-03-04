@@ -26,7 +26,7 @@ func InitDB(path string) (*sql.DB, error) {
 func runMigrations(db *sql.DB) error {
 	query := `
 		CREATE TABLE IF NOT EXISTS transfers (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			id INTEGER PRIMARY KEY,
 			user_id TEXT,
 			guestvoucher_id INTEGER,
 			file_count INTEGER DEFAULT 0,
@@ -34,18 +34,18 @@ func runMigrations(db *sql.DB) error {
 			subject TEXT,
 			message TEXT,
 			download_count INTEGER DEFAULT 0,
-			expiry_date DATETIME,
-			creation_date DATETIME DEFAULT (CURRENT_TIMESTAMP)
+			expiry_date TIMESTAMP,
+			creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 		);
 
 		CREATE TABLE IF NOT EXISTS files (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			id INTEGER PRIMARY KEY,
 			transfer_id INTEGER NOT NULL,
-			file_name STRING NOT NULL,
+			file_name TEXT NOT NULL,
 			file_byte_size BIGINT DEFAULT 0,
 			download_count INTEGER DEFAULT 0,
 			FOREIGN KEY (transfer_id) REFERENCES transfers(id) ON DELETE CASCADE
-		)
+		);
 	`
 
 	_, err := db.Exec(query)
