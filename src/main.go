@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	err := LoadEnv()
+	err := config.LoadEnv()
 	if err != nil {
 		log.Fatalf("Loading env file failed: %v", err)
 		return
