@@ -6,7 +6,7 @@ import (
 
 	"codeberg.org/filesender/filesender-next/config"
 
-	_ "modernc.org/sqlite"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 func main() {

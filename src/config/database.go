@@ -8,7 +8,7 @@ import (
 // Initializes a SQLite database at the given path.
 // Opens the database connection and applies "migrations".
 func InitDB(path string) (*sql.DB, error) {
-	db, err := sql.Open("sqlite", path)
+	db, err := sql.Open("sqlite3", path)
 	if err != nil {
 		return nil, err
 	}
