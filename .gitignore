@@ -1,3 +1,8 @@
+# Project specific & generic
+.DS_Store
+*.db
+
+# Golang
 *.exe
 *.exe~
 *.dll
@@ -8,5 +13,19 @@
 go.work
 go.work.sum
 .env
-.DS_Store
-*.db
+
+# Node.js
+node_modules/
+jspm_packages/
+logs
+*.log
+npm-debug.log*
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+pids
+*.pid
+*.seed
+*.pid.lock
+.npm
+
+# Playwright
+test-results
