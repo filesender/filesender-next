@@ -25,7 +25,7 @@ func LoadEnv() {
 		if _, err := os.Stat(path); err == nil {
 			err := loadEnvFile(path)
 			if err != nil {
-				log.Println("Error loading .env file: %v", err)
+				log.Printf("Error loading .env file: %v", err)
 			}
 			return
 		}
