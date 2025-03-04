@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"codeberg.org/filesender/filesender-next/src/config"
+	"codeberg.org/filesender/filesender-next/src/handlers"
 
 	"github.com/gorilla/mux"
 	_ "github.com/mattn/go-sqlite3"
@@ -34,6 +35,10 @@ func main() {
 	defer db.Close()
 
 	router := mux.NewRouter()
+
+	// API endpoints
+	apiRouter := router.PathPrefix("/api").Subrouter()
+	apiRouter.HandleFunc("/files/count", handlers.CountFilesHandler(db)).Methods("GET")
 
 	// Serve static files
 	fs := http.FileServer(http.Dir("./public"))
