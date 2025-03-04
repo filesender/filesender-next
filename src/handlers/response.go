@@ -34,7 +34,8 @@ func sendJSON(w http.ResponseWriter, status int, success bool, message string, d
 	json.NewEncoder(w).Encode(response)
 }
 
-func sendTemplate(w http.ResponseWriter, tmpl string, data interface{}) {
+// Send a template response with the given data
+func sendTemplate(w http.ResponseWriter, tmpl string, data any) {
 	tmplPath := "templates/" + tmpl + ".html"
 	basePath := "templates/base.html"
 
@@ -52,6 +53,7 @@ func sendTemplate(w http.ResponseWriter, tmpl string, data interface{}) {
 	}
 }
 
+// Send an error response
 func sendError(w http.ResponseWriter, status int, message string) {
 	http.Error(w, message, status)
 }
