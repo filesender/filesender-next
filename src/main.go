@@ -38,7 +38,10 @@ func main() {
 
 	// API endpoints
 	apiRouter := router.PathPrefix("/api").Subrouter()
-	apiRouter.HandleFunc("/files/count", handlers.CountFilesHandler(db)).Methods("GET")
+	apiRouter.HandleFunc("/files/count", handlers.CountFilesApiHandler(db)).Methods("GET")
+
+	// Page handlers
+	router.HandleFunc("/file-count", handlers.CountFilesTemplateHandler(db)).Methods("GET")
 
 	// Serve static files
 	fs := http.FileServer(http.Dir("./public"))

@@ -7,14 +7,19 @@ import (
 	"codeberg.org/filesender/filesender-next/src/models"
 )
 
-func CountFilesApiHandler(db *sql.DB) http.HandlerFunc {
+func CountFilesTemplateHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		count, err := models.CountFiles(db)
 		if err != nil {
-			sendJSON(w, http.StatusInternalServerError, false, "Failed counting files in database", nil)
+			sendError(w, 500, "Failed counting files in database")
 			return
 		}
 
-		sendJSON(w, http.StatusOK, true, "", map[string]int{"count": count})
+		data := map[string]any{
+			"Title": "File count",
+			"Count": count,
+		}
+
+		sendTemplate(w, "file-count", data)
 	}
 }

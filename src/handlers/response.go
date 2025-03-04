@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"encoding/json"
+	"html/template"
+	"log"
 	"net/http"
 )
 
@@ -30,4 +32,26 @@ func sendJSON(w http.ResponseWriter, status int, success bool, message string, d
 	}
 
 	json.NewEncoder(w).Encode(response)
+}
+
+func sendTemplate(w http.ResponseWriter, tmpl string, data interface{}) {
+	tmplPath := "templates/" + tmpl + ".html"
+	basePath := "templates/base.html"
+
+	t, err := template.ParseFiles(basePath, tmplPath)
+	if err != nil {
+		log.Println("Error parsing template:", err)
+		sendError(w, 500, "Error rendering page")
+		return
+	}
+
+	err = t.Execute(w, data)
+	if err != nil {
+		log.Println("Error executing template:", err)
+		sendError(w, 500, "Error rendering page")
+	}
+}
+
+func sendError(w http.ResponseWriter, status int, message string) {
+	http.Error(w, message, status)
 }
