@@ -1,6 +1,8 @@
 package main
 
 import (
+	"embed"
+	"io/fs"
 	"log"
 	"net/http"
 	"os"
@@ -11,6 +13,12 @@ import (
 	"github.com/gorilla/mux"
 	_ "github.com/mattn/go-sqlite3"
 )
+
+//go:embed public/*
+var embeddedPublicFiles embed.FS
+
+//go:embed templates/*
+var embeddedTemplateFiles embed.FS
 
 func main() {
 	// Load .env file if any exists
@@ -30,6 +38,9 @@ func main() {
 	}
 	defer db.Close()
 
+	// Initialise handler, pass embedded template files
+	handlers.Init(embeddedTemplateFiles)
+
 	router := mux.NewRouter()
 
 	// API endpoints
@@ -40,8 +51,12 @@ func main() {
 	router.HandleFunc("/file-count", handlers.CountFilesTemplateHandler(db)).Methods("GET")
 
 	// Serve static files
-	fs := http.FileServer(http.Dir("./public"))
-	router.PathPrefix("/").Handler(fs)
+	subFS, err := fs.Sub(embeddedPublicFiles, "public")
+	if err != nil {
+		panic(err)
+	}
+	fs := http.FileServer(http.FS(subFS))
+	router.PathPrefix("/").Handler(http.StripPrefix("/", fs))
 
 	port := "8080"
 	log.Fatal(http.ListenAndServe(":"+port, router))
