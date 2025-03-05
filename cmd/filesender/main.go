@@ -24,14 +24,14 @@ func main() {
 	// Load .env file if any exists
 	config.LoadEnv()
 
-	db_path, exists := os.LookupEnv("DATABASE_PATH")
+	dbPath, exists := os.LookupEnv("DATABASE_PATH")
 	if !exists {
 		log.Fatalf("Database path not set in env")
 		return
 	}
 
 	// Initialise database
-	db, err := config.InitDB(db_path)
+	db, err := config.InitDB(dbPath)
 	if err != nil {
 		log.Fatalf("Failed initialising database: %v", err)
 		return
@@ -45,7 +45,7 @@ func main() {
 
 	// API endpoints
 	apiRouter := router.PathPrefix("/api").Subrouter()
-	apiRouter.HandleFunc("/files/count", handlers.CountFilesApiHandler(db)).Methods("GET")
+	apiRouter.HandleFunc("/files/count", handlers.CountFilesAPIHandler(db)).Methods("GET")
 
 	// Page handlers
 	router.HandleFunc("/file-count", handlers.CountFilesTemplateHandler(db)).Methods("GET")
@@ -59,5 +59,8 @@ func main() {
 	router.PathPrefix("/").Handler(http.StripPrefix("/", fs))
 
 	port := "8080"
-	log.Fatal(http.ListenAndServe(":"+port, router))
+	err = http.ListenAndServe(":"+port, router)
+	if err != nil {
+		log.Printf("Error runngin HTTP server: %v", err)
+	}
 }

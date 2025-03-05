@@ -39,7 +39,10 @@ func sendJSON(w http.ResponseWriter, status int, success bool, message string, d
 		response.Message = message
 	}
 
-	json.NewEncoder(w).Encode(response)
+	err := json.NewEncoder(w).Encode(response)
+	if err != nil {
+		log.Printf("Error sending JSON: %v", err)
+	}
 }
 
 // Send a template response with the given data
