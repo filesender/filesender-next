@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"os"
 
-	"codeberg.org/filesender/filesender-next/src/config"
-	"codeberg.org/filesender/filesender-next/src/handlers"
+	"codeberg.org/filesender/filesender-next/config"
+	"codeberg.org/filesender/filesender-next/handlers"
 
 	"github.com/gorilla/mux"
 	_ "github.com/mattn/go-sqlite3"

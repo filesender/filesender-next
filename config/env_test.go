@@ -14,7 +14,7 @@ func TestEnvReading(t *testing.T) {
 		t.Errorf("Database path is already set in environment variables")
 	}
 
-	err := copyFile("../../env.example", ".env")
+	err := copyFile("../env.example", ".env")
 	if err != nil {
 		t.Errorf("Failed copying env.example to .env: %v", err)
 	}
