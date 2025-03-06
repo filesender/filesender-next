@@ -3,6 +3,7 @@
 *.db
 
 # Golang
+/filesender
 *.exe
 *.exe~
 *.dll
