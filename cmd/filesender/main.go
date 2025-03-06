@@ -9,7 +9,6 @@ import (
 	"codeberg.org/filesender/filesender-next/config"
 	"codeberg.org/filesender/filesender-next/handlers"
 
-	"github.com/gorilla/mux"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -31,14 +30,13 @@ func main() {
 	// Initialise handler, pass embedded template files
 	handlers.Init(embeddedTemplateFiles)
 
-	router := mux.NewRouter()
+	router := http.NewServeMux()
 
 	// API endpoints
-	apiRouter := router.PathPrefix("/api").Subrouter()
-	apiRouter.HandleFunc("/files/count", handlers.CountFilesAPIHandler(db)).Methods("GET")
+	router.HandleFunc("GET /api/files/count", handlers.CountFilesAPIHandler(db))
 
 	// Page handlers
-	router.HandleFunc("/file-count", handlers.CountFilesTemplateHandler(db)).Methods("GET")
+	router.HandleFunc("GET /file-count", handlers.CountFilesTemplateHandler(db))
 
 	// Serve static files
 	subFS, err := fs.Sub(embeddedPublicFiles, "public")
@@ -46,10 +44,11 @@ func main() {
 		panic(err)
 	}
 	fs := http.FileServer(http.FS(subFS))
-	router.PathPrefix("/").Handler(http.StripPrefix("/", fs))
+	router.Handle("GET /", http.StripPrefix("/", fs))
 
 	addr := config.GetEnv("LISTEN", "0.0.0.0:8080")
 	log.Println("HTTP server listening on " + addr)
+
 	err = http.ListenAndServe(addr, router)
 	if err != nil {
 		log.Printf("Error runngin HTTP server: %v", err)
