@@ -1,0 +1,24 @@
+[Unit]
+Description=Filesender Daemon
+
+[Service]
+Environment=LISTEN=127.0.0.1:8080
+ExecStart=filesender
+Restart=on-failure
+CapabilityBoundingSet=
+DynamicUser=yes
+NoNewPrivileges=yes
+PrivateDevices=yes
+PrivateTmp=yes
+PrivateUsers=yes
+ProtectHome=yes
+ProtectHostname=yes
+ProtectSystem=strict
+ProtectUsers=yes
+RestrictAddressFamilies=AF_INET AF_INET6
+RestrictNamespaces=yes
+StateDirectory=%N
+SystemCallFilter=@system-service
+
+[Install]
+WantedBy=multi-user.target
