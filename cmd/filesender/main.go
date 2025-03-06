@@ -46,7 +46,7 @@ func main() {
 	fs := http.FileServer(http.FS(subFS))
 	router.Handle("GET /", http.StripPrefix("/", fs))
 
-	addr := config.GetEnv("LISTEN", "0.0.0.0:8080")
+	addr := config.GetEnv("LISTEN", "127.0.0.1:8080")
 	log.Println("HTTP server listening on " + addr)
 
 	err = http.ListenAndServe(addr, router)
