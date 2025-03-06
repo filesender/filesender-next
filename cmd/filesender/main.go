@@ -51,6 +51,6 @@ func main() {
 
 	err = http.ListenAndServe(addr, router)
 	if err != nil {
-		log.Printf("Error runngin HTTP server: %v", err)
+		log.Printf("Error running HTTP server: %v", err)
 	}
 }
