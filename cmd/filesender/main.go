@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
+	"path"
 
 	"codeberg.org/filesender/filesender-next/config"
 	"codeberg.org/filesender/filesender-next/handlers"
@@ -20,7 +21,7 @@ var embeddedTemplateFiles embed.FS
 
 func main() {
 	// Initialise database
-	db, err := config.InitDB(config.GetEnv("DATABASE_PATH", "filesender.db"))
+	db, err := config.InitDB(path.Join(config.GetEnv("STATE_DIRECTORY", "."), "filesender.db"))
 	if err != nil {
 		log.Fatalf("Failed initialising database: %v", err)
 		return
