@@ -102,3 +102,15 @@ func loadConfigFile(filename string) (map[string]map[string]string, error) {
 
 	return config, scanner.Err()
 }
+
+// Deletes config file if exists
+func DeleteConfigFile() error {
+	confPath := GetConfigPaths()
+
+	if _, err := os.Stat(confPath); err != nil {
+		log.Printf("Config file does not exist")
+		return nil
+	}
+
+	return os.Remove(confPath)
+}
