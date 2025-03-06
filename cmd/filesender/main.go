@@ -2,7 +2,6 @@ package main
 
 import (
 	"embed"
-	"flag"
 	"io/fs"
 	"log"
 	"net/http"
@@ -20,30 +19,9 @@ var embeddedPublicFiles embed.FS
 //go:embed templates/*
 var embeddedTemplateFiles embed.FS
 
-var resetConfigFlag = flag.Bool("r", false, "Resets config at default location")
-
 func main() {
-	flag.Parse()
-
-	// Delete config file if reset flag is on
-	if *resetConfigFlag {
-		err := config.DeleteConfigFile()
-		if err != nil {
-			log.Fatalf("Failed deleting existing configuration: %v", err)
-		}
-
-		log.Println("Config file has been deleted")
-	}
-
-	// Load .conf file if any exists, or else creates with default values
-	cnfg, err := config.LoadConfig()
-	if err != nil {
-		log.Fatalf("Failed loading configuration: %v", err)
-		return
-	}
-
 	// Initialise database
-	db, err := config.InitDB(cnfg["database"]["path"])
+	db, err := config.InitDB(config.GetEnv("DATABASE_PATH", "filesender.db"))
 	if err != nil {
 		log.Fatalf("Failed initialising database: %v", err)
 		return
@@ -70,7 +48,7 @@ func main() {
 	fs := http.FileServer(http.FS(subFS))
 	router.PathPrefix("/").Handler(http.StripPrefix("/", fs))
 
-	addr := cnfg["http"]["host"] + ":" + cnfg["http"]["port"]
+	addr := config.GetEnv("LISTEN", "0.0.0.0:8080")
 	log.Println("HTTP server listening on " + addr)
 	err = http.ListenAndServe(addr, router)
 	if err != nil {
