@@ -5,8 +5,8 @@ import "time"
 // Model representing the "transfers" table
 type Transfer struct {
 	ID             int       `json:"id"`
-	UserId         string    `json:"user_id"`
-	GuestvoucherId int       `json:"guestvoucher_id"`
+	UserID         string    `json:"user_id"`
+	GuestvoucherID int       `json:"guest_voucher_id"`
 	FileCount      int       `json:"file_count"`
 	TotalByteSize  int       `json:"total_byte_size"`
 	Subject        string    `json:"subject"`
