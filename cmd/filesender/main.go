@@ -5,7 +5,6 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
-	"os"
 
 	"codeberg.org/filesender/filesender-next/config"
 	"codeberg.org/filesender/filesender-next/handlers"
@@ -22,16 +21,14 @@ var embeddedTemplateFiles embed.FS
 
 func main() {
 	// Load .env file if any exists
-	config.LoadEnv()
-
-	dbPath, exists := os.LookupEnv("DATABASE_PATH")
-	if !exists {
-		log.Fatalf("Database path not set in env")
+	cnfg, err := config.LoadConfig()
+	if err != nil {
+		log.Fatalf("Failed loading configuration: %v", err)
 		return
 	}
 
 	// Initialise database
-	db, err := config.InitDB(dbPath)
+	db, err := config.InitDB(cnfg["database"]["path"])
 	if err != nil {
 		log.Fatalf("Failed initialising database: %v", err)
 		return
@@ -58,8 +55,9 @@ func main() {
 	fs := http.FileServer(http.FS(subFS))
 	router.PathPrefix("/").Handler(http.StripPrefix("/", fs))
 
-	port := "8080"
-	err = http.ListenAndServe(":"+port, router)
+	addr := cnfg["http"]["host"] + ":" + cnfg["http"]["port"]
+	log.Printf("HTTP server listening on " + addr)
+	err = http.ListenAndServe(addr, router)
 	if err != nil {
 		log.Printf("Error runngin HTTP server: %v", err)
 	}
