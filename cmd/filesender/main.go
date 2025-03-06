@@ -71,7 +71,7 @@ func main() {
 	router.PathPrefix("/").Handler(http.StripPrefix("/", fs))
 
 	addr := cnfg["http"]["host"] + ":" + cnfg["http"]["port"]
-	log.Printf("HTTP server listening on " + addr)
+	log.Println("HTTP server listening on " + addr)
 	err = http.ListenAndServe(addr, router)
 	if err != nil {
 		log.Printf("Error runngin HTTP server: %v", err)
