@@ -34,6 +34,9 @@ jobs:
         with:
           go-version: 1.24
 
+      - name: Install Make
+        run: apt update && apt install -y make
+
       - name: Build and start Filesender
         run: |
           make filesender
