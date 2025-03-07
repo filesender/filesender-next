@@ -16,27 +16,8 @@ jobs:
       - name: Run linter
         run: make lint
 
-  unit:
-    name: Unit tests
-    runs-on: codeberg-tiny
-
-    steps:
-      - name: Install required dependencies
-        run: apt update && apt install -y nodejs make gcc libc-dev
-
-      - name: Set up Golang
-        uses: actions/setup-go@v5
-        with:
-          go-version: 1.24
-
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Run tests
-        run: make test
-
-  e2e:
-    name: End to end tests
+  tests:
+    name: End to end tests and unit tests
     runs-on: codeberg-tiny
     container:
       image: mcr.microsoft.com/playwright:v1.50.1-noble
@@ -67,3 +48,6 @@ jobs:
 
       - name: Stop filesender
         run: pkill filesender || true
+
+      - name: Run unit tests
+        run: make test
