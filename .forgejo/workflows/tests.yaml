@@ -25,11 +25,11 @@ jobs:
       options: --init
 
     steps:
+      - name: Install required dependencies
+        run: apt update && apt install -y nodejs make gcc libc-dev
+
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Install required dependencies
-        run: apt update && apt install -y make gcc libc-dev
 
       - name: Run tests
         run: make test
