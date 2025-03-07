@@ -39,7 +39,7 @@ jobs:
 
       - name: Build and start Filesender
         run: |
-          make filesender
+          CGO_ENABLED=1 make filesender
           ./filesender &
           sleep 5 # Wait for the server to start
 
