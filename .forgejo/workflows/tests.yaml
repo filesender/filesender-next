@@ -1,13 +1,16 @@
 on: [push]
 
 jobs:
-    linter:
-        runs-on: codeberg-tiny
-        container:
-            image: golangci/golangci-lint:latest
-        steps:
-          - name: Checkout code
-            uses: actions/checkout@v4
+  linter:
+    runs-on: codeberg-tiny
+    container:
+      image: golangci/golangci-lint:latest
+    steps:
+      - name: Install Node.js
+        run: apt update && apt install -y nodejs
 
-          - name: Run linter
-            run: make lint
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run linter
+        run: make lint
