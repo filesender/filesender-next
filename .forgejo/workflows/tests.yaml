@@ -16,6 +16,25 @@ jobs:
       - name: Run linter
         run: make lint
 
+  unit:
+    name: Unit tests
+    runs-on: codeberg-tiny
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Golang
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.24
+
+      - name: Install required dependencies
+        run: apt update && apt install -y make gcc libc-dev
+
+      - name: Run tests
+        run: make test
+
   e2e:
     name: End to end tests
     runs-on: codeberg-tiny
@@ -39,7 +58,7 @@ jobs:
 
       - name: Build and start Filesender
         run: |
-          CGO_ENABLED=1 make filesender
+          make filesender
           ./filesender &
           sleep 5 # Wait for the server to start
 
