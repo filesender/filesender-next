@@ -1,0 +1,13 @@
+on: [push]
+
+jobs:
+    linter:
+        runs-on: docker
+        container:
+            image: golangci/golangic-lint:latest
+        steps:
+          - name: Checkout code
+            uses: actions/checkout@v4
+
+          - name: Run linter
+            run: make lint
