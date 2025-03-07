@@ -4,7 +4,7 @@ jobs:
     linter:
         runs-on: codeberg-tiny
         container:
-            image: golangci/golangic-lint:latest
+            image: golangci/golangci-lint:latest
         steps:
           - name: Checkout code
             uses: actions/checkout@v4
