@@ -2,7 +2,7 @@ on: [push]
 
 jobs:
     linter:
-        runs-on: self-hosted
+        runs-on: codeberg-tiny
         container:
             image: golangci/golangic-lint:latest
         steps:
