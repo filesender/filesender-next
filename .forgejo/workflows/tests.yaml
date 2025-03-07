@@ -19,21 +19,15 @@ jobs:
   e2e:
     name: End to end tests
     runs-on: codeberg-tiny
+    container:
+      image: mcr.microsoft.com/playwright:v1.51.0-noble
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 23
-
       - name: Install dependencies
         run: npm i
-
-      - name: Install playwright browsers
-        run: npx playwright install --with-deps
 
       - name: Set up Golang
         uses: actions/setup-go@v5
