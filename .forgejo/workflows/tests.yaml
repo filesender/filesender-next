@@ -5,12 +5,51 @@ jobs:
     runs-on: codeberg-tiny
     container:
       image: golangci/golangci-lint:latest
+    
     steps:
-      - name: Install Node.js
-        run: apt update && apt install -y nodejs
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 23
 
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Run linter
         run: make lint
+
+  e2e:
+    name: End to end tests
+    runs-on: codeberg-tiny
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 23
+
+      - name: Install dependencies
+        run: npm i
+
+      - name: Install playwright browsers
+        run: npx playwright install --wait-deps
+
+      - name: Set up Golang
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.24
+
+      - name: Build and start Filesender
+        run: |
+          make filesender
+          ./filesender &
+          sleep 5 # Wait for the server to start
+
+      - name: Run playwright tests
+        run: npx playwright test
+
+      - name: Stop filesender
+        run: pkill filesender || true
