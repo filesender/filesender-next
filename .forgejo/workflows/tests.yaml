@@ -2,7 +2,7 @@ on: [push]
 
 jobs:
     linter:
-        runs-on: docker
+        runs-on: self-hosted
         container:
             image: golangci/golangic-lint:latest
         steps:
