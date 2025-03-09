@@ -1,0 +1,53 @@
+on: [push]
+
+jobs:
+  linter:
+    runs-on: codeberg-tiny
+    container:
+      image: golangci/golangci-lint:latest
+    
+    steps:
+      - name: Install Node.js
+        run: apt update && apt install -y nodejs
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run linter
+        run: make lint
+
+  tests:
+    name: End to end tests and unit tests
+    runs-on: codeberg-tiny
+    container:
+      image: mcr.microsoft.com/playwright:v1.50.1-noble
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: npm i
+
+      - name: Set up Golang
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.24
+
+      - name: Install required dependencies
+        run: apt update && apt install -y make gcc libc-dev
+
+      - name: Build and start Filesender
+        run: |
+          make filesender
+          ./filesender &
+          sleep 5 # Wait for the server to start
+
+      - name: Run playwright tests
+        run: npx playwright test
+
+      - name: Stop filesender
+        run: pkill filesender || true
+
+      - name: Run unit tests
+        run: make test

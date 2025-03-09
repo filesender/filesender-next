@@ -20,7 +20,7 @@ fmt:
 	gofumpt -w . || go fmt ./...
 
 lint:
-	golangci-lint run -E stylecheck,revive,gocritic
+	golangci-lint run -E stylecheck,revive,gocritic --timeout=5m
 
 vet:
 	go vet ./...
