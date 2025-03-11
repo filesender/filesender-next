@@ -4,9 +4,11 @@ FileSender Next is a fresh rewrite of the widely-used FileSender application, no
 
 ## Why a Rewrite?
 
-After more than 15 years of active development, the original FileSender codebase has grown complex and difficult to maintain. Recent security audits have highlighted vulnerabilities, making it clear that enhancing security and maintainability is essential. This rewrite aims to:
+During the last FileSender meeting at the TNC24 conference, it was concluded that working towards a more secure FileSender codebase should be the priority for the roadmap. After more than 12 years of development, the original FileSender 2.x codebase has grown in complexity.
 
-- Significantly improve security
+This rewrite aims to:
+
+- Improve security
 - Simplify the architecture
 - Enable new features, including end-to-end encryption for large files
 
