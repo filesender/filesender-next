@@ -1,6 +1,6 @@
 # FileSender Next
 
-FileSender Next is a fresh rewrite of the widely-used FileSender platform, now implemented in Go.
+FileSender Next is a fresh rewrite of the widely-used FileSender application, now implemented in Go.
 
 ## Why a Rewrite?
 
