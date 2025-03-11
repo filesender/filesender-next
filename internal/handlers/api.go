@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"net/http"
 
-	"codeberg.org/filesender/filesender-next/models"
+	"codeberg.org/filesender/filesender-next/internal/models"
 )
 
 func CountFilesAPIHandler(db *sql.DB) http.HandlerFunc {

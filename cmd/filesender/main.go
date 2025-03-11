@@ -8,8 +8,8 @@ import (
 	"path"
 	"time"
 
-	"codeberg.org/filesender/filesender-next/config"
-	"codeberg.org/filesender/filesender-next/handlers"
+	"codeberg.org/filesender/filesender-next/internal/config"
+	"codeberg.org/filesender/filesender-next/internal/handlers"
 
 	_ "github.com/mattn/go-sqlite3"
 )
