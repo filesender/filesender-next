@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 	"path"
+	"time"
 
 	"codeberg.org/filesender/filesender-next/config"
 	"codeberg.org/filesender/filesender-next/handlers"
@@ -47,10 +48,18 @@ func main() {
 	fs := http.FileServer(http.FS(subFS))
 	router.Handle("GET /", http.StripPrefix("/", fs))
 
+	// Setup server
 	addr := config.GetEnv("LISTEN", "127.0.0.1:8080")
-	slog.Info("HTTP server listening on " + addr)
+	s := &http.Server{
+		Addr:           addr,
+		Handler:        router,
+		ReadTimeout:    10 * time.Second,
+		WriteTimeout:   10 * time.Second,
+		MaxHeaderBytes: 1 << 20,
+	}
 
-	err = http.ListenAndServe(addr, router)
+	slog.Info("HTTP server listening on " + addr)
+	err = s.ListenAndServe()
 	if err != nil {
 		slog.Error("Error running HTTP server", "error", err)
 	}
