@@ -65,7 +65,7 @@ func main() {
 func setLogLevel() {
 	var logLevel slog.Level
 
-	if config.GetEnv("DEBUG", "false") == "true" {
+	if config.GetEnv("FILESENDER_DEBUG", "false") == "true" {
 		logLevel = slog.LevelDebug
 	} else {
 		logLevel = slog.LevelInfo
