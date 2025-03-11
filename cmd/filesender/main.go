@@ -3,7 +3,7 @@ package main
 import (
 	"embed"
 	"io/fs"
-	"log"
+	"log/slog"
 	"net/http"
 	"path"
 
@@ -23,7 +23,7 @@ func main() {
 	// Initialise database
 	db, err := config.InitDB(path.Join(config.GetEnv("STATE_DIRECTORY", "."), "filesender.db"))
 	if err != nil {
-		log.Fatalf("Failed initialising database: %v", err)
+		slog.Error("Failed initialising database", "error", err)
 		return
 	}
 	defer db.Close()
@@ -48,10 +48,10 @@ func main() {
 	router.Handle("GET /", http.StripPrefix("/", fs))
 
 	addr := config.GetEnv("LISTEN", "127.0.0.1:8080")
-	log.Println("HTTP server listening on " + addr)
+	slog.Info("HTTP server listening on " + addr)
 
 	err = http.ListenAndServe(addr, router)
 	if err != nil {
-		log.Printf("Error running HTTP server: %v", err)
+		slog.Error("Error running HTTP server", "error", err)
 	}
 }

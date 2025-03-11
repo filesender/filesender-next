@@ -2,13 +2,14 @@ package config
 
 import (
 	"database/sql"
-	"log"
+	"log/slog"
+	"os"
 )
 
 // Initializes a SQLite database at the given path.
 // Opens the database connection and applies "migrations".
 func InitDB(path string) (*sql.DB, error) {
-	log.Printf("Using database: %s", path)
+	slog.Info("Using database", "path", path)
 	db, err := sql.Open("sqlite3", path)
 	if err != nil {
 		return nil, err
@@ -16,10 +17,11 @@ func InitDB(path string) (*sql.DB, error) {
 
 	err = runMigrations(db)
 	if err != nil {
-		log.Fatalf("Migration failed: %v", err)
+		slog.Error("Migration failed", "error", err)
+		os.Exit(1)
 	}
 
-	log.Println("Database connected and migrated successfully.")
+	slog.Info("Database connected and migrated successfully")
 	return db, nil
 }
 
