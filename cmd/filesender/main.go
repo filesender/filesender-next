@@ -1,24 +1,18 @@
 package main
 
 import (
-	"embed"
 	"io/fs"
 	"log/slog"
 	"net/http"
 	"path"
 	"time"
 
+	"codeberg.org/filesender/filesender-next/internal/assets"
 	"codeberg.org/filesender/filesender-next/internal/config"
 	"codeberg.org/filesender/filesender-next/internal/handlers"
 
 	_ "github.com/mattn/go-sqlite3"
 )
-
-//go:embed public/*
-var embeddedPublicFiles embed.FS
-
-//go:embed templates/*
-var embeddedTemplateFiles embed.FS
 
 func main() {
 	// Initialise database
@@ -30,7 +24,7 @@ func main() {
 	defer db.Close()
 
 	// Initialise handler, pass embedded template files
-	handlers.Init(embeddedTemplateFiles)
+	handlers.Init(assets.EmbeddedTemplateFiles)
 
 	router := http.NewServeMux()
 
@@ -41,7 +35,7 @@ func main() {
 	router.HandleFunc("GET /file-count", handlers.CountFilesTemplateHandler(db))
 
 	// Serve static files
-	subFS, err := fs.Sub(embeddedPublicFiles, "public")
+	subFS, err := fs.Sub(assets.EmbeddedPublicFiles, "public")
 	if err != nil {
 		panic(err)
 	}
