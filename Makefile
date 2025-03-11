@@ -36,4 +36,5 @@ install: filesender
 	install -D filesender $(DESTDIR)$(PREFIX)/bin/filesender
 
 run:
-	go run ./cmd/filesender
+	mkdir -p ./data
+	STATE_DIRECTORY=./data go run ./cmd/filesender

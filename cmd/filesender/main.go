@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
+	"os"
 	"path"
 
 	"codeberg.org/filesender/filesender-next/config"
@@ -21,7 +22,11 @@ var embeddedTemplateFiles embed.FS
 
 func main() {
 	// Initialise database
-	db, err := config.InitDB(path.Join(config.GetEnv("STATE_DIRECTORY", "."), "filesender.db"))
+	stateDir := os.Getenv("STATE_DIRECTORY")
+	if stateDir == "" {
+		log.Fatal("environment variable \"STATE_DIRECTORY\" not set")
+	}
+	db, err := config.InitDB(path.Join(stateDir, "filesender.db"))
 	if err != nil {
 		log.Fatalf("Failed initialising database: %v", err)
 		return
@@ -47,7 +52,10 @@ func main() {
 	fs := http.FileServer(http.FS(subFS))
 	router.Handle("GET /", http.StripPrefix("/", fs))
 
-	addr := config.GetEnv("LISTEN", "127.0.0.1:8080")
+	addr := os.Getenv("LISTEN")
+	if addr == "" {
+		addr = "127.0.0.1:8080"
+	}
 	log.Println("HTTP server listening on " + addr)
 
 	err = http.ListenAndServe(addr, router)
