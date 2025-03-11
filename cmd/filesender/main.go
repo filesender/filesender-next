@@ -4,6 +4,7 @@ import (
 	"io/fs"
 	"log/slog"
 	"net/http"
+	"os"
 	"path"
 	"time"
 
@@ -15,6 +16,8 @@ import (
 )
 
 func main() {
+	setLogLevel()
+
 	// Initialise database
 	db, err := config.InitDB(path.Join(config.GetEnv("STATE_DIRECTORY", "."), "filesender.db"))
 	if err != nil {
@@ -57,4 +60,21 @@ func main() {
 	if err != nil {
 		slog.Error("Error running HTTP server", "error", err)
 	}
+}
+
+func setLogLevel() {
+	var logLevel slog.Level
+
+	if config.GetEnv("DEBUG", "false") == "true" {
+		logLevel = slog.LevelDebug
+	} else {
+		logLevel = slog.LevelInfo
+	}
+
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+		Level: logLevel,
+	}))
+
+	slog.SetDefault(logger)
+	slog.Debug("Debug logging enabled")
 }

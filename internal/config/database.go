@@ -9,7 +9,7 @@ import (
 // Initializes a SQLite database at the given path.
 // Opens the database connection and applies "migrations".
 func InitDB(path string) (*sql.DB, error) {
-	slog.Info("Using database", "path", path)
+	slog.Debug("Using database", "path", path)
 	db, err := sql.Open("sqlite3", path)
 	if err != nil {
 		return nil, err
@@ -21,7 +21,7 @@ func InitDB(path string) (*sql.DB, error) {
 		os.Exit(1)
 	}
 
-	slog.Info("Database connected and migrated successfully")
+	slog.Debug("Database connected and migrated successfully")
 	return db, nil
 }
 

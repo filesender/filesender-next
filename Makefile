@@ -36,4 +36,4 @@ install: filesender
 	install -D filesender $(DESTDIR)$(PREFIX)/bin/filesender
 
 run:
-	go run ./cmd/filesender
+	DEBUG=true go run ./cmd/filesender
