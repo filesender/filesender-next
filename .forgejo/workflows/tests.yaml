@@ -40,6 +40,7 @@ jobs:
       - name: Build and start Filesender
         run: |
           make filesender
+          mkdir -p ./data
           FILESENDER_DEBUG=true STATE_DIRECTORY=./data ./filesender &
           sleep 5 # Wait for the server to start
 
