@@ -37,4 +37,4 @@ install: filesender
 
 run:
 	mkdir -p ./data
-	FILESENDER_DEBUG=true STATE_DIRECTORY=./data go run ./cmd/filesender
+	STATE_DIRECTORY=./data go run ./cmd/filesender -d
