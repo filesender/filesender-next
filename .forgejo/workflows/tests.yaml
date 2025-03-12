@@ -39,7 +39,8 @@ jobs:
 
       - name: Build and start Filesender
         run: |
-          make run &
+          make filesender
+          FILESENDER_DEBUG=true STATE_DIRECTORY=./data ./filesender &
           sleep 5 # Wait for the server to start
 
       - name: Run playwright tests
