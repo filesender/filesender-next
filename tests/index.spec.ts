@@ -2,6 +2,14 @@ import { test, expect } from '@playwright/test';
 
 test('should return a successful response', async ({ page }) => {
     const response = await page.goto('http://localhost:8080');
+
     expect(response?.status()).toBe(200);
-    expect(await response?.text()).toContain("Hello, world!");
+    await expect(page).toHaveTitle("Upload page");
+});
+
+test('should contain two file inputs', async ({ page }) => {
+    await page.goto('http://localhost:8080');
+
+    const fileInputs = page.locator('input[type="file"]');
+    await expect(fileInputs).toHaveCount(2);
 });
