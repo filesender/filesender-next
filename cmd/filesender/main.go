@@ -1,35 +1,33 @@
 package main
 
 import (
-	"embed"
 	"io/fs"
-	"log"
+	"log/slog"
 	"net/http"
+	"os"
 	"path"
+	"time"
 
-	"codeberg.org/filesender/filesender-next/config"
-	"codeberg.org/filesender/filesender-next/handlers"
+	"codeberg.org/filesender/filesender-next/internal/assets"
+	"codeberg.org/filesender/filesender-next/internal/config"
+	"codeberg.org/filesender/filesender-next/internal/handlers"
 
 	_ "github.com/mattn/go-sqlite3"
 )
 
-//go:embed public/*
-var embeddedPublicFiles embed.FS
-
-//go:embed templates/*
-var embeddedTemplateFiles embed.FS
-
 func main() {
+	setLogLevel()
+
 	// Initialise database
 	db, err := config.InitDB(path.Join(config.GetEnv("STATE_DIRECTORY", "."), "filesender.db"))
 	if err != nil {
-		log.Fatalf("Failed initialising database: %v", err)
+		slog.Error("Failed initialising database", "error", err)
 		return
 	}
 	defer db.Close()
 
 	// Initialise handler, pass embedded template files
-	handlers.Init(embeddedTemplateFiles)
+	handlers.Init(assets.EmbeddedTemplateFiles)
 
 	router := http.NewServeMux()
 
@@ -40,18 +38,43 @@ func main() {
 	router.HandleFunc("GET /file-count", handlers.CountFilesTemplateHandler(db))
 
 	// Serve static files
-	subFS, err := fs.Sub(embeddedPublicFiles, "public")
+	subFS, err := fs.Sub(assets.EmbeddedPublicFiles, "public")
 	if err != nil {
 		panic(err)
 	}
 	fs := http.FileServer(http.FS(subFS))
 	router.Handle("GET /", http.StripPrefix("/", fs))
 
+	// Setup server
 	addr := config.GetEnv("LISTEN", "127.0.0.1:8080")
-	log.Println("HTTP server listening on " + addr)
-
-	err = http.ListenAndServe(addr, router)
-	if err != nil {
-		log.Printf("Error running HTTP server: %v", err)
+	s := &http.Server{
+		Addr:           addr,
+		Handler:        router,
+		ReadTimeout:    10 * time.Second,
+		WriteTimeout:   10 * time.Second,
+		MaxHeaderBytes: 1 << 20,
 	}
+
+	slog.Info("HTTP server listening on " + addr)
+	err = s.ListenAndServe()
+	if err != nil {
+		slog.Error("Error running HTTP server", "error", err)
+	}
+}
+
+func setLogLevel() {
+	var logLevel slog.Level
+
+	if config.GetEnv("FILESENDER_DEBUG", "false") == "true" {
+		logLevel = slog.LevelDebug
+	} else {
+		logLevel = slog.LevelInfo
+	}
+
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+		Level: logLevel,
+	}))
+
+	slog.SetDefault(logger)
+	slog.Debug("Debug logging enabled")
 }

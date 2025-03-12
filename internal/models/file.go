@@ -2,7 +2,7 @@ package models
 
 import (
 	"database/sql"
-	"log"
+	"log/slog"
 )
 
 // Model representing the "files" table
@@ -19,7 +19,7 @@ func CountFiles(db *sql.DB) (int, error) {
 	var count int
 	err := db.QueryRow("SELECT count(id) as c FROM files").Scan(&count)
 	if err != nil {
-		log.Println("Database query error:", err)
+		slog.Error("Database query error", "error", err)
 		return 0, err
 	}
 	return count, nil

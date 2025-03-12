@@ -4,7 +4,7 @@ import (
 	"embed"
 	"encoding/json"
 	"html/template"
-	"log"
+	"log/slog"
 	"net/http"
 )
 
@@ -23,7 +23,7 @@ func Init(fs embed.FS) {
 }
 
 // Send a JSON response with the given data
-func sendJSON(w http.ResponseWriter, status int, success bool, message string, data interface{}) {
+func sendJSON(w http.ResponseWriter, status int, success bool, message string, data any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 
@@ -41,7 +41,7 @@ func sendJSON(w http.ResponseWriter, status int, success bool, message string, d
 
 	err := json.NewEncoder(w).Encode(response)
 	if err != nil {
-		log.Printf("Error sending JSON: %v", err)
+		slog.Error("Error sending JSON", "error", err)
 	}
 }
 
@@ -52,14 +52,14 @@ func sendTemplate(w http.ResponseWriter, tmpl string, data any) {
 
 	t, err := template.ParseFS(templatesFS, basePath, tmplPath)
 	if err != nil {
-		log.Println("Error parsing template:", err)
+		slog.Error("Error parsing template", "error", err)
 		sendError(w, 500, "Error rendering page")
 		return
 	}
 
 	err = t.Execute(w, data)
 	if err != nil {
-		log.Println("Error executing template:", err)
+		slog.Error("Error executing template", "error", err)
 		sendError(w, 500, "Error rendering page")
 	}
 }
