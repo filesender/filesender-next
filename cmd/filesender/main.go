@@ -1,8 +1,8 @@
 package main
 
 import (
+	"flag"
 	"io/fs"
-	"log"
 	"log/slog"
 	"net/http"
 	"os"
@@ -17,17 +17,20 @@ import (
 )
 
 func main() {
-	setLogLevel()
+	enableDebug := flag.Bool("d", false, "enable DEBUG output")
+	flag.Parse()
+	setLogLevel(*enableDebug)
 
 	// Initialise database
 	stateDir := os.Getenv("STATE_DIRECTORY")
 	if stateDir == "" {
-		log.Fatal("environment variable \"STATE_DIRECTORY\" not set")
+		slog.Error("environment variable \"STATE_DIRECTORY\" not set")
+		os.Exit(1)
 	}
 	db, err := config.InitDB(path.Join(stateDir, "filesender.db"))
 	if err != nil {
 		slog.Error("Failed initialising database", "error", err)
-		return
+		os.Exit(1)
 	}
 	defer db.Close()
 
@@ -70,15 +73,11 @@ func main() {
 	}
 }
 
-func setLogLevel() {
-	var logLevel slog.Level
-
-	if os.Getenv("FILESENDER_DEBUG") == "true" {
+func setLogLevel(enableDebug bool) {
+	logLevel := slog.LevelInfo
+	if enableDebug {
 		logLevel = slog.LevelDebug
-	} else {
-		logLevel = slog.LevelInfo
 	}
-
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
 		Level: logLevel,
 	}))
