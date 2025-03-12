@@ -16,8 +16,9 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+var enableDebug = flag.Bool("d", false, "enable DEBUG output")
+
 func main() {
-	enableDebug := flag.Bool("d", false, "enable DEBUG output")
 	flag.Parse()
 	setLogLevel(*enableDebug)
 
