@@ -2,6 +2,7 @@ package main
 
 import (
 	"io/fs"
+	"log"
 	"log/slog"
 	"net/http"
 	"os"
@@ -19,7 +20,11 @@ func main() {
 	setLogLevel()
 
 	// Initialise database
-	db, err := config.InitDB(path.Join(config.GetEnv("STATE_DIRECTORY", "."), "filesender.db"))
+	stateDir := os.Getenv("STATE_DIRECTORY")
+	if stateDir == "" {
+		log.Fatal("environment variable \"STATE_DIRECTORY\" not set")
+	}
+	db, err := config.InitDB(path.Join(stateDir, "filesender.db"))
 	if err != nil {
 		slog.Error("Failed initialising database", "error", err)
 		return
@@ -46,7 +51,10 @@ func main() {
 	router.Handle("GET /", http.StripPrefix("/", fs))
 
 	// Setup server
-	addr := config.GetEnv("LISTEN", "127.0.0.1:8080")
+	addr := os.Getenv("LISTEN")
+	if addr == "" {
+		addr = "127.0.0.1:8080"
+	}
 	s := &http.Server{
 		Addr:           addr,
 		Handler:        router,

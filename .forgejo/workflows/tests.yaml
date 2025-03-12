@@ -39,8 +39,7 @@ jobs:
 
       - name: Build and start Filesender
         run: |
-          make filesender
-          ./filesender &
+          make run &
           sleep 5 # Wait for the server to start
 
       - name: Run playwright tests

@@ -36,4 +36,5 @@ install: filesender
 	install -D filesender $(DESTDIR)$(PREFIX)/bin/filesender
 
 run:
-	FILESENDER_DEBUG=true go run ./cmd/filesender
+	mkdir -p ./data
+	FILESENDER_DEBUG=true STATE_DIRECTORY=./data go run ./cmd/filesender
