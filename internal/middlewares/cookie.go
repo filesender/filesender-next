@@ -6,7 +6,7 @@ import (
 )
 
 // Dummy function "cookie auth" just reading "session" cookie value
-func CookieAuth(r *http.Request) (authenticated bool, user_id string) {
+func CookieAuth(r *http.Request) (authenticated bool, userID string) {
 	val, err := r.Cookie("session")
 	if err == http.ErrNoCookie {
 		return
@@ -17,6 +17,6 @@ func CookieAuth(r *http.Request) (authenticated bool, user_id string) {
 
 	// For now just copy the value into "user_id", this is a dummy function anyways
 	authenticated = true
-	user_id = val.Value
+	userID = val.Value
 	return
 }
