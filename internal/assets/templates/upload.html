@@ -42,7 +42,7 @@
                 <div class="flex border p-4 flex-col gap-1">
                     <div>
                         <label for="expiry_date">Expiry date *</label>
-                        <input id="expiry_date" type="date" required>
+                        <input id="expiry_date" type="date" value="{{ .DefaultDate }}" min="{{ .MinDate }}" max="{{ .MaxDate }}" required>
                     </div>
 
                     <div>

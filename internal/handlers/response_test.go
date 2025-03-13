@@ -109,10 +109,9 @@ func TestSendError(t *testing.T) {
 
 // Helper function to read template files manually
 func loadTemplates() (*template.Template, error) {
-	basePath := filepath.Join("..", "assets", "templates", "base.html")
 	testPath := filepath.Join("..", "assets", "templates", "test.html")
 
-	tmpl, err := template.ParseFiles(basePath, testPath)
+	tmpl, err := template.ParseFiles(testPath)
 	if err != nil {
 		return nil, err
 	}

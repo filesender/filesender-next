@@ -47,10 +47,7 @@ func sendJSON(w http.ResponseWriter, status int, success bool, message string, d
 
 // Send a template response with the given data
 func sendTemplate(w http.ResponseWriter, tmpl string, data any) {
-	tmplPath := "templates/" + tmpl + ".html"
-	basePath := "templates/base.html"
-
-	t, err := template.ParseFS(templatesFS, basePath, tmplPath)
+	t, err := template.ParseFS(templatesFS, "templates/"+tmpl+".html")
 	if err != nil {
 		slog.Error("Error parsing template", "error", err)
 		sendError(w, 500, "Error rendering page")

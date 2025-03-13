@@ -44,6 +44,7 @@ func main() {
 	router.HandleFunc("POST /api/v1/transfers", handlers.CreateTransferAPIHandler(db))
 
 	// Page handlers
+	router.HandleFunc("GET /{$}", handlers.UploadTemplateHandler())
 	router.HandleFunc("GET /file-count", handlers.CountFilesTemplateHandler(db))
 
 	// Serve static files
