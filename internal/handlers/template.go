@@ -12,9 +12,9 @@ func UploadTemplateHandler() http.HandlerFunc {
 		maxDate := time.Now().UTC().Add(time.Hour * 24 * 30)
 
 		data := map[string]any{
-			"MinDate":     minDate.Format("2006-01-02"),
-			"DefaultDate": defaultDate.Format("2006-01-02"),
-			"MaxDate":     maxDate.Format("2006-01-02"),
+			"MinDate":     minDate.Format(time.DateOnly),
+			"DefaultDate": defaultDate.Format(time.DateOnly),
+			"MaxDate":     maxDate.Format(time.DateOnly),
 		}
 
 		sendTemplate(w, "upload", data)

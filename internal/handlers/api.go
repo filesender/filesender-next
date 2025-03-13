@@ -37,12 +37,13 @@ func CreateTransferAPIHandler(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		transfer, err := models.CreateTransfer(db, models.Transfer{
+		transfer := models.Transfer{
 			UserID:     userID,
 			Subject:    requestBody.Subject,
 			Message:    requestBody.Message,
 			ExpiryDate: expiryDate,
-		})
+		}
+		err := transfer.CreateTransfer(db)
 
 		if err != nil {
 			slog.Error("Failed creating transfer", "error", err)
@@ -52,7 +53,7 @@ func CreateTransferAPIHandler(db *sql.DB) http.HandlerFunc {
 
 		slog.Debug("Successfully created new transfer", "user", userID, "transfer", transfer.ID)
 		sendJSON(w, http.StatusCreated, true, "", createTransferAPIResponse{
-			Transfer: *transfer,
+			Transfer: transfer,
 		})
 	}
 }

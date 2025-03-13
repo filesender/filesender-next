@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-// Mock response writer
+// Mock JSON response writer
 func TestRecvJSON(t *testing.T) {
 	type testStruct struct {
 		Name string `json:"name"`
@@ -46,18 +46,13 @@ func TestRecvJSON(t *testing.T) {
 			request := httptest.NewRequest(http.MethodPost, "/", bytes.NewBuffer([]byte(tt.requestBody)))
 			request.Header.Set("Content-Type", "application/json")
 
-			// Using httptest ResponseRecorder
 			responseRecorder := httptest.NewRecorder()
-
-			// Call function
 			got := recvJSON(responseRecorder, request, &result)
 
-			// Validate result
 			if got != tt.expectedResult {
 				t.Errorf("recvJSON() got %v, expected %v", got, tt.expectedResult)
 			}
 
-			// Validate HTTP status code
 			if responseRecorder.Code != tt.statusCode && !tt.expectedResult {
 				t.Errorf("HTTP status code got %v, expected %v", responseRecorder.Code, tt.statusCode)
 			}

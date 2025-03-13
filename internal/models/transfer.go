@@ -18,7 +18,7 @@ type Transfer struct {
 	CreationDate  time.Time `json:"creation_date"`
 }
 
-func CreateTransfer(db *sql.DB, transfer Transfer) (*Transfer, error) {
+func (transfer *Transfer) CreateTransfer(db *sql.DB) error {
 	query := `
 		INSERT INTO transfers (
 			user_id, guestvoucher_id, file_count, total_byte_size, subject, message, download_count, expiry_date
@@ -36,16 +36,15 @@ func CreateTransfer(db *sql.DB, transfer Transfer) (*Transfer, error) {
 		transfer.ExpiryDate,
 	)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	transfer.CreationDate = time.Now().UTC().Round(time.Second)
 
 	transferID, err := result.LastInsertId()
 	if err != nil {
-		return nil, err
+		return err
 	}
-
 	transfer.ID = int(transferID)
 
-	return &transfer, nil
+	return nil
 }

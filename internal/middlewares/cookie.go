@@ -6,17 +6,15 @@ import (
 )
 
 // Dummy function "cookie auth" just reading "session" cookie value
-func CookieAuth(r *http.Request) (authenticated bool, userID string) {
+func CookieAuth(r *http.Request) (bool, string) {
 	val, err := r.Cookie("session")
 	if err == http.ErrNoCookie {
-		return
+		return false, ""
 	} else if err != nil {
 		slog.Error("Failed reading cookie", "error", err)
-		return
+		return false, ""
 	}
 
-	// For now just copy the value into "user_id", this is a dummy function anyways
-	authenticated = true
-	userID = val.Value
-	return
+	// For now just return the value, this is a dummy function anyways
+	return true, val.Value
 }
