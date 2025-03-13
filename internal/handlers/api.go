@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"database/sql"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -46,10 +47,12 @@ func CreateTransferAPIHandler(db *sql.DB) http.HandlerFunc {
 		})
 
 		if err != nil {
+			slog.Error("Failed creating transfer", "error", err)
 			sendJSON(w, 500, false, "Failed creating transfer", nil)
 			return
 		}
 
+		slog.Debug("Successfully created new transfer", "user", userID, "transfer", transfer.ID)
 		sendJSON(w, 201, true, "", createTransferAPIResponse{
 			Transfer: *transfer,
 		})
