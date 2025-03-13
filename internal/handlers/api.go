@@ -33,6 +33,11 @@ func CreateTransferAPIHandler(db *sql.DB) http.HandlerFunc {
 			expiryDate = time.Now().Add(time.Hour * 24 * 7)
 		}
 
+		if expiryDate.Before(time.Now()) || expiryDate.After(time.Now().AddDate(0, 0, 30)) {
+			sendJSON(w, 400, false, "Expiry date must be in the future, but max 30 days in the future", nil)
+			return
+		}
+
 		transfer, err := models.CreateTransfer(db, models.Transfer{
 			UserID:     userID,
 			Subject:    requestBody.Subject,
