@@ -7,16 +7,15 @@ import (
 
 // Model representing the "transfers" table
 type Transfer struct {
-	ID             int       `json:"id"`
-	UserID         string    `json:"user_id"`
-	GuestvoucherID int       `json:"guest_voucher_id"`
-	FileCount      int       `json:"file_count"`
-	TotalByteSize  int       `json:"total_byte_size"`
-	Subject        string    `json:"subject"`
-	Message        string    `json:"message"`
-	DownloadCount  int       `json:"download_count"`
-	ExpiryDate     time.Time `json:"expiry_date"`
-	CreationDate   time.Time `json:"creation_date"`
+	ID            int       `json:"id"`
+	UserID        string    `json:"user_id"`
+	FileCount     int       `json:"file_count"`
+	TotalByteSize int       `json:"total_byte_size"`
+	Subject       string    `json:"subject"`
+	Message       string    `json:"message"`
+	DownloadCount int       `json:"download_count"`
+	ExpiryDate    time.Time `json:"expiry_date"`
+	CreationDate  time.Time `json:"creation_date"`
 }
 
 func CreateTransfer(db *sql.DB, transfer Transfer) (*Transfer, error) {
@@ -29,7 +28,6 @@ func CreateTransfer(db *sql.DB, transfer Transfer) (*Transfer, error) {
 
 	result, err := db.Exec(query,
 		transfer.UserID,
-		transfer.GuestvoucherID,
 		transfer.FileCount,
 		transfer.TotalByteSize,
 		transfer.Subject,

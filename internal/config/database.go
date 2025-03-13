@@ -31,7 +31,6 @@ func runMigrations(db *sql.DB) error {
 		CREATE TABLE IF NOT EXISTS transfers (
 			id INTEGER PRIMARY KEY,
 			user_id TEXT,
-			guestvoucher_id INTEGER,
 			file_count INTEGER DEFAULT 0,
 			total_byte_size BIGINT DEFAULT 0,
 			subject TEXT,
