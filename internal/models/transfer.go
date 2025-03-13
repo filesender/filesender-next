@@ -40,6 +40,7 @@ func CreateTransfer(db *sql.DB, transfer Transfer) (*Transfer, error) {
 	if err != nil {
 		return nil, err
 	}
+	transfer.CreationDate = time.Now()
 
 	transferID, err := result.LastInsertId()
 	if err != nil {
