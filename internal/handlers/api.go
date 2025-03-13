@@ -28,6 +28,9 @@ func CreateTransferAPIHandler(db *sql.DB) http.HandlerFunc {
 		var expiryDate time.Time
 		if requestBody.ExpiryDate != nil {
 			expiryDate = *requestBody.ExpiryDate
+		} else {
+			// Default to current time + 7 days if not set
+			expiryDate = time.Now().Add(time.Hour * 24 * 7)
 		}
 
 		transfer, err := models.CreateTransfer(db, models.Transfer{
