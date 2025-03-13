@@ -45,7 +45,6 @@ func main() {
 
 	// Page handlers
 	router.HandleFunc("GET /{$}", handlers.UploadTemplateHandler())
-	router.HandleFunc("GET /file-count", handlers.CountFilesTemplateHandler(db))
 
 	// Serve static files
 	subFS, err := fs.Sub(assets.EmbeddedPublicFiles, "public")
