@@ -41,8 +41,7 @@ func main() {
 	router := http.NewServeMux()
 
 	// API endpoints
-	router.HandleFunc("POST /api/transfers", handlers.CreateTransferAPIHandler(db))
-	router.HandleFunc("GET /api/files/count", handlers.CountFilesAPIHandler(db))
+	router.HandleFunc("POST /api/v1/transfers", handlers.CreateTransferAPIHandler(db))
 
 	// Page handlers
 	router.HandleFunc("GET /file-count", handlers.CountFilesTemplateHandler(db))
