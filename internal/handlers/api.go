@@ -14,7 +14,7 @@ func CreateTransferAPIHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		authenticated, userID := middlewares.CookieAuth(r)
 		if !authenticated {
-			sendJSON(w, 401, false, "You're not authenticated", nil)
+			sendJSON(w, http.StatusUnauthorized, false, "You're not authenticated", nil)
 			return
 		}
 
@@ -26,16 +26,14 @@ func CreateTransferAPIHandler(db *sql.DB) http.HandlerFunc {
 		}
 
 		// Handle nil pointer
-		var expiryDate time.Time
+		now := time.Now()
+		expiryDate := now.Add(time.Hour * 24 * 7)
 		if requestBody.ExpiryDate != nil {
 			expiryDate = *requestBody.ExpiryDate
-		} else {
-			// Default to current time + 7 days if not set
-			expiryDate = time.Now().Add(time.Hour * 24 * 7)
 		}
 
-		if expiryDate.Before(time.Now()) || expiryDate.After(time.Now().AddDate(0, 0, 30)) {
-			sendJSON(w, 400, false, "Expiry date must be in the future, but max 30 days in the future", nil)
+		if expiryDate.Before(now) || expiryDate.After(now.AddDate(0, 0, 30)) {
+			sendJSON(w, http.StatusBadRequest, false, "Expiry date must be in the future, but max 30 days in the future", nil)
 			return
 		}
 
@@ -48,12 +46,12 @@ func CreateTransferAPIHandler(db *sql.DB) http.HandlerFunc {
 
 		if err != nil {
 			slog.Error("Failed creating transfer", "error", err)
-			sendJSON(w, 500, false, "Failed creating transfer", nil)
+			sendJSON(w, http.StatusInternalServerError, false, "Failed creating transfer", nil)
 			return
 		}
 
 		slog.Debug("Successfully created new transfer", "user", userID, "transfer", transfer.ID)
-		sendJSON(w, 201, true, "", createTransferAPIResponse{
+		sendJSON(w, http.StatusCreated, true, "", createTransferAPIResponse{
 			Transfer: *transfer,
 		})
 	}

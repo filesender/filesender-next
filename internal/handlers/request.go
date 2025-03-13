@@ -15,7 +15,7 @@ func recvJSON(w http.ResponseWriter, r *http.Request, v any) bool {
 	err := decoder.Decode(v)
 	if err != nil {
 		slog.Error("Failed unmarshal JSON", "error", err)
-		sendJSON(w, 400, false, "Incorrect JSON format", nil)
+		sendJSON(w, http.StatusBadRequest, false, "Incorrect JSON format", nil)
 		return false
 	}
 
