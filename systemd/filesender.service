@@ -3,7 +3,7 @@ Description=Filesender Daemon
 
 [Service]
 Environment=LISTEN=127.0.0.1:8080
-ExecStart=filesender
+ExecStart=filesender -listen ${LISTEN}
 Restart=on-failure
 CapabilityBoundingSet=
 DynamicUser=yes

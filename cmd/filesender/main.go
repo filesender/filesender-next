@@ -17,7 +17,9 @@ import (
 )
 
 func main() {
-	var enableDebug = flag.Bool("d", false, "enable DEBUG output")
+	enableDebug := flag.Bool("d", false, "enable DEBUG output")
+	addr := flag.String("listen", "127.0.0.1:8080", "specify the LISTEN address")
+
 	flag.Parse()
 
 	setLogLevel(*enableDebug)
@@ -55,19 +57,15 @@ func main() {
 	router.Handle("GET /", http.StripPrefix("/", fs))
 
 	// Setup server
-	addr := os.Getenv("LISTEN")
-	if addr == "" {
-		addr = "127.0.0.1:8080"
-	}
 	s := &http.Server{
-		Addr:           addr,
+		Addr:           *addr,
 		Handler:        router,
 		ReadTimeout:    10 * time.Second,
 		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
 
-	slog.Info("HTTP server listening on " + addr)
+	slog.Info("HTTP server listening on " + *addr)
 	err = s.ListenAndServe()
 	if err != nil {
 		slog.Error("Error running HTTP server", "error", err)
