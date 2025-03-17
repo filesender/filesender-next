@@ -20,7 +20,7 @@ fmt:
 	gofumpt -w . || go fmt ./...
 
 lint:
-	golangci-lint run -E stylecheck,revive,gocritic
+	golangci-lint run -E stylecheck,revive,gocritic --timeout=5m
 
 vet:
 	go vet ./...
@@ -36,4 +36,8 @@ install: filesender
 	install -D filesender $(DESTDIR)$(PREFIX)/bin/filesender
 
 run:
-	go run ./cmd/filesender
+	mkdir -p ./data
+	STATE_DIRECTORY=./data go run ./cmd/filesender -d
+
+hotreload:
+	watchexec --shell=none -r -w ./internal/assets/public -- make run

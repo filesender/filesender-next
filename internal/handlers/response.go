@@ -4,8 +4,9 @@ import (
 	"embed"
 	"encoding/json"
 	"html/template"
-	"log"
+	"log/slog"
 	"net/http"
+	"path"
 )
 
 var templatesFS embed.FS
@@ -23,7 +24,7 @@ func Init(fs embed.FS) {
 }
 
 // Send a JSON response with the given data
-func sendJSON(w http.ResponseWriter, status int, success bool, message string, data interface{}) {
+func sendJSON(w http.ResponseWriter, status int, success bool, message string, data any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 
@@ -41,25 +42,22 @@ func sendJSON(w http.ResponseWriter, status int, success bool, message string, d
 
 	err := json.NewEncoder(w).Encode(response)
 	if err != nil {
-		log.Printf("Error sending JSON: %v", err)
+		slog.Error("Error sending JSON", "error", err)
 	}
 }
 
 // Send a template response with the given data
 func sendTemplate(w http.ResponseWriter, tmpl string, data any) {
-	tmplPath := "templates/" + tmpl + ".html"
-	basePath := "templates/base.html"
-
-	t, err := template.ParseFS(templatesFS, basePath, tmplPath)
+	t, err := template.ParseFS(templatesFS, path.Join("templates", tmpl+".html"))
 	if err != nil {
-		log.Println("Error parsing template:", err)
+		slog.Error("Error parsing template", "error", err)
 		sendError(w, 500, "Error rendering page")
 		return
 	}
 
 	err = t.Execute(w, data)
 	if err != nil {
-		log.Println("Error executing template:", err)
+		slog.Error("Error executing template", "error", err)
 		sendError(w, 500, "Error rendering page")
 	}
 }

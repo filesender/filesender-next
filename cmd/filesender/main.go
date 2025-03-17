@@ -1,57 +1,88 @@
 package main
 
 import (
-	"embed"
+	"flag"
 	"io/fs"
-	"log"
+	"log/slog"
 	"net/http"
+	"os"
 	"path"
+	"time"
 
-	"codeberg.org/filesender/filesender-next/config"
-	"codeberg.org/filesender/filesender-next/handlers"
+	"codeberg.org/filesender/filesender-next/internal/assets"
+	"codeberg.org/filesender/filesender-next/internal/config"
+	"codeberg.org/filesender/filesender-next/internal/handlers"
 
 	_ "github.com/mattn/go-sqlite3"
 )
 
-//go:embed public/*
-var embeddedPublicFiles embed.FS
-
-//go:embed templates/*
-var embeddedTemplateFiles embed.FS
-
 func main() {
+	var enableDebug = flag.Bool("d", false, "enable DEBUG output")
+	flag.Parse()
+
+	setLogLevel(*enableDebug)
+
 	// Initialise database
-	db, err := config.InitDB(path.Join(config.GetEnv("STATE_DIRECTORY", "."), "filesender.db"))
+	stateDir := os.Getenv("STATE_DIRECTORY")
+	if stateDir == "" {
+		slog.Error("environment variable \"STATE_DIRECTORY\" not set")
+		os.Exit(1)
+	}
+	db, err := config.InitDB(path.Join(stateDir, "filesender.db"))
 	if err != nil {
-		log.Fatalf("Failed initialising database: %v", err)
-		return
+		slog.Error("Failed initialising database", "error", err)
+		os.Exit(1)
 	}
 	defer db.Close()
 
 	// Initialise handler, pass embedded template files
-	handlers.Init(embeddedTemplateFiles)
+	handlers.Init(assets.EmbeddedTemplateFiles)
 
 	router := http.NewServeMux()
 
 	// API endpoints
-	router.HandleFunc("GET /api/files/count", handlers.CountFilesAPIHandler(db))
+	router.HandleFunc("POST /api/v1/transfers", handlers.CreateTransferAPIHandler(db))
 
 	// Page handlers
-	router.HandleFunc("GET /file-count", handlers.CountFilesTemplateHandler(db))
+	router.HandleFunc("GET /{$}", handlers.UploadTemplateHandler())
 
 	// Serve static files
-	subFS, err := fs.Sub(embeddedPublicFiles, "public")
+	subFS, err := fs.Sub(assets.EmbeddedPublicFiles, "public")
 	if err != nil {
 		panic(err)
 	}
 	fs := http.FileServer(http.FS(subFS))
 	router.Handle("GET /", http.StripPrefix("/", fs))
 
-	addr := config.GetEnv("LISTEN", "127.0.0.1:8080")
-	log.Println("HTTP server listening on " + addr)
-
-	err = http.ListenAndServe(addr, router)
-	if err != nil {
-		log.Printf("Error running HTTP server: %v", err)
+	// Setup server
+	addr := os.Getenv("LISTEN")
+	if addr == "" {
+		addr = "127.0.0.1:8080"
 	}
+	s := &http.Server{
+		Addr:           addr,
+		Handler:        router,
+		ReadTimeout:    10 * time.Second,
+		WriteTimeout:   10 * time.Second,
+		MaxHeaderBytes: 1 << 20,
+	}
+
+	slog.Info("HTTP server listening on " + addr)
+	err = s.ListenAndServe()
+	if err != nil {
+		slog.Error("Error running HTTP server", "error", err)
+	}
+}
+
+func setLogLevel(enableDebug bool) {
+	logLevel := slog.LevelInfo
+	if enableDebug {
+		logLevel = slog.LevelDebug
+	}
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+		Level: logLevel,
+	}))
+
+	slog.SetDefault(logger)
+	slog.Debug("Debug logging enabled")
 }

@@ -1,9 +1,8 @@
 # Project specific & generic
-.DS_Store
-*.db
+/data
+/filesender
 
 # Golang
-/filesender
 *.exe
 *.exe~
 *.dll
@@ -30,3 +29,9 @@ pids
 
 # Playwright
 test-results
+
+# VSCode
+.vscode
+
+# Apple
+.DS_Store
