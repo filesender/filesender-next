@@ -12,13 +12,13 @@ import (
 
 // Handles newly uploaded file
 func HandleFileUpload(transfer models.Transfer, file multipart.File, fileHeader *multipart.FileHeader) error {
-	err := os.MkdirAll(path.Join(os.Getenv("STATE_DIRECTORY"), "uploads"), os.ModePerm)
+	err := os.Mkdir(path.Join(os.Getenv("STATE_DIRECTORY"), "uploads"), os.ModePerm)
 	if err != nil {
 		return err
 	}
 
 	uploadDest := path.Join(os.Getenv("STATE_DIRECTORY"), "uploads", strconv.Itoa(transfer.ID))
-	err = os.MkdirAll(uploadDest, os.ModePerm)
+	err = os.Mkdir(uploadDest, os.ModePerm)
 	if err != nil {
 		return err
 	}
