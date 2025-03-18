@@ -76,6 +76,10 @@ Content-Disposition: form-data; name="transfer_id"
 
 9
 ------WebKitFormBoundary
+Content-Disposition: form-data; name="relative_path"
+
+/images
+------WebKitFormBoundary
 Content-Disposition: form-data; name="file"; filename="example.txt"
 Content-Type: text/plain
 
@@ -87,6 +91,7 @@ Content-Type: text/plain
 | Parameter | Type | Required | Description |
 |--|--|--|--|
 | `transfer_id` | integer | Yes | The ID of the transfer to upload the file to |
+| `relative_path` | string | No | When uploading a directory, if it has child directories, what they should be called etc. |
 | `file` | file | Yes | The file to be uploaded |
 
 **Response:**

@@ -4,7 +4,9 @@ import (
 	"database/sql"
 	"log/slog"
 	"net/http"
+	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"codeberg.org/filesender/filesender-next/internal/middlewares"
@@ -88,6 +90,17 @@ func UploadAPIHandler(db *sql.DB, maxUploadSize int64) http.HandlerFunc {
 			return
 		}
 
+		relativePath := ""
+		relativePaths := r.MultipartForm.Value["relative_path"]
+		if len(relativePaths) == 1 {
+			relativePath = filepath.Clean(relativePaths[0])
+			if strings.Contains(relativePath, "..") {
+				slog.Error("Upload invalid relative path: trying to access parent directory")
+				sendJSON(w, http.StatusBadRequest, false, "Invalid relative path", nil)
+				return
+			}
+		}
+
 		transfer, err := models.GetTransferFromID(db, int(transferID))
 		if err != nil {
 			sendJSON(w, http.StatusNotFound, false, "Could not find the transfer", nil)
@@ -113,7 +126,7 @@ func UploadAPIHandler(db *sql.DB, maxUploadSize int64) http.HandlerFunc {
 			return
 		}
 
-		err = HandleFileUpload(transfer, file, fileHeader)
+		err = HandleFileUpload(transfer, file, fileHeader, relativePath)
 		if err != nil {
 			slog.Error("Failed handling newly uploaded file!", "error", err)
 			sendJSON(w, http.StatusInternalServerError, false, "Handle file failed", nil)

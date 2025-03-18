@@ -54,13 +54,43 @@ func TestHandleFileUpload_Success(t *testing.T) {
 	}
 	defer file.Close()
 
-	err = handlers.HandleFileUpload(transfer, file, fileHeader)
+	err = handlers.HandleFileUpload(transfer, file, fileHeader, "")
 	if err != nil {
 		t.Fatalf("HandleFileUpload failed: %v", err)
 	}
 
 	// Verify that the file was created
 	uploadDest := path.Join(tempDir, "uploads", strconv.Itoa(transfer.ID), fileHeader.Filename)
+	if _, err := os.Stat(uploadDest); os.IsNotExist(err) {
+		t.Fatalf("Expected file %s to exist, but it does not", uploadDest)
+	}
+}
+
+func TestHandleFileUpload_SuccessRelativeDirectory(t *testing.T) {
+	// Set up a temporary directory for testing
+	tempDir, err := os.MkdirTemp("", "test_uploads")
+	if err != nil {
+		t.Fatalf("Failed to create temporary directory: %v", err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	os.Setenv("STATE_DIRECTORY", tempDir)
+	transfer := models.Transfer{ID: 123}
+
+	// Create a fake file
+	fileHeader, file, err := createMultipartFile("This is a test file.")
+	if err != nil {
+		t.Fatalf("Failed to create multipart file: %v", err)
+	}
+	defer file.Close()
+
+	err = handlers.HandleFileUpload(transfer, file, fileHeader, "/example")
+	if err != nil {
+		t.Fatalf("HandleFileUpload failed: %v", err)
+	}
+
+	// Verify that the file was created
+	uploadDest := path.Join(tempDir, "uploads", strconv.Itoa(transfer.ID), "example", fileHeader.Filename)
 	if _, err := os.Stat(uploadDest); os.IsNotExist(err) {
 		t.Fatalf("Expected file %s to exist, but it does not", uploadDest)
 	}
@@ -78,7 +108,7 @@ func TestHandleFileUpload_Failure_InvalidDirectory(t *testing.T) {
 	defer file.Close()
 
 	// Expect an error
-	err = handlers.HandleFileUpload(transfer, file, fileHeader)
+	err = handlers.HandleFileUpload(transfer, file, fileHeader, "")
 	if err == nil {
 		t.Fatal("Expected an error but got nil")
 	}
@@ -106,7 +136,7 @@ func TestHandleFileUpload_Failure_FileCreation(t *testing.T) {
 	fileHeader.Filename = ""
 
 	// Expect an error
-	err = handlers.HandleFileUpload(transfer, file, fileHeader)
+	err = handlers.HandleFileUpload(transfer, file, fileHeader, "")
 	if err == nil {
 		t.Fatal("Expected an error but got nil")
 	}
