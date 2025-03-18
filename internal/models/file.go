@@ -1,10 +1,32 @@
 package models
 
-// Model representing the "files" table
+import (
+	"encoding/json"
+	"os"
+	"path"
+)
+
+// Model representing the "files" metadata
 type File struct {
-	ID            int    `json:"id"`
-	TransferID    int    `json:"transfer_id"`
-	FileName      string `json:"file_name"`
-	FileByteSize  int    `json:"file_byte_size"`
-	DownloadCount int    `json:"download_count"`
+	DownloadCount int `json:"download_count"`
+}
+
+func (file *File) Create(uploadDest string, fileName string) error {
+	metaJSON, err := json.Marshal(file)
+	if err != nil {
+		return err
+	}
+
+	metaFile, err := os.Create(path.Join(uploadDest, fileName+".meta"))
+	if err != nil {
+		return err
+	}
+	defer metaFile.Close()
+
+	_, err = metaFile.Write(metaJSON)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

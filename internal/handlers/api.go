@@ -4,12 +4,15 @@ import (
 	"database/sql"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"time"
 
 	"codeberg.org/filesender/filesender-next/internal/middlewares"
 	"codeberg.org/filesender/filesender-next/internal/models"
 )
 
+// Creates a transfer, returns a transfer object
+// This should be called before uploading
 func CreateTransferAPIHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		authenticated, userID := middlewares.CookieAuth(r)
@@ -43,7 +46,7 @@ func CreateTransferAPIHandler(db *sql.DB) http.HandlerFunc {
 			Message:    requestBody.Message,
 			ExpiryDate: expiryDate,
 		}
-		err := transfer.CreateTransfer(db)
+		err := transfer.Create(db)
 
 		if err != nil {
 			slog.Error("Failed creating transfer", "error", err)
@@ -55,5 +58,75 @@ func CreateTransferAPIHandler(db *sql.DB) http.HandlerFunc {
 		sendJSON(w, http.StatusCreated, true, "", createTransferAPIResponse{
 			Transfer: transfer,
 		})
+	}
+}
+
+// Handles file upload to specific transfer
+func UploadAPIHandler(db *sql.DB, maxUploadSize int64) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		authenticated, userID := middlewares.CookieAuth(r)
+		if !authenticated {
+			sendJSON(w, http.StatusUnauthorized, false, "You're not authenticated", nil)
+			return
+		}
+
+		r.Body = http.MaxBytesReader(w, r.Body, maxUploadSize)
+		if err := r.ParseMultipartForm(maxUploadSize); err != nil {
+			sendJSON(w, 413, false, "Upload file size too large", nil) // there's no "payload too large" in http std
+			return
+		}
+
+		transferIDs := r.MultipartForm.Value["transfer_id"]
+		if len(transferIDs) != 1 {
+			sendJSON(w, http.StatusBadRequest, false, "Expected a transfer id", nil)
+			return
+		}
+
+		transferID, err := strconv.ParseInt(transferIDs[0], 10, 0)
+		if err != nil {
+			sendJSON(w, http.StatusBadRequest, false, "Transfer ID is not a number", nil)
+			return
+		}
+
+		transfer, err := models.GetTransferFromID(db, int(transferID))
+		if err != nil {
+			sendJSON(w, http.StatusNotFound, false, "Could not find the transfer", nil)
+			return
+		}
+		if transfer.UserID != userID {
+			sendJSON(w, http.StatusUnauthorized, false, "You're not authorized to modify this transfer", nil)
+			return
+		}
+
+		file, fileHeader, err := r.FormFile("file")
+		if err != nil {
+			slog.Error("Failed opening file", "error", err)
+			sendJSON(w, http.StatusInternalServerError, false, "Lost the file", nil)
+			return
+		}
+		defer file.Close()
+
+		err = transfer.NewFile(db, int(fileHeader.Size))
+		if err != nil {
+			slog.Error("Failed adding new file to transfer object", "error", err)
+			sendJSON(w, http.StatusInternalServerError, false, "Handle file failed", nil)
+			return
+		}
+
+		err = HandleFileUpload(transfer, file, fileHeader)
+		if err != nil {
+			slog.Error("Failed handling newly uploaded file!", "error", err)
+			sendJSON(w, http.StatusInternalServerError, false, "Handle file failed", nil)
+
+			// Remove the file from transfer object if handling file failed
+			err = transfer.RemoveFile(db, int(fileHeader.Size))
+			if err != nil {
+				slog.Error("Failed removing file from transfer object", "error", err)
+			}
+			return
+		}
+
+		slog.Debug("Successfully created new file", "user", userID, "transfer", transfer.ID, "file", fileHeader.Filename)
+		sendJSON(w, http.StatusCreated, true, "", nil)
 	}
 }

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"strconv"
 	"time"
 
 	"codeberg.org/filesender/filesender-next/internal/assets"
@@ -23,6 +24,18 @@ func main() {
 	flag.Parse()
 
 	setLogLevel(*enableDebug)
+
+	// Get max upload size (per chunk)
+	maxUploadSizeStr := os.Getenv("MAX_UPLOAD_SIZE")
+	if maxUploadSizeStr == "" {
+		slog.Info("environment variable \"MAX_UPLOAD_SIZE\" is not set, using default: 2147483648 (2GB)")
+		maxUploadSizeStr = "2147483648"
+	}
+	maxUploadSize, err := strconv.ParseInt(maxUploadSizeStr, 10, 0)
+	if err != nil {
+		slog.Error("Failed converting \"MAX_UPLOAD_SIZE\" to int", "error", err)
+		os.Exit(1)
+	}
 
 	// Initialise database
 	stateDir := os.Getenv("STATE_DIRECTORY")
@@ -44,6 +57,7 @@ func main() {
 
 	// API endpoints
 	router.HandleFunc("POST /api/v1/transfers", handlers.CreateTransferAPIHandler(db))
+	router.HandleFunc("POST /api/v1/upload", handlers.UploadAPIHandler(db, maxUploadSize))
 
 	// Page handlers
 	router.HandleFunc("GET /{$}", handlers.UploadTemplateHandler())
