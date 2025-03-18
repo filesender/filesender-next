@@ -44,7 +44,7 @@ func HandleFileUpload(transfer models.Transfer, file multipart.File, fileHeader 
 		}
 
 		if _, err := os.Stat(uploadDest); os.IsNotExist(err) {
-			err = os.Mkdir(uploadDest, os.ModePerm)
+			err = os.MkdirAll(uploadDest, os.ModePerm)
 			if err != nil {
 				return err
 			}

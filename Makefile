@@ -40,4 +40,4 @@ run:
 	STATE_DIRECTORY=./data go run ./cmd/filesender -d
 
 hotreload:
-	watchexec --shell=none -r -w ./internal/assets/public -- make run
+	watchexec --shell=none -r -w ./internal/assets -- make run
