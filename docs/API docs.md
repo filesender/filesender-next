@@ -11,7 +11,7 @@ As of right now, the "authentication" is just dummy authentication, the `session
 
 ### Create transfer
 **Endpoint:** `POST /transfers`
-**Description:** Creates a transfer for the authenticated user
+**Description:** Creates a transfer for the authenticated user.
 
 **Request:**
 ```http
@@ -35,6 +35,7 @@ Cookie: session=Hello, world!
 
 **Response:**
 
+Success:
 ```json
 {
   "success": true,
@@ -54,6 +55,56 @@ Cookie: session=Hello, world!
   }
 }
 ```
+
+Errors:
+- `401 Unauthorized` if the user is not authenticated.
+- `400 Bad Request` if the expiry date is in the past or more than 30 days in the future.
+- `500 Internal Server Error` if the transfer creation fails.
+
+### Upload file
+**Endpoint:** `POST /upload`
+**Description:** Uploads a file to a specific transfer. The user must be authenticated, and the transfer ID must belong to them.
+
+**Request:**
+```http
+POST /upload
+Cookie: session=Hello, world!
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary
+
+------WebKitFormBoundary
+Content-Disposition: form-data; name="transfer_id"
+
+9
+------WebKitFormBoundary
+Content-Disposition: form-data; name="file"; filename="example.txt"
+Content-Type: text/plain
+
+(file content here)
+------WebKitFormBoundary--
+```
+
+**Form Parameters:**
+| Parameter | Type | Required | Description |
+|--|--|--|--|
+| `transfer_id` | integer | Yes | The ID of the transfer to upload the file to |
+| `file` | file | Yes | The file to be uploaded |
+
+**Response:**
+
+Success:
+```json
+{
+  "success": true
+}
+```
+
+Errors:
+- `401 Unauthorized` if the user is not authenticated.
+- `400 Bad Request` if no `transfer_id` is provided or it's not a valid integer.
+- `413 Payload Too Large` if the file exceeds the allowed upload size.
+- `404 Not Found` if the specified transfer does not exist.
+- `401 Unauthorized` if the transfer does not belong to the user.
+- `500 Internal Server Error` if the file processing fails.
 
 ## Error Handling
 
