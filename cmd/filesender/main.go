@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"flag"
 	"io/fs"
 	"log/slog"
@@ -43,7 +44,12 @@ func main() {
 		slog.Error("environment variable \"STATE_DIRECTORY\" not set")
 		os.Exit(1)
 	}
-	db, err := config.InitDB(path.Join(stateDir, "filesender.db"))
+	db, err := sql.Open("sqlite3", path.Join(stateDir, "filesender.db"))
+	if err != nil {
+		slog.Error("Failed initialising database", "error", err)
+		os.Exit(1)
+	}
+	err = config.InitDB(db)
 	if err != nil {
 		slog.Error("Failed initialising database", "error", err)
 		os.Exit(1)
