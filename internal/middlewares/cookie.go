@@ -5,16 +5,17 @@ import (
 	"net/http"
 )
 
-// Dummy function "cookie auth" just reading "session" cookie value
-func CookieAuth(r *http.Request) (bool, string) {
-	val, err := r.Cookie("session")
-	if err == http.ErrNoCookie {
-		return false, ""
-	} else if err != nil {
-		slog.Error("Failed reading cookie", "error", err)
-		return false, ""
-	}
+type CookieAuth struct {
+	CookieName string
+}
 
-	// For now just return the value, this is a dummy function anyways
-	return true, val.Value
+func (s *CookieAuth) User(r *http.Request) (string, error) {
+	val, err := r.Cookie(s.CookieName)
+	if err != nil {
+		slog.Error("Failed reading cookie", "error", err)
+		return "", err
+	}
+	slog.Info("User Authenticated", "UserID", val.Value)
+
+	return val.Value, nil
 }

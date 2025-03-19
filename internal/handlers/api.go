@@ -15,10 +15,10 @@ import (
 
 // Creates a transfer, returns a transfer object
 // This should be called before uploading
-func CreateTransferAPIHandler(db *sql.DB) http.HandlerFunc {
+func CreateTransferAPIHandler(m middlewares.Auth, db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		authenticated, userID := middlewares.CookieAuth(r)
-		if !authenticated {
+		userID, err := m.User(r)
+		if err != nil {
 			sendJSON(w, http.StatusUnauthorized, false, "You're not authenticated", nil)
 			return
 		}
@@ -48,8 +48,7 @@ func CreateTransferAPIHandler(db *sql.DB) http.HandlerFunc {
 			Message:    requestBody.Message,
 			ExpiryDate: expiryDate,
 		}
-		err := transfer.Create(db)
-
+		err = transfer.Create(db)
 		if err != nil {
 			slog.Error("Failed creating transfer", "error", err)
 			sendJSON(w, http.StatusInternalServerError, false, "Failed creating transfer", nil)
@@ -64,10 +63,10 @@ func CreateTransferAPIHandler(db *sql.DB) http.HandlerFunc {
 }
 
 // Handles file upload to specific transfer
-func UploadAPIHandler(db *sql.DB, maxUploadSize int64) http.HandlerFunc {
+func UploadAPIHandler(m middlewares.Auth, db *sql.DB, maxUploadSize int64) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		authenticated, userID := middlewares.CookieAuth(r)
-		if !authenticated {
+		userID, err := m.User(r)
+		if err != nil {
 			sendJSON(w, http.StatusUnauthorized, false, "You're not authenticated", nil)
 			return
 		}

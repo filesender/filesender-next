@@ -14,6 +14,7 @@ import (
 	"codeberg.org/filesender/filesender-next/internal/assets"
 	"codeberg.org/filesender/filesender-next/internal/config"
 	"codeberg.org/filesender/filesender-next/internal/handlers"
+	"codeberg.org/filesender/filesender-next/internal/middlewares"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -56,14 +57,17 @@ func main() {
 	}
 	defer db.Close()
 
+	userAuth := &middlewares.CookieAuth{CookieName: "session"}
+	//	userAuth := &middlewares.HeaderAuth{HeaderName: "REMOTE_USER"}
+
 	// Initialise handler, pass embedded template files
 	handlers.Init(assets.EmbeddedTemplateFiles)
 
 	router := http.NewServeMux()
 
 	// API endpoints
-	router.HandleFunc("POST /api/v1/transfers", handlers.CreateTransferAPIHandler(db))
-	router.HandleFunc("POST /api/v1/upload", handlers.UploadAPIHandler(db, maxUploadSize))
+	router.HandleFunc("POST /api/v1/transfers", handlers.CreateTransferAPIHandler(userAuth, db))
+	router.HandleFunc("POST /api/v1/upload", handlers.UploadAPIHandler(userAuth, db, maxUploadSize))
 
 	// Page handlers
 	router.HandleFunc("GET /{$}", handlers.UploadTemplateHandler())

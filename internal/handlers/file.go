@@ -36,7 +36,6 @@ func HandleFileUpload(transfer models.Transfer, file multipart.File, fileHeader 
 	uploadDest := ""
 	if relativePath == "" { // If relative path not set, default to base dir
 		uploadDest = baseUploadDir
-
 	} else { // Else check if relative path is in base dir & create if not exists
 		uploadDest = filepath.Join(baseUploadDir, relativePath)
 		if !strings.HasPrefix(uploadDest, baseUploadDir) {
