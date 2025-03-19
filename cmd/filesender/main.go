@@ -57,13 +57,11 @@ func main() {
 	}
 	defer db.Close()
 
-	userAuth := &middlewares.CookieAuth{CookieName: "session"}
-	//	userAuth := &middlewares.HeaderAuth{HeaderName: "REMOTE_USER"}
-
 	// Initialise handler, pass embedded template files
 	handlers.Init(assets.EmbeddedTemplateFiles)
 
 	router := http.NewServeMux()
+	userAuth := &middlewares.HeaderAuth{HeaderName: "REMOTE_USER"}
 
 	// API endpoints
 	router.HandleFunc("POST /api/v1/transfers", handlers.CreateTransferAPIHandler(userAuth, db))

@@ -1,8 +1,9 @@
 package middlewares
 
 import (
+	"errors"
 	"fmt"
-	"log/slog"
+	"net"
 	"net/http"
 )
 
@@ -10,13 +11,18 @@ type HeaderAuth struct {
 	HeaderName string
 }
 
-func (s *HeaderAuth) User(r *http.Request) (string, error) {
+func (s *HeaderAuth) AuthUser(r *http.Request) (string, error) {
+	tcpAddr, err := net.ResolveTCPAddr("tcp", r.RemoteAddr)
+	if err != nil {
+		return "", err
+	}
+	if !tcpAddr.IP.IsLoopback() {
+		return "", errors.New("REMOTE_ADDR is NOT `localhost`")
+	}
 	remoteUser := r.Header.Get(s.HeaderName)
 	if remoteUser == "" {
-		return "", fmt.Errorf("header \"%s\" not set", s.HeaderName)
+		return "", fmt.Errorf("HTTP header %s NOT set", s.HeaderName)
 	}
-
-	slog.Info("User Authenticated", "UserID", remoteUser)
 
 	return remoteUser, nil
 }

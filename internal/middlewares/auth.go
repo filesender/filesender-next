@@ -5,5 +5,5 @@ import (
 )
 
 type Auth interface {
-	User(r *http.Request) (string, error)
+	AuthUser(r *http.Request) (string, error)
 }
