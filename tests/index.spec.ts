@@ -4,7 +4,7 @@ test('should return a successful response', async ({ page }) => {
     const response = await page.goto('http://localhost:8080');
 
     expect(response?.status()).toBe(200);
-    await expect(page).toHaveTitle("Upload page");
+    await expect(page).toHaveTitle("Upload");
 });
 
 test('should contain two file inputs', async ({ page }) => {

@@ -86,4 +86,6 @@ form.addEventListener("submit", async e => {
     for (let i = 0; i < files.length; i++) {
         await uploadFile(transfer.id, files[i]);
     }
+
+    window.location.replace(`/upload/${transfer.id}`);
 });

@@ -1,6 +1,6 @@
 PREFIX=/usr/local
 
-.PHONY: test update vendor fmt lint vet sloc clean install run
+.PHONY: test update vendor fmt lint vet sloc clean install run run-dev hotreload
 
 filesender: cmd/filesender/main.go
 	go build $(GOBUILDFLAGS) -o $@ codeberg.org/filesender/filesender-next/cmd/filesender
@@ -44,4 +44,4 @@ run-dev:
 	STATE_DIRECTORY=./data go run -tags="dev" ./cmd/filesender -d
 
 hotreload:
-	watchexec --shell=none -r -w ./internal/assets -- make run
+	watchexec --shell=none -r -w ./internal/assets -- make run-dev
