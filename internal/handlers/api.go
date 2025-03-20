@@ -9,15 +9,15 @@ import (
 	"strings"
 	"time"
 
-	"codeberg.org/filesender/filesender-next/internal/middlewares"
+	"codeberg.org/filesender/filesender-next/internal/auth"
 	"codeberg.org/filesender/filesender-next/internal/models"
 )
 
 // Creates a transfer, returns a transfer object
 // This should be called before uploading
-func CreateTransferAPIHandler(m middlewares.Auth, db *sql.DB) http.HandlerFunc {
+func CreateTransferAPIHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userID, err := m.AuthUser(r)
+		userID, err := auth.Auth(r)
 		if err != nil {
 			slog.Info("unable to authenticate user", "error", err)
 			sendJSON(w, http.StatusUnauthorized, false, "You're not authenticated", nil)
@@ -65,9 +65,9 @@ func CreateTransferAPIHandler(m middlewares.Auth, db *sql.DB) http.HandlerFunc {
 }
 
 // Handles file upload to specific transfer
-func UploadAPIHandler(m middlewares.Auth, db *sql.DB, maxUploadSize int64) http.HandlerFunc {
+func UploadAPIHandler(db *sql.DB, maxUploadSize int64) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userID, err := m.AuthUser(r)
+		userID, err := auth.Auth(r)
 		if err != nil {
 			slog.Info("unable to authenticate user", "error", err)
 			sendJSON(w, http.StatusUnauthorized, false, "You're not authenticated", nil)

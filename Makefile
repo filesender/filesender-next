@@ -39,5 +39,9 @@ run:
 	mkdir -p ./data
 	STATE_DIRECTORY=./data go run ./cmd/filesender -d
 
+run-dev:
+	mkdir -p ./data
+	STATE_DIRECTORY=./data go run -tags="dev" ./cmd/filesender -d
+
 hotreload:
 	watchexec --shell=none -r -w ./internal/assets -- make run
