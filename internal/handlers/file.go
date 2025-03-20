@@ -25,7 +25,7 @@ func HandleFileUpload(transfer models.Transfer, file multipart.File, fileHeader 
 	}
 
 	// Create transfer folder if not exists
-	baseUploadDir := path.Join(uploadsPath, strconv.Itoa(transfer.ID))
+	baseUploadDir := filepath.Clean(path.Join(uploadsPath, strconv.Itoa(transfer.ID)))
 	if _, err := os.Stat(baseUploadDir); os.IsNotExist(err) {
 		err = os.Mkdir(baseUploadDir, os.ModePerm)
 		if err != nil {
@@ -37,7 +37,7 @@ func HandleFileUpload(transfer models.Transfer, file multipart.File, fileHeader 
 	if relativePath == "" { // If relative path not set, default to base dir
 		uploadDest = baseUploadDir
 	} else { // Else check if relative path is in base dir & create if not exists
-		uploadDest = filepath.Join(baseUploadDir, relativePath)
+		uploadDest = filepath.Join(baseUploadDir, filepath.Clean(relativePath))
 		if !strings.HasPrefix(uploadDest, baseUploadDir) {
 			return fmt.Errorf("upload invalid relative path: trying to access outside of upload destination")
 		}

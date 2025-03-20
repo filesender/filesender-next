@@ -15,6 +15,7 @@ import (
 
 	"codeberg.org/filesender/filesender-next/internal/config"
 	"codeberg.org/filesender/filesender-next/internal/handlers"
+	"codeberg.org/filesender/filesender-next/internal/middlewares"
 	"codeberg.org/filesender/filesender-next/internal/models"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -28,7 +29,8 @@ func TestCreateTransferAPIHandler(t *testing.T) {
 		t.Errorf("Failed initialising database: %v", err)
 	}
 
-	handler := handlers.CreateTransferAPIHandler(db)
+	authMiddleware := &middlewares.HeaderAuth{HeaderName: "X-User"}
+	handler := handlers.CreateTransferAPIHandler(authMiddleware, db)
 
 	t.Run("Unauthenticated User", func(t *testing.T) {
 		req, _ := http.NewRequest("POST", "/create", nil)
@@ -43,8 +45,9 @@ func TestCreateTransferAPIHandler(t *testing.T) {
 	t.Run("Valid Transfer Creation", func(t *testing.T) {
 		requestBody := `{"subject":"Test Transfer","message":"Test Message","expiry_date":null}`
 		req, _ := http.NewRequest("POST", "/create", strings.NewReader(requestBody))
+		req.Header.Set("X-User", "dummy_session")
 		req.Header.Set("Content-Type", "application/json")
-		req.AddCookie(&http.Cookie{Name: "session", Value: "dummy_session"})
+		req.RemoteAddr = "127.0.0.1:12345"
 		resp := httptest.NewRecorder()
 
 		handler.ServeHTTP(resp, req)
@@ -63,7 +66,8 @@ func TestUploadAPIHandler(t *testing.T) {
 		t.Errorf("Failed initialising database: %v", err)
 	}
 
-	handler := handlers.UploadAPIHandler(db, 10*1024*1024) // 10 MB limit
+	authMiddleware := &middlewares.HeaderAuth{HeaderName: "X-User"}
+	handler := handlers.UploadAPIHandler(authMiddleware, db, 10*1024*1024) // 10 MB limit
 
 	t.Run("Upload without authentication", func(t *testing.T) {
 		req, _ := http.NewRequest("POST", "/upload", nil)
@@ -82,8 +86,9 @@ func TestUploadAPIHandler(t *testing.T) {
 		writer.Close()
 
 		req, _ := http.NewRequest("POST", "/upload", body)
+		req.Header.Set("X-User", "dummy_session")
 		req.Header.Set("Content-Type", writer.FormDataContentType())
-		req.AddCookie(&http.Cookie{Name: "session", Value: "dummy_session"})
+		req.RemoteAddr = "127.0.0.1:12345"
 		resp := httptest.NewRecorder()
 
 		handler.ServeHTTP(resp, req)
@@ -108,8 +113,9 @@ func TestUploadAPIHandler(t *testing.T) {
 		writer.Close()
 
 		req, _ := http.NewRequest("POST", "/upload", body)
+		req.Header.Set("X-User", "dummy_session")
 		req.Header.Set("Content-Type", writer.FormDataContentType())
-		req.AddCookie(&http.Cookie{Name: "session", Value: "dummy_session"})
+		req.RemoteAddr = "127.0.0.1:12345"
 		resp := httptest.NewRecorder()
 
 		handler.ServeHTTP(resp, req)
@@ -148,8 +154,9 @@ func TestUploadAPIHandler(t *testing.T) {
 		writer.Close()
 
 		req, _ := http.NewRequest("POST", "/upload", body)
+		req.Header.Set("X-User", "dummy_session")
 		req.Header.Set("Content-Type", writer.FormDataContentType())
-		req.AddCookie(&http.Cookie{Name: "session", Value: "dummy_session"})
+		req.RemoteAddr = "127.0.0.1:12345"
 		resp := httptest.NewRecorder()
 
 		handler.ServeHTTP(resp, req)
