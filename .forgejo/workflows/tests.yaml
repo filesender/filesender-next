@@ -21,6 +21,7 @@ jobs:
     runs-on: codeberg-tiny
     container:
       image: mcr.microsoft.com/playwright:v1.50.1-noble
+      options: --network=host
 
     steps:
       - name: Checkout code
@@ -43,18 +44,6 @@ jobs:
           mkdir -p ./data
           FILESENDER_DEBUG=true STATE_DIRECTORY=./data ./filesender &
           sleep 5 # Wait for the server to start
-          
-      - name: Wait for server to be ready
-        run: |
-          for i in {1..10}; do
-            if curl --silent --fail http://localhost:8080/; then
-              echo "Server is up!"
-              exit 0
-            fi
-            echo "Waiting for server..."
-            sleep 2
-          done
-          echo "Server did not start in time" && exit 1
 
       - name: Run playwright tests
         run: npx playwright test
