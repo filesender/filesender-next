@@ -77,7 +77,7 @@ func UploadAPIHandler(db *sql.DB, maxUploadSize int64) http.HandlerFunc {
 
 		r.Body = http.MaxBytesReader(w, r.Body, maxUploadSize)
 		if err := r.ParseMultipartForm(maxUploadSize); err != nil {
-			sendJSON(w, 413, false, "Upload file size too large", nil) // there's no "payload too large" in http std
+			sendJSON(w, http.StatusRequestEntityTooLarge, false, "Upload file size too large", nil) // there's no "payload too large" in http std
 			return
 		}
 
