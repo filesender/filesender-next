@@ -14,7 +14,6 @@ import (
 	"codeberg.org/filesender/filesender-next/internal/assets"
 	"codeberg.org/filesender/filesender-next/internal/config"
 	"codeberg.org/filesender/filesender-next/internal/handlers"
-	"codeberg.org/filesender/filesender-next/internal/middlewares"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -22,9 +21,7 @@ import (
 func main() {
 	enableDebug := flag.Bool("d", false, "enable DEBUG output")
 	addr := flag.String("listen", "127.0.0.1:8080", "specify the LISTEN address")
-
 	flag.Parse()
-
 	setLogLevel(*enableDebug)
 
 	// Get max upload size (per chunk)
@@ -61,11 +58,9 @@ func main() {
 	handlers.Init(assets.EmbeddedTemplateFiles)
 
 	router := http.NewServeMux()
-	userAuth := &middlewares.HeaderAuth{HeaderName: "REMOTE_USER"}
-
 	// API endpoints
-	router.HandleFunc("POST /api/v1/transfers", handlers.CreateTransferAPIHandler(userAuth, db))
-	router.HandleFunc("POST /api/v1/upload", handlers.UploadAPIHandler(userAuth, db, maxUploadSize))
+	router.HandleFunc("POST /api/v1/transfers", handlers.CreateTransferAPIHandler(db))
+	router.HandleFunc("POST /api/v1/upload", handlers.UploadAPIHandler(db, maxUploadSize))
 
 	// Page handlers
 	router.HandleFunc("GET /{$}", handlers.UploadTemplateHandler())

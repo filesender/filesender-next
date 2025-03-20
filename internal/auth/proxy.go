@@ -1,17 +1,14 @@
-package middlewares
+//go:build !dev
+
+package auth
 
 import (
 	"errors"
-	"fmt"
 	"net"
 	"net/http"
 )
 
-type HeaderAuth struct {
-	HeaderName string
-}
-
-func (s *HeaderAuth) AuthUser(r *http.Request) (string, error) {
+func Auth(r *http.Request) (string, error) {
 	tcpAddr, err := net.ResolveTCPAddr("tcp", r.RemoteAddr)
 	if err != nil {
 		return "", err
@@ -19,9 +16,9 @@ func (s *HeaderAuth) AuthUser(r *http.Request) (string, error) {
 	if !tcpAddr.IP.IsLoopback() {
 		return "", errors.New("REMOTE_ADDR is NOT `localhost`")
 	}
-	remoteUser := r.Header.Get(s.HeaderName)
+	remoteUser := r.Header.Get("REMOTE_USER")
 	if remoteUser == "" {
-		return "", fmt.Errorf("HTTP header %s NOT set", s.HeaderName)
+		return "", errors.New("HTTP header REMOTE_USER is NOT set")
 	}
 
 	return remoteUser, nil
