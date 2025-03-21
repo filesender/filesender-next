@@ -1,20 +1,15 @@
 package logging
 
 import (
-	"flag"
 	"log/slog"
 	"os"
 )
 
 func init() {
-	enableDebug := flag.Bool("d", false, "enable DEBUG output")
-	flag.Parse()
+	SetLogLevel(slog.LevelInfo)
+}
 
-	logLevel := slog.LevelInfo
-	if *enableDebug {
-		logLevel = slog.LevelDebug
-	}
-
+func SetLogLevel(logLevel slog.Leveler) {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
 		Level: logLevel,
 	}))

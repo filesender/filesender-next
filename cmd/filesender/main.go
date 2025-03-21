@@ -14,14 +14,20 @@ import (
 	"codeberg.org/filesender/filesender-next/internal/assets"
 	"codeberg.org/filesender/filesender-next/internal/config"
 	"codeberg.org/filesender/filesender-next/internal/handlers"
-	_ "codeberg.org/filesender/filesender-next/internal/logging"
+	"codeberg.org/filesender/filesender-next/internal/logging"
 
 	_ "github.com/mattn/go-sqlite3"
 )
 
 func main() {
+	enableDebug := flag.Bool("d", false, "enable DEBUG output")
 	addr := flag.String("listen", "127.0.0.1:8080", "specify the LISTEN address")
 	flag.Parse()
+
+	// Set log level if debug
+	if *enableDebug {
+		logging.SetLogLevel(slog.LevelDebug)
+	}
 
 	// Get max upload size (per chunk)
 	maxUploadSizeStr := os.Getenv("MAX_UPLOAD_SIZE")
