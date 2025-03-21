@@ -1,6 +1,6 @@
 PREFIX=/usr/local
 
-.PHONY: test update vendor fmt lint vet sloc clean install run run-dev hotreload
+.PHONY: test update vendor fmt lint vet sloc clean install run run-dev hotreload act
 
 filesender: cmd/filesender/main.go
 	go build $(GOBUILDFLAGS) -o $@ codeberg.org/filesender/filesender-next/cmd/filesender
@@ -45,3 +45,6 @@ run-dev:
 
 hotreload:
 	watchexec --shell=none -r -w ./internal/assets -- make run-dev
+
+act:
+	act --container-architecture linux/amd64 --workflows .forgejo/workflows/tests.yaml
