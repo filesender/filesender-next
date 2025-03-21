@@ -21,7 +21,6 @@ jobs:
     runs-on: codeberg-tiny
     container:
       image: mcr.microsoft.com/playwright:v1.50.1-noble
-      options: --network=host
 
     steps:
       - name: Checkout code
@@ -42,8 +41,6 @@ jobs:
         run: |
           make filesender GOBUILDFLAGS="-tags=dev"
           mkdir -p ./data
-          FILESENDER_DEBUG=true STATE_DIRECTORY=./data ./filesender &
-          sleep 5 # Wait for the server to start
 
       - name: Run playwright tests
         run: npx playwright test
