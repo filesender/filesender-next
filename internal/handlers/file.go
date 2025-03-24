@@ -7,10 +7,10 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	"codeberg.org/filesender/filesender-next/internal/models"
+	"codeberg.org/filesender/filesender-next/internal/utils"
 )
 
 // Handles newly uploaded file
@@ -25,7 +25,7 @@ func HandleFileUpload(transfer models.Transfer, file multipart.File, fileHeader 
 	}
 
 	// Create transfer folder if not exists
-	baseUploadDir := filepath.Clean(path.Join(uploadsPath, strconv.Itoa(transfer.ID)))
+	baseUploadDir := filepath.Clean(path.Join(uploadsPath, transfer.UserID, transfer.ID))
 	if _, err := os.Stat(baseUploadDir); os.IsNotExist(err) {
 		err = os.Mkdir(baseUploadDir, os.ModePerm)
 		if err != nil {
@@ -37,7 +37,7 @@ func HandleFileUpload(transfer models.Transfer, file multipart.File, fileHeader 
 	if relativePath == "" { // If relative path not set, default to base dir
 		uploadDest = baseUploadDir
 	} else { // Else check if relative path is in base dir & create if not exists
-		uploadDest = filepath.Join(baseUploadDir, filepath.Clean(relativePath))
+		uploadDest = filepath.Clean(filepath.Join(baseUploadDir, filepath.Clean(relativePath)))
 		if !strings.HasPrefix(uploadDest, baseUploadDir) {
 			return fmt.Errorf("upload invalid relative path: trying to access outside of upload destination")
 		}
@@ -64,7 +64,7 @@ func HandleFileUpload(transfer models.Transfer, file multipart.File, fileHeader 
 	meta := models.File{
 		DownloadCount: 0,
 	}
-	err = meta.Create(uploadDest, fileHeader.Filename)
+	err = utils.WriteDataFromFile(meta, filepath.Join(uploadDest, fileHeader.Filename+".meta"))
 	if err != nil {
 		return err
 	}

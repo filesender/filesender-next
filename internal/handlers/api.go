@@ -1,21 +1,20 @@
 package handlers
 
 import (
-	"database/sql"
 	"log/slog"
 	"net/http"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"time"
 
 	"codeberg.org/filesender/filesender-next/internal/auth"
 	"codeberg.org/filesender/filesender-next/internal/models"
+	"github.com/google/uuid"
 )
 
 // Creates a transfer, returns a transfer object
 // This should be called before uploading
-func CreateTransferAPIHandler(db *sql.DB) http.HandlerFunc {
+func CreateTransferAPIHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, err := auth.Auth(r)
 		if err != nil {
@@ -50,7 +49,7 @@ func CreateTransferAPIHandler(db *sql.DB) http.HandlerFunc {
 			Message:    requestBody.Message,
 			ExpiryDate: expiryDate,
 		}
-		err = transfer.Create(db)
+		err = transfer.Create()
 		if err != nil {
 			slog.Error("Failed creating transfer", "error", err)
 			sendJSON(w, http.StatusInternalServerError, false, "Failed creating transfer", nil)
@@ -65,7 +64,7 @@ func CreateTransferAPIHandler(db *sql.DB) http.HandlerFunc {
 }
 
 // Handles file upload to specific transfer
-func UploadAPIHandler(db *sql.DB, maxUploadSize int64) http.HandlerFunc {
+func UploadAPIHandler(maxUploadSize int64) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, err := auth.Auth(r)
 		if err != nil {
@@ -86,10 +85,10 @@ func UploadAPIHandler(db *sql.DB, maxUploadSize int64) http.HandlerFunc {
 			sendJSON(w, http.StatusBadRequest, false, "Expected a transfer id", nil)
 			return
 		}
-
-		transferID, err := strconv.ParseInt(transferIDs[0], 10, 0)
+		transferID := transferIDs[0]
+		err = uuid.Validate(transferID)
 		if err != nil {
-			sendJSON(w, http.StatusBadRequest, false, "Transfer ID is not a number", nil)
+			sendJSON(w, http.StatusBadRequest, false, "Transfer ID is incorrectly formatted", nil)
 			return
 		}
 
@@ -104,7 +103,7 @@ func UploadAPIHandler(db *sql.DB, maxUploadSize int64) http.HandlerFunc {
 			}
 		}
 
-		transfer, err := models.GetTransferFromID(db, int(transferID))
+		transfer, err := models.GetTransferFromIDs(userID, transferID)
 		if err != nil {
 			sendJSON(w, http.StatusNotFound, false, "Could not find the transfer", nil)
 			return
@@ -122,23 +121,17 @@ func UploadAPIHandler(db *sql.DB, maxUploadSize int64) http.HandlerFunc {
 		}
 		defer file.Close()
 
-		err = transfer.NewFile(db, int(fileHeader.Size))
-		if err != nil {
-			slog.Error("Failed adding new file to transfer object", "error", err)
-			sendJSON(w, http.StatusInternalServerError, false, "Handle file failed", nil)
-			return
-		}
-
 		err = HandleFileUpload(transfer, file, fileHeader, relativePath)
 		if err != nil {
 			slog.Error("Failed handling newly uploaded file!", "error", err)
 			sendJSON(w, http.StatusInternalServerError, false, "Handle file failed", nil)
+			return
+		}
 
-			// Remove the file from transfer object if handling file failed
-			err = transfer.RemoveFile(db, int(fileHeader.Size))
-			if err != nil {
-				slog.Error("Failed removing file from transfer object", "error", err)
-			}
+		err = transfer.NewFile(int(fileHeader.Size))
+		if err != nil {
+			slog.Error("Failed adding new file to transfer object", "error", err)
+			sendJSON(w, http.StatusInternalServerError, false, "Handle file failed", nil)
 			return
 		}
 

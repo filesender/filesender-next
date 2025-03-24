@@ -12,9 +12,13 @@ export default defineConfig({
         { name: 'webkit', use: { browserName: 'webkit' } },
     ],
     webServer: {
-        command: 'FILESENDER_DEBUG=true STATE_DIRECTORY=./data ./filesender',
+        command: 'filesender',
         url: 'http://localhost:8080',
         stdout: 'pipe',
-        stderr: 'pipe'
+        stderr: 'pipe',
+        env: {
+            FILESENDER_DEBUG: 'true',
+            STATE_DIRECTORY: './data',
+        }
     }
 });

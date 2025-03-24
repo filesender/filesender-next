@@ -5,7 +5,7 @@ import (
 	"mime/multipart"
 	"os"
 	"path"
-	"strconv"
+	"path/filepath"
 	"testing"
 
 	"codeberg.org/filesender/filesender-next/internal/handlers"
@@ -45,7 +45,14 @@ func TestHandleFileUpload_Success(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	os.Setenv("STATE_DIRECTORY", tempDir)
-	transfer := models.Transfer{ID: 123}
+	transfer := models.Transfer{
+		ID:     "testing123",
+		UserID: "weeb",
+	}
+	err = os.MkdirAll(filepath.Join(tempDir, "uploads", transfer.UserID), os.ModePerm)
+	if err != nil {
+		t.Fatalf("Failed to create user uploads directory: %v", err)
+	}
 
 	// Create a fake file
 	fileHeader, file, err := createMultipartFile("This is a test file.")
@@ -60,7 +67,7 @@ func TestHandleFileUpload_Success(t *testing.T) {
 	}
 
 	// Verify that the file was created
-	uploadDest := path.Join(tempDir, "uploads", strconv.Itoa(transfer.ID), fileHeader.Filename)
+	uploadDest := path.Join(tempDir, "uploads", transfer.UserID, transfer.ID, fileHeader.Filename)
 	if _, err := os.Stat(uploadDest); os.IsNotExist(err) {
 		t.Fatalf("Expected file %s to exist, but it does not", uploadDest)
 	}
@@ -75,7 +82,14 @@ func TestHandleFileUpload_SuccessRelativeDirectory(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	os.Setenv("STATE_DIRECTORY", tempDir)
-	transfer := models.Transfer{ID: 123}
+	transfer := models.Transfer{
+		ID:     "testing123",
+		UserID: "weeb",
+	}
+	err = os.MkdirAll(filepath.Join(tempDir, "uploads", transfer.UserID), os.ModePerm)
+	if err != nil {
+		t.Fatalf("Failed to create user uploads directory: %v", err)
+	}
 
 	// Create a fake file
 	fileHeader, file, err := createMultipartFile("This is a test file.")
@@ -90,7 +104,7 @@ func TestHandleFileUpload_SuccessRelativeDirectory(t *testing.T) {
 	}
 
 	// Verify that the file was created
-	uploadDest := path.Join(tempDir, "uploads", strconv.Itoa(transfer.ID), "example", fileHeader.Filename)
+	uploadDest := path.Join(tempDir, "uploads", transfer.UserID, transfer.ID, "example", fileHeader.Filename)
 	if _, err := os.Stat(uploadDest); os.IsNotExist(err) {
 		t.Fatalf("Expected file %s to exist, but it does not", uploadDest)
 	}
@@ -99,7 +113,10 @@ func TestHandleFileUpload_SuccessRelativeDirectory(t *testing.T) {
 func TestHandleFileUpload_Failure_InvalidDirectory(t *testing.T) {
 	// Set an invalid directory
 	os.Setenv("STATE_DIRECTORY", "/invalid/directory")
-	transfer := models.Transfer{ID: 123}
+	transfer := models.Transfer{
+		ID:     "testing123",
+		UserID: "weeb",
+	}
 
 	fileHeader, file, err := createMultipartFile("Test file.")
 	if err != nil {
@@ -123,7 +140,14 @@ func TestHandleFileUpload_Failure_FileCreation(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	os.Setenv("STATE_DIRECTORY", tempDir)
-	transfer := models.Transfer{ID: 123}
+	transfer := models.Transfer{
+		ID:     "testing123",
+		UserID: "weeb",
+	}
+	err = os.MkdirAll(filepath.Join(tempDir, "uploads", transfer.UserID), os.ModePerm)
+	if err != nil {
+		t.Fatalf("Failed to create user uploads directory: %v", err)
+	}
 
 	// Create a fake file
 	fileHeader, file, err := createMultipartFile("File content.")

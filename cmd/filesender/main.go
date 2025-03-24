@@ -1,22 +1,17 @@
 package main
 
 import (
-	"database/sql"
 	"flag"
 	"io/fs"
 	"log/slog"
 	"net/http"
 	"os"
-	"path"
 	"strconv"
 	"time"
 
 	"codeberg.org/filesender/filesender-next/internal/assets"
-	"codeberg.org/filesender/filesender-next/internal/config"
 	"codeberg.org/filesender/filesender-next/internal/handlers"
 	"codeberg.org/filesender/filesender-next/internal/logging"
-
-	_ "github.com/mattn/go-sqlite3"
 )
 
 func main() {
@@ -47,29 +42,22 @@ func main() {
 		slog.Error("environment variable \"STATE_DIRECTORY\" not set")
 		os.Exit(1)
 	}
-	db, err := sql.Open("sqlite3", path.Join(stateDir, "filesender.db"))
+	err = os.MkdirAll(stateDir, os.ModePerm)
 	if err != nil {
-		slog.Error("Failed initialising database", "error", err)
-		os.Exit(1)
+		slog.Error("Failed creating state directory", "error", err)
 	}
-	err = config.InitDB(db)
-	if err != nil {
-		slog.Error("Failed initialising database", "error", err)
-		os.Exit(1)
-	}
-	defer db.Close()
 
 	// Initialise handler, pass embedded template files
 	handlers.Init(assets.EmbeddedTemplateFiles)
 
 	router := http.NewServeMux()
 	// API endpoints
-	router.HandleFunc("POST /api/v1/transfers", handlers.CreateTransferAPIHandler(db))
-	router.HandleFunc("POST /api/v1/upload", handlers.UploadAPIHandler(db, maxUploadSize))
+	router.HandleFunc("POST /api/v1/transfers", handlers.CreateTransferAPIHandler())
+	router.HandleFunc("POST /api/v1/upload", handlers.UploadAPIHandler(maxUploadSize))
 
 	// Page handlers
 	router.HandleFunc("GET /{$}", handlers.UploadTemplateHandler())
-	router.HandleFunc("GET /upload/{id}", handlers.UploadDoneTemplateHandler(db))
+	router.HandleFunc("GET /upload/{id}", handlers.UploadDoneTemplateHandler())
 
 	// Serve static files
 	subFS, err := fs.Sub(assets.EmbeddedPublicFiles, "public")
