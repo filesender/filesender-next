@@ -84,7 +84,16 @@ form.addEventListener("submit", async e => {
     });
 
     for (let i = 0; i < files.length; i++) {
-        await uploadFile(transfer.id, files[i]);
+        let tries = 0;
+        while (tries < 3) {
+            try {
+                await uploadFile(transfer.id, files[i]);
+                break;
+            } catch (e) {
+                console.error("Error uploading", e);
+                tries++;
+            }
+        }
     }
 
     window.location.replace(`/upload/${transfer.id}`);
