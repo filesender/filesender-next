@@ -5,7 +5,7 @@ test('should return a non successful response', async ({ page }) => {
     const response = await page.goto('http://localhost:8080/upload/this doesnt exist');
 
     expect(response?.status()).toBe(400);
-    expect(await response?.text()).toContain("Failed converting ID to number");
+    expect(await response?.text()).toContain("Transfer ID is invalid");
 });
 
 test('should upload a file', async ({ page }) => {
