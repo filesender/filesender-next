@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Upload page</title>
+    <title>Upload</title>
     <link rel="stylesheet" href="/styles/base.css">
 </head>
 <body>
@@ -12,42 +12,32 @@
             <div class="flex justify-around border p-4">
                 <div>
                     <label for="folder-selector">Select a folder</label>
-                    <input id="folder-selector" type="file" webkitdirectory directory/>
+                    <input name="folder-input" id="folder-selector" type="file" webkitdirectory directory/>
                 </div>
             
                 <div>
                     <label for="files-selector">Select files</label>
-                    <input id="files-selector" type="file" multiple/>
+                    <input name="files-input" id="files-selector" type="file" multiple/>
                 </div>
             </div>
 
             <div class="grid wrap mt-4 gap-1">
                 <div class="flex border p-4 flex-col gap-1">
                     <div>
-                        <label for="email">Recipient *</label>
-                        <input id="email" type="email" required>
-                    </div>
-
-                    <div>
                         <label for="subject">Subject</label>
-                        <input id="subject" type="text">
+                        <input name="subject" id="subject" type="text">
                     </div>
 
                     <div>
                         <label for="message">Message</label>
-                        <textarea id="message" rows="4"></textarea>
+                        <textarea name="message" id="message" rows="4"></textarea>
                     </div>
                 </div>
 
                 <div class="flex border p-4 flex-col gap-1">
                     <div>
                         <label for="expiry_date">Expiry date *</label>
-                        <input id="expiry_date" type="date" value="{{ .DefaultDate }}" min="{{ .MinDate }}" max="{{ .MaxDate }}" required>
-                    </div>
-
-                    <div>
-                        <input type="checkbox" name="" id="link">
-                        <label for="link">Get a link instead of sending to recipient</label>
+                        <input name="expiry-date" id="expiry_date" type="date" value="{{ .DefaultDate }}" min="{{ .MinDate }}" max="{{ .MaxDate }}" required>
                     </div>
                 </div>
             </div>
@@ -57,5 +47,7 @@
             </div>
         </form>
     </div>
+
+    <script src="/js/upload.js"></script>
 </body>
 </html>

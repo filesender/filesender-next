@@ -39,10 +39,8 @@ jobs:
 
       - name: Build and start Filesender
         run: |
-          make filesender
+          make filesender GOBUILDFLAGS="-tags=dev"
           mkdir -p ./data
-          FILESENDER_DEBUG=true STATE_DIRECTORY=./data ./filesender &
-          sleep 5 # Wait for the server to start
 
       - name: Run playwright tests
         run: npx playwright test

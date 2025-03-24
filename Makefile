@@ -1,12 +1,12 @@
 PREFIX=/usr/local
 
-.PHONY: test update vendor fmt lint vet sloc clean install run
+.PHONY: test update vendor fmt lint vet sloc clean install run run-dev hotreload act
 
 filesender: cmd/filesender/main.go
 	go build $(GOBUILDFLAGS) -o $@ codeberg.org/filesender/filesender-next/cmd/filesender
 
 test:
-	go test ./...
+	go test -v ./...
 
 update:
 	# update Go dependencies
@@ -39,5 +39,12 @@ run:
 	mkdir -p ./data
 	STATE_DIRECTORY=./data go run ./cmd/filesender -d
 
+run-dev:
+	mkdir -p ./data
+	STATE_DIRECTORY=./data go run -tags="dev" ./cmd/filesender -d
+
 hotreload:
-	watchexec --shell=none -r -w ./internal/assets/public -- make run
+	watchexec --shell=none -r -w ./internal/assets -- make run-dev
+
+act:
+	act --container-architecture linux/amd64 --workflows .forgejo/workflows/tests.yaml

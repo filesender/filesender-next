@@ -1,22 +1,28 @@
 package handlers
 
 import (
-	"database/sql"
 	"log/slog"
 	"net/http"
+	"path/filepath"
+	"strings"
 	"time"
 
-	"codeberg.org/filesender/filesender-next/internal/middlewares"
+	"codeberg.org/filesender/filesender-next/internal/auth"
 	"codeberg.org/filesender/filesender-next/internal/models"
+	"github.com/google/uuid"
 )
 
-func CreateTransferAPIHandler(db *sql.DB) http.HandlerFunc {
+// Creates a transfer, returns a transfer object
+// This should be called before uploading
+func CreateTransferAPIHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		authenticated, userID := middlewares.CookieAuth(r)
-		if !authenticated {
+		userID, err := auth.Auth(r)
+		if err != nil {
+			slog.Info("unable to authenticate user", "error", err)
 			sendJSON(w, http.StatusUnauthorized, false, "You're not authenticated", nil)
 			return
 		}
+		slog.Info("user authenticated", "user_id", userID)
 
 		// Read requets body
 		var requestBody createTransferAPIRequest
@@ -43,8 +49,7 @@ func CreateTransferAPIHandler(db *sql.DB) http.HandlerFunc {
 			Message:    requestBody.Message,
 			ExpiryDate: expiryDate,
 		}
-		err := transfer.CreateTransfer(db)
-
+		err = transfer.Create()
 		if err != nil {
 			slog.Error("Failed creating transfer", "error", err)
 			sendJSON(w, http.StatusInternalServerError, false, "Failed creating transfer", nil)
@@ -55,5 +60,82 @@ func CreateTransferAPIHandler(db *sql.DB) http.HandlerFunc {
 		sendJSON(w, http.StatusCreated, true, "", createTransferAPIResponse{
 			Transfer: transfer,
 		})
+	}
+}
+
+// Handles file upload to specific transfer
+func UploadAPIHandler(maxUploadSize int64) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID, err := auth.Auth(r)
+		if err != nil {
+			slog.Info("unable to authenticate user", "error", err)
+			sendJSON(w, http.StatusUnauthorized, false, "You're not authenticated", nil)
+			return
+		}
+		slog.Info("user authenticated", "user_id", userID)
+
+		r.Body = http.MaxBytesReader(w, r.Body, maxUploadSize)
+		if err := r.ParseMultipartForm(maxUploadSize); err != nil {
+			sendJSON(w, http.StatusRequestEntityTooLarge, false, "Upload file size too large", nil) // there's no "payload too large" in http std
+			return
+		}
+
+		transferIDs := r.MultipartForm.Value["transfer_id"]
+		if len(transferIDs) != 1 {
+			sendJSON(w, http.StatusBadRequest, false, "Expected a transfer id", nil)
+			return
+		}
+		transferID := transferIDs[0]
+		err = uuid.Validate(transferID)
+		if err != nil {
+			sendJSON(w, http.StatusBadRequest, false, "Transfer ID is incorrectly formatted", nil)
+			return
+		}
+
+		relativePath := ""
+		relativePaths := r.MultipartForm.Value["relative_path"]
+		if len(relativePaths) == 1 {
+			relativePath = filepath.Clean(relativePaths[0])
+			if strings.Contains(relativePath, "..") {
+				slog.Error("Upload invalid relative path: trying to access parent directory")
+				sendJSON(w, http.StatusBadRequest, false, "Invalid relative path", nil)
+				return
+			}
+		}
+
+		transfer, err := models.GetTransferFromIDs(userID, transferID)
+		if err != nil {
+			sendJSON(w, http.StatusNotFound, false, "Could not find the transfer", nil)
+			return
+		}
+		if transfer.UserID != userID {
+			sendJSON(w, http.StatusUnauthorized, false, "You're not authorized to modify this transfer", nil)
+			return
+		}
+
+		file, fileHeader, err := r.FormFile("file")
+		if err != nil {
+			slog.Error("Failed opening file", "error", err)
+			sendJSON(w, http.StatusInternalServerError, false, "Lost the file", nil)
+			return
+		}
+		defer file.Close()
+
+		err = HandleFileUpload(transfer, file, fileHeader, relativePath)
+		if err != nil {
+			slog.Error("Failed handling newly uploaded file!", "error", err)
+			sendJSON(w, http.StatusInternalServerError, false, "Handle file failed", nil)
+			return
+		}
+
+		err = transfer.NewFile(int(fileHeader.Size))
+		if err != nil {
+			slog.Error("Failed adding new file to transfer object", "error", err)
+			sendJSON(w, http.StatusInternalServerError, false, "Handle file failed", nil)
+			return
+		}
+
+		slog.Debug("Successfully created new file", "user", userID, "transfer", transfer.ID, "file", fileHeader.Filename)
+		sendJSON(w, http.StatusCreated, true, "", nil)
 	}
 }
