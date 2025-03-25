@@ -41,7 +41,10 @@ const uploadFile = async (transferId, file) => {
     formData.append("file", file);
 
     if (file.webkitRelativePath) {
-        formData.append("relative_path", file.webkitRelativePath.split("/").slice(1, -1).join("/"))
+        if (file.webkitRelativePath.split("/").slice(1, -1).join("/") !== "") {
+            showError("Not uploading relative files");
+            return false;
+        }
     }
     
     const response = await fetch("api/v1/upload", {
@@ -96,5 +99,6 @@ form.addEventListener("submit", async e => {
         }
     }
 
+    return;
     window.location.replace(`upload/${transfer.id}`);
 });

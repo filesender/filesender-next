@@ -8,8 +8,6 @@ package handlers
 import (
 	"log/slog"
 	"net/http"
-	"path/filepath"
-	"strings"
 	"time"
 
 	"codeberg.org/filesender/filesender-next/internal/auth"
@@ -96,17 +94,6 @@ func UploadAPIHandler(maxUploadSize int64) http.HandlerFunc {
 			return
 		}
 
-		relativePath := ""
-		relativePaths := r.MultipartForm.Value["relative_path"]
-		if len(relativePaths) == 1 {
-			relativePath = filepath.Clean(relativePaths[0])
-			if strings.Contains(relativePath, "..") {
-				slog.Error("Upload invalid relative path: trying to access parent directory")
-				sendJSON(w, http.StatusBadRequest, false, "Invalid relative path", nil)
-				return
-			}
-		}
-
 		transfer, err := models.GetTransferFromIDs(userID, transferID)
 		if err != nil {
 			sendJSON(w, http.StatusNotFound, false, "Could not find the transfer", nil)
@@ -129,7 +116,7 @@ func UploadAPIHandler(maxUploadSize int64) http.HandlerFunc {
 			}
 		}()
 
-		err = HandleFileUpload(transfer, file, fileHeader, relativePath)
+		err = HandleFileUpload(transfer, file, fileHeader)
 		if err != nil {
 			slog.Error("Failed handling newly uploaded file!", "error", err)
 			sendJSON(w, http.StatusInternalServerError, false, "Handle file failed", nil)
