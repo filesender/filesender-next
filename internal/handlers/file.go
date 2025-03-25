@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 
 	"codeberg.org/filesender/filesender-next/internal/models"
-	"codeberg.org/filesender/filesender-next/internal/utils"
 )
 
 // HandleFileUpload handles a new file uploaded
@@ -47,8 +46,10 @@ func HandleFileUpload(transfer models.Transfer, file multipart.File, fileHeader 
 		return err
 	}
 
-	meta := models.File{}
-	err = utils.WriteDataFromFile(meta, filepath.Join(uploadDest, fileHeader.Filename+".meta"))
+	meta := models.File{
+		ByteSize: int(fileHeader.Size),
+	}
+	err = meta.Create(transfer.UserID, transfer.ID, fileHeader.Filename)
 	if err != nil {
 		return err
 	}

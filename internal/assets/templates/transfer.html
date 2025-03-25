@@ -8,11 +8,39 @@
 </head>
 <body>
     <div class="wrapper">
-        <p>{{ .FileCount }} file(s) ({{ .BytesSize }} bytes)</p>
+        <p>{{ .FileCount }} file(s) ({{ .ByteSize }} bytes)</p>
 
-        <a href="download" target="_blank">
-            Download .zip
-        </a>
+        <table>
+            <tr>
+                <th></th>
+                <th>File name</th>
+                <th>Byte size</th>
+                <th></th>
+            </tr>
+
+            {{ range .Files }}
+            <tr>
+                <td>
+                    <input type="checkbox" name="{{ .FileName }}">
+                </td>
+                <td>{{ .FileName }}</td>
+                <td>{{ .ByteSize }} bytes</td>
+                <td>
+                    <button>
+                        Download
+                    </button>
+                </td>
+            </tr>
+            {{ end }}
+        </table>
+
+        <button>
+            Download Selected
+        </button>
+
+        <button>
+            Download All
+        </button>
     </div>
 </body>
 </html>

@@ -25,13 +25,11 @@ func UploadTemplateHandler() http.HandlerFunc {
 		defaultDate := time.Now().UTC().Add(time.Hour * 24 * 7)
 		maxDate := time.Now().UTC().Add(time.Hour * 24 * 30)
 
-		data := map[string]any{
-			"MinDate":     minDate.Format(time.DateOnly),
-			"DefaultDate": defaultDate.Format(time.DateOnly),
-			"MaxDate":     maxDate.Format(time.DateOnly),
-		}
-
-		sendTemplate(w, "upload", data)
+		sendTemplate(w, "upload", uploadTemplate{
+			MinDate:     minDate.Format(time.DateOnly),
+			DefaultDate: defaultDate.Format(time.DateOnly),
+			MaxDate:     maxDate.Format(time.DateOnly),
+		})
 	}
 }
 
@@ -66,14 +64,12 @@ func UploadDoneTemplateHandler() http.HandlerFunc {
 			return
 		}
 
-		data := map[string]any{
-			"UserID":     userID,
-			"TransferID": transfer.ID,
-			"FileCount":  transfer.FileCount,
-			"BytesSize":  transfer.TotalByteSize,
-		}
-
-		sendTemplate(w, "upload_done", data)
+		sendTemplate(w, "upload_done", uploadDoneTemplate{
+			UserID:     userID,
+			TransferID: transfer.ID,
+			FileCount:  transfer.FileCount,
+			BytesSize:  transfer.TotalByteSize,
+		})
 	}
 }
 
@@ -103,9 +99,23 @@ func GetTransferTemplateHandler() http.HandlerFunc {
 			return
 		}
 
-		data := map[string]any{
-			"FileCount": transfer.FileCount,
-			"BytesSize": transfer.TotalByteSize,
+		data := getTransferTemplate{
+			FileCount: transfer.FileCount,
+			ByteSize:  transfer.TotalByteSize,
+		}
+
+		for i := range transfer.FileCount {
+			fileName := transfer.FileNames[i]
+			file, err := models.GetFileFromName(userID, transferID, fileName)
+			if err != nil {
+				slog.Error("Failed getting file metadata", "error", err)
+				continue
+			}
+
+			data.Files = append(data.Files, getTransferTemplateFile{
+				FileName: fileName,
+				ByteSize: file.ByteSize,
+			})
 		}
 
 		sendTemplate(w, "transfer", data)

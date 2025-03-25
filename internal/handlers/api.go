@@ -123,7 +123,7 @@ func UploadAPIHandler(maxUploadSize int64) http.HandlerFunc {
 			return
 		}
 
-		err = transfer.NewFile(int(fileHeader.Size))
+		err = transfer.NewFile(fileHeader.Filename, int(fileHeader.Size))
 		if err != nil {
 			slog.Error("Failed adding new file to transfer object", "error", err)
 			sendJSON(w, http.StatusInternalServerError, false, "Handle file failed", nil)

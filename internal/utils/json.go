@@ -7,8 +7,8 @@ import (
 	"os"
 )
 
-// WriteDataFromFile receives any data object and writes to path
-func WriteDataFromFile(data any, path string) error {
+// WriteDataToFile receives any data object and writes to path
+func WriteDataToFile(data any, path string) error {
 	JSONData, err := json.Marshal(data)
 	if err != nil {
 		return err

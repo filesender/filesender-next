@@ -16,6 +16,7 @@ import (
 type Transfer struct {
 	ID            string    `json:"id"`
 	UserID        string    `json:"user_id"`
+	FileNames     []string  `json:"file_names"`
 	FileCount     int       `json:"file_count"`
 	TotalByteSize int       `json:"total_byte_size"`
 	DownloadCount int       `json:"download_count"`
@@ -42,7 +43,7 @@ func (transfer *Transfer) Create() error {
 
 	transfer.CreationDate = time.Now().UTC().Round(time.Second)
 
-	err = utils.WriteDataFromFile(transfer, filepath.Join(userDir, transfer.ID+".meta"))
+	err = utils.WriteDataToFile(transfer, filepath.Join(userDir, transfer.ID+".meta"))
 	if err != nil {
 		slog.Error("Failed writing meta file", "error", err)
 		return err
@@ -55,7 +56,7 @@ func (transfer *Transfer) Create() error {
 func (transfer *Transfer) Update() error {
 	stateDir := os.Getenv("STATE_DIRECTORY")
 
-	err := utils.WriteDataFromFile(transfer, filepath.Join(stateDir, "uploads", transfer.UserID, transfer.ID+".meta"))
+	err := utils.WriteDataToFile(transfer, filepath.Join(stateDir, "uploads", transfer.UserID, transfer.ID+".meta"))
 	if err != nil {
 		slog.Error("Failed writing meta file", "error", err)
 		return err
@@ -65,9 +66,10 @@ func (transfer *Transfer) Update() error {
 }
 
 // NewFile adds data of a new file to transfer
-func (transfer *Transfer) NewFile(byteSize int) error {
+func (transfer *Transfer) NewFile(fileName string, byteSize int) error {
 	transfer.TotalByteSize += byteSize
 	transfer.FileCount++
+	transfer.FileNames = append(transfer.FileNames, fileName)
 
 	err := transfer.Update()
 	if err != nil {

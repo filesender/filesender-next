@@ -29,8 +29,6 @@ Cookie: session=Hello, world!
 
 | Parameter | Type | Required | Description |
 |--|--|--|--|
-| `subject` | string | No | Subject of transfer |
-| `message` | string | No | Message of transfer |
 | `expiry_date` | datetime | No | Expiry date in ISO8601 format, default: current date + 7 days |
 
 **Response:**

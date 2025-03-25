@@ -99,6 +99,5 @@ form.addEventListener("submit", async e => {
         }
     }
 
-    return;
     window.location.replace(`upload/${transfer.id}`);
 });
