@@ -1,3 +1,8 @@
+// Package handlers contains everything that has anything to do with handling (something)
+// Handlers for API requests, template requests
+// Handlers for file(s)
+// Handlers for response
+// Handlers for request
 package handlers
 
 import (
@@ -12,6 +17,7 @@ import (
 	"codeberg.org/filesender/filesender-next/internal/models"
 )
 
+// CreateTransferAPIHandler handles POST /api/v1/transfers
 // Creates a transfer, returns a transfer object
 // This should be called before uploading
 func CreateTransferAPIHandler() http.HandlerFunc {
@@ -63,7 +69,7 @@ func CreateTransferAPIHandler() http.HandlerFunc {
 	}
 }
 
-// Handles file upload to specific transfer
+// UploadAPIHandler handles POST /api/v1/upload
 func UploadAPIHandler(maxUploadSize int64) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, err := auth.Auth(r)
@@ -119,7 +125,11 @@ func UploadAPIHandler(maxUploadSize int64) http.HandlerFunc {
 			sendJSON(w, http.StatusInternalServerError, false, "Lost the file", nil)
 			return
 		}
-		defer file.Close()
+		defer func() {
+			if err := file.Close(); err != nil {
+				slog.Error("Failed closing file", "error", err)
+			}
+		}()
 
 		err = HandleFileUpload(transfer, file, fileHeader, relativePath)
 		if err != nil {

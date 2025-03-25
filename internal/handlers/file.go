@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"io"
+	"log/slog"
 	"mime/multipart"
 	"os"
 	"path"
@@ -13,7 +14,7 @@ import (
 	"codeberg.org/filesender/filesender-next/internal/utils"
 )
 
-// Handles newly uploaded file
+// HandleFileUpload handles a new file uploaded
 func HandleFileUpload(transfer models.Transfer, file multipart.File, fileHeader *multipart.FileHeader, relativePath string) error {
 	// Create uploads folder if not exist
 	uploadsPath := path.Join(os.Getenv("STATE_DIRECTORY"), "uploads")
@@ -54,7 +55,11 @@ func HandleFileUpload(transfer models.Transfer, file multipart.File, fileHeader 
 	if err != nil {
 		return err
 	}
-	defer dst.Close()
+	defer func() {
+		if err := dst.Close(); err != nil {
+			slog.Error("Failed closing file", "error", err)
+		}
+	}()
 
 	_, err = io.Copy(dst, file)
 	if err != nil {

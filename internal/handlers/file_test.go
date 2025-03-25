@@ -21,13 +21,19 @@ func createMultipartFile(content string) (*multipart.FileHeader, *os.File, error
 
 	_, err = tmpFile.Write([]byte(content))
 	if err != nil {
-		tmpFile.Close()
+		err = tmpFile.Close()
+		if err != nil {
+			return nil, nil, err
+		}
 		return nil, nil, err
 	}
 
 	_, err = tmpFile.Seek(0, io.SeekStart)
 	if err != nil {
-		tmpFile.Close()
+		err = tmpFile.Close()
+		if err != nil {
+			return nil, nil, err
+		}
 		return nil, nil, err
 	}
 
@@ -42,9 +48,17 @@ func TestHandleFileUpload_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temporary directory: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() {
+		if err := os.RemoveAll(tempDir); err != nil {
+			t.Errorf("Failed deleting temp directory: %v", err)
+		}
+	}()
 
-	os.Setenv("STATE_DIRECTORY", tempDir)
+	err = os.Setenv("STATE_DIRECTORY", tempDir)
+	if err != nil {
+		t.Fatalf("Failed setting env var: %v", err)
+	}
+
 	transfer := models.Transfer{
 		ID:     "testing123",
 		UserID: "weeb",
@@ -59,7 +73,11 @@ func TestHandleFileUpload_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create multipart file: %v", err)
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			t.Errorf("Failed closing file: %v", err)
+		}
+	}()
 
 	err = handlers.HandleFileUpload(transfer, file, fileHeader, "")
 	if err != nil {
@@ -79,9 +97,17 @@ func TestHandleFileUpload_SuccessRelativeDirectory(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temporary directory: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() {
+		if err := os.RemoveAll(tempDir); err != nil {
+			t.Errorf("Failed deleting temp directory: %v", err)
+		}
+	}()
 
-	os.Setenv("STATE_DIRECTORY", tempDir)
+	err = os.Setenv("STATE_DIRECTORY", tempDir)
+	if err != nil {
+		t.Fatalf("Failed setting env var: %v", err)
+	}
+
 	transfer := models.Transfer{
 		ID:     "testing123",
 		UserID: "weeb",
@@ -96,7 +122,11 @@ func TestHandleFileUpload_SuccessRelativeDirectory(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create multipart file: %v", err)
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			t.Errorf("Failed closing file: %v", err)
+		}
+	}()
 
 	err = handlers.HandleFileUpload(transfer, file, fileHeader, "/example")
 	if err != nil {
@@ -112,7 +142,11 @@ func TestHandleFileUpload_SuccessRelativeDirectory(t *testing.T) {
 
 func TestHandleFileUpload_Failure_InvalidDirectory(t *testing.T) {
 	// Set an invalid directory
-	os.Setenv("STATE_DIRECTORY", "/invalid/directory")
+	err := os.Setenv("STATE_DIRECTORY", "/invalid/directory")
+	if err != nil {
+		t.Fatalf("Failed setting env var: %v", err)
+	}
+
 	transfer := models.Transfer{
 		ID:     "testing123",
 		UserID: "weeb",
@@ -122,7 +156,11 @@ func TestHandleFileUpload_Failure_InvalidDirectory(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create multipart file: %v", err)
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			t.Errorf("Failed closing file: %v", err)
+		}
+	}()
 
 	// Expect an error
 	err = handlers.HandleFileUpload(transfer, file, fileHeader, "")
@@ -137,9 +175,17 @@ func TestHandleFileUpload_Failure_FileCreation(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temporary directory: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() {
+		if err := os.RemoveAll(tempDir); err != nil {
+			t.Errorf("Failed deleting temp directory: %v", err)
+		}
+	}()
 
-	os.Setenv("STATE_DIRECTORY", tempDir)
+	err = os.Setenv("STATE_DIRECTORY", tempDir)
+	if err != nil {
+		t.Fatalf("Failed setting env var: %v", err)
+	}
+
 	transfer := models.Transfer{
 		ID:     "testing123",
 		UserID: "weeb",
@@ -154,7 +200,11 @@ func TestHandleFileUpload_Failure_FileCreation(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create multipart file: %v", err)
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			t.Errorf("Failed closing file: %v", err)
+		}
+	}()
 
 	// Set empty filename to cause failure
 	fileHeader.Filename = ""

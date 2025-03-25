@@ -1,5 +1,6 @@
 //go:build !dev
 
+// Package auth contains authentication functions
 package auth
 
 import (
@@ -8,6 +9,7 @@ import (
 	"net/http"
 )
 
+// Auth checks `REMOTE_ADDR` header for authentication
 func Auth(r *http.Request) (string, error) {
 	tcpAddr, err := net.ResolveTCPAddr("tcp", r.RemoteAddr)
 	if err != nil {

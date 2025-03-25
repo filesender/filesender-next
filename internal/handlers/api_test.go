@@ -23,9 +23,16 @@ func TestCreateTransferAPIHandler(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temporary directory: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() {
+		if err := os.RemoveAll(tempDir); err != nil {
+			t.Errorf("Failed deleting temp directory: %v", err)
+		}
+	}()
 
-	os.Setenv("STATE_DIRECTORY", tempDir)
+	err = os.Setenv("STATE_DIRECTORY", tempDir)
+	if err != nil {
+		t.Fatalf("Failed setting env var: %v", err)
+	}
 
 	t.Run("Unauthenticated User", func(t *testing.T) {
 		req, _ := http.NewRequest("POST", "/create", nil)
@@ -61,9 +68,16 @@ func TestUploadAPIHandler(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temporary directory: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() {
+		if err := os.RemoveAll(tempDir); err != nil {
+			t.Errorf("Failed deleting temp directory: %v", err)
+		}
+	}()
 
-	os.Setenv("STATE_DIRECTORY", tempDir)
+	err = os.Setenv("STATE_DIRECTORY", tempDir)
+	if err != nil {
+		t.Fatalf("Failed setting env var: %v", err)
+	}
 
 	transfer := models.Transfer{
 		UserID: "dummy_session",
@@ -87,7 +101,10 @@ func TestUploadAPIHandler(t *testing.T) {
 		body := &bytes.Buffer{}
 		writer := multipart.NewWriter(body)
 		_ = writer.WriteField("transfer_id", "invalid")
-		writer.Close()
+		err = writer.Close()
+		if err != nil {
+			t.Fatalf("Failed closing HTTP body writer: %v", err)
+		}
 
 		req, _ := http.NewRequest("POST", "/upload", body)
 		req.Header.Set("REMOTE_USER", "dummy_session")
@@ -114,7 +131,10 @@ func TestUploadAPIHandler(t *testing.T) {
 		body := &bytes.Buffer{}
 		writer := multipart.NewWriter(body)
 		_ = writer.WriteField("transfer_id", transfer.ID)
-		writer.Close()
+		err = writer.Close()
+		if err != nil {
+			t.Fatalf("Failed closing HTTP body writer: %v", err)
+		}
 
 		req, _ := http.NewRequest("POST", "/upload", body)
 		req.Header.Set("REMOTE_USER", "dummy_session")
@@ -146,7 +166,10 @@ func TestUploadAPIHandler(t *testing.T) {
 		if err != nil {
 			t.Errorf("Failed creating file contents")
 		}
-		writer.Close()
+		err = writer.Close()
+		if err != nil {
+			t.Fatalf("Failed closing HTTP body writer: %v", err)
+		}
 
 		req, _ := http.NewRequest("POST", "/upload", body)
 		req.Header.Set("REMOTE_USER", "dummy_session")
