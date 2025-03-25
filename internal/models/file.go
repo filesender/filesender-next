@@ -1,16 +1,19 @@
+// Package models contains data models
 package models
 
 import (
 	"encoding/json"
+	"log/slog"
 	"os"
 	"path"
 )
 
-// Model representing the "files" metadata
+// File model representing metadata
 type File struct {
 	DownloadCount int `json:"download_count"`
 }
 
+// Create function creates a new file metadata file representing a file
 func (file *File) Create(uploadDest string, fileName string) error {
 	metaJSON, err := json.Marshal(file)
 	if err != nil {
@@ -21,7 +24,11 @@ func (file *File) Create(uploadDest string, fileName string) error {
 	if err != nil {
 		return err
 	}
-	defer metaFile.Close()
+	defer func() {
+		if err := metaFile.Close(); err != nil {
+			slog.Error("Failed closing file", "error", err)
+		}
+	}()
 
 	_, err = metaFile.Write(metaJSON)
 	if err != nil {

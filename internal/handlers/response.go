@@ -11,7 +11,7 @@ import (
 
 var templatesFS embed.FS
 
-// Standard API response format
+// Response struct standardizes the JSON response data
 type Response struct {
 	Success bool   `json:"success"`
 	Message string `json:"message,omitempty"`

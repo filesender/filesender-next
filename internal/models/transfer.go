@@ -10,7 +10,7 @@ import (
 	"codeberg.org/filesender/filesender-next/internal/utils"
 )
 
-// Model representing the "transfers" table
+// Transfer model representing metadata
 type Transfer struct {
 	ID            string    `json:"id"`
 	UserID        string    `json:"user_id"`
@@ -23,13 +23,18 @@ type Transfer struct {
 	CreationDate  time.Time `json:"creation_date"`
 }
 
-// Creates new transfer folder and writes meta file
+// Create function creates a new transfer folder & writes a new meta file
 func (transfer *Transfer) Create() error {
 	stateDir := os.Getenv("STATE_DIRECTORY")
-	transfer.ID = id.New()
+	transferID, err := id.New()
+	if err != nil {
+		slog.Error("Failed getting transfer ID", "error", err)
+		return err
+	}
+	transfer.ID = transferID
 
 	userDir := filepath.Clean(filepath.Join(stateDir, "uploads", transfer.UserID))
-	err := os.MkdirAll(userDir, os.ModePerm)
+	err = os.MkdirAll(userDir, os.ModePerm)
 	if err != nil {
 		slog.Error("Failed creating user directory", "error", err)
 		return err
@@ -46,6 +51,7 @@ func (transfer *Transfer) Create() error {
 	return nil
 }
 
+// Update saves the current Transfer state to disk
 func (transfer *Transfer) Update() error {
 	stateDir := os.Getenv("STATE_DIRECTORY")
 
@@ -58,7 +64,7 @@ func (transfer *Transfer) Update() error {
 	return nil
 }
 
-// Adds data of a new file to transfer
+// NewFile adds data of a new file to transfer
 func (transfer *Transfer) NewFile(byteSize int) error {
 	transfer.TotalByteSize += byteSize
 	transfer.FileCount++
@@ -72,7 +78,7 @@ func (transfer *Transfer) NewFile(byteSize int) error {
 	return nil
 }
 
-// Gets transfer based on user ID & transfer ID
+// GetTransferFromIDs gets transfer based on user ID & transfer ID
 func GetTransferFromIDs(userID string, transferID string) (Transfer, error) {
 	stateDir := os.Getenv("STATE_DIRECTORY")
 	var transfer Transfer

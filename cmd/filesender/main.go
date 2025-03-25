@@ -1,3 +1,4 @@
+// Package main, the starting point of the Filesender application
 package main
 
 import (
