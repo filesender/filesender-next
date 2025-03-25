@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"codeberg.org/filesender/filesender-next/internal/utils"
-	"github.com/google/uuid"
 )
 
 // Model representing the "transfers" table
@@ -26,7 +25,7 @@ type Transfer struct {
 // Creates new transfer folder and writes meta file
 func (transfer *Transfer) Create() error {
 	stateDir := os.Getenv("STATE_DIRECTORY")
-	transfer.ID = uuid.New().String()
+	transfer.ID = utils.NewRandomID()
 
 	userDir := filepath.Clean(filepath.Join(stateDir, "uploads", transfer.UserID))
 	err := os.MkdirAll(userDir, os.ModePerm)

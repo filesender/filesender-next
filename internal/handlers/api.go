@@ -9,7 +9,7 @@ import (
 
 	"codeberg.org/filesender/filesender-next/internal/auth"
 	"codeberg.org/filesender/filesender-next/internal/models"
-	"github.com/google/uuid"
+	"codeberg.org/filesender/filesender-next/internal/utils"
 )
 
 // Creates a transfer, returns a transfer object
@@ -86,7 +86,7 @@ func UploadAPIHandler(maxUploadSize int64) http.HandlerFunc {
 			return
 		}
 		transferID := transferIDs[0]
-		err = uuid.Validate(transferID)
+		err = utils.ValidateRandomID(transferID)
 		if err != nil {
 			sendJSON(w, http.StatusBadRequest, false, "Transfer ID is incorrectly formatted", nil)
 			return
