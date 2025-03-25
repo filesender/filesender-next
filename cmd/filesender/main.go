@@ -10,7 +10,6 @@ import (
 	"strconv"
 	"time"
 
-	"codeberg.org/filesender/filesender-next/internal/archive"
 	"codeberg.org/filesender/filesender-next/internal/assets"
 	"codeberg.org/filesender/filesender-next/internal/handlers"
 	"codeberg.org/filesender/filesender-next/internal/logging"
@@ -48,18 +47,6 @@ func main() {
 	if err != nil {
 		slog.Error("Failed creating state directory", "error", err)
 	}
-
-	// Initialise temp folder for archives
-	tempDir, err := os.MkdirTemp("", "archives")
-	if err != nil {
-		slog.Error("Failed creating temporary directory", "error", err)
-	}
-	archive.Init(tempDir)
-	defer func() {
-		if err := os.RemoveAll(tempDir); err != nil {
-			slog.Error("Failed deleting temporary directory", "error", err)
-		}
-	}()
 
 	// Initialise handler, pass embedded template files
 	handlers.Init(assets.EmbeddedTemplateFiles)
