@@ -10,6 +10,7 @@ import (
 	"codeberg.org/filesender/filesender-next/internal/models"
 )
 
+// UploadTemplateHandler handles GET /{$}
 func UploadTemplateHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, _ *http.Request) {
 		minDate := time.Now().UTC().Add(time.Hour * 24)
@@ -26,6 +27,7 @@ func UploadTemplateHandler() http.HandlerFunc {
 	}
 }
 
+// UploadDoneTemplateHandler handles GET /upload/{id}
 func UploadDoneTemplateHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, err := auth.Auth(r)

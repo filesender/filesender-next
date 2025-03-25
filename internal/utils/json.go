@@ -1,11 +1,13 @@
+// Package utils contains small utility functions
 package utils
 
 import (
 	"encoding/json"
+	"log/slog"
 	"os"
 )
 
-// Receives any data object and writes to path
+// WriteDataFromFile receives any data object and writes to path
 func WriteDataFromFile(data any, path string) error {
 	JSONData, err := json.Marshal(data)
 	if err != nil {
@@ -16,7 +18,11 @@ func WriteDataFromFile(data any, path string) error {
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			slog.Error("Failed closing file", "error", err)
+		}
+	}()
 
 	_, err = file.Write(JSONData)
 	if err != nil {
@@ -26,7 +32,7 @@ func WriteDataFromFile(data any, path string) error {
 	return nil
 }
 
-// Reads data from file into object
+// ReadDataFromFile reads data from file into object
 func ReadDataFromFile(path string, v any) error {
 	data, err := os.ReadFile(path)
 	if err != nil {

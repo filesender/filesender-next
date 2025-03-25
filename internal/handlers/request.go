@@ -9,7 +9,11 @@ import (
 // Receive JSON body, tries to unmarshal the request body
 // If fails, returns a HTTP 400
 func recvJSON(w http.ResponseWriter, r *http.Request, v any) bool {
-	defer r.Body.Close()
+	defer func() {
+		if err := r.Body.Close(); err != nil {
+			slog.Error("Failed closing HTTP body stream", "error", err)
+		}
+	}()
 
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(v)

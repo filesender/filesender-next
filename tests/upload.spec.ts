@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
+import { randomUUID } from 'crypto';
 
 test('should return a non successful response', async ({ page }) => {
     const response = await page.goto('http://localhost:8080/upload/this doesnt exist');
@@ -10,7 +11,7 @@ test('should return a non successful response', async ({ page }) => {
 
 test('should upload a file', async ({ page }) => {
     // Generate temp file
-    const filePath = `temp-file-${crypto.randomUUID()}.txt`;
+    const filePath = `temp-file-${randomUUID()}.txt`;
     fs.writeFileSync(filePath, 'This is a test file content.'); // 28 bytes
 
     await page.goto('http://localhost:8080/');
