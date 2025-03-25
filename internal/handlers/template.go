@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"codeberg.org/filesender/filesender-next/internal/auth"
+	"codeberg.org/filesender/filesender-next/internal/id"
 	"codeberg.org/filesender/filesender-next/internal/models"
-	"codeberg.org/filesender/filesender-next/internal/utils"
 )
 
 func UploadTemplateHandler() http.HandlerFunc {
@@ -37,7 +37,7 @@ func UploadDoneTemplateHandler() http.HandlerFunc {
 		slog.Info("user authenticated", "user_id", userID)
 
 		transferID := r.PathValue("id")
-		err = utils.ValidateRandomID(transferID)
+		err = id.Validate(transferID)
 		if err != nil {
 			slog.Error("User passed invalid transfer ID", "error", err)
 			sendError(w, http.StatusBadRequest, "Transfer ID is invalid")

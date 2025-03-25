@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"codeberg.org/filesender/filesender-next/internal/id"
 	"codeberg.org/filesender/filesender-next/internal/utils"
 )
 
@@ -25,7 +26,7 @@ type Transfer struct {
 // Creates new transfer folder and writes meta file
 func (transfer *Transfer) Create() error {
 	stateDir := os.Getenv("STATE_DIRECTORY")
-	transfer.ID = utils.NewRandomID()
+	transfer.ID = id.New()
 
 	userDir := filepath.Clean(filepath.Join(stateDir, "uploads", transfer.UserID))
 	err := os.MkdirAll(userDir, os.ModePerm)

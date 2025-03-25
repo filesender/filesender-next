@@ -1,4 +1,4 @@
-package utils
+package id
 
 import (
 	"crypto/rand"
@@ -6,14 +6,14 @@ import (
 	"errors"
 )
 
-func NewRandomID() string {
+func New() string {
 	randomData := make([]byte, 16)
 	rand.Read(randomData)
 
 	return hex.EncodeToString(randomData)
 }
 
-func ValidateRandomID(in string) error {
+func Validate(in string) error {
 	if len(in) != 32 {
 		return errors.New("invalid length")
 	}
