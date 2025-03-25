@@ -9,9 +9,7 @@ import (
 )
 
 // File model representing metadata
-type File struct {
-	DownloadCount int `json:"download_count"`
-}
+type File struct{}
 
 // Create function creates a new file metadata file representing a file
 func (file *File) Create(uploadDest string, fileName string) error {

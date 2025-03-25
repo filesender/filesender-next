@@ -1,6 +1,8 @@
 package models
 
 import (
+	"errors"
+	"fmt"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -16,8 +18,6 @@ type Transfer struct {
 	UserID        string    `json:"user_id"`
 	FileCount     int       `json:"file_count"`
 	TotalByteSize int       `json:"total_byte_size"`
-	Subject       string    `json:"subject"`
-	Message       string    `json:"message"`
 	DownloadCount int       `json:"download_count"`
 	ExpiryDate    time.Time `json:"expiry_date"`
 	CreationDate  time.Time `json:"creation_date"`
@@ -73,6 +73,17 @@ func (transfer *Transfer) NewFile(byteSize int) error {
 	if err != nil {
 		slog.Error("Failed adding new file data to transfer metadata", "error", err)
 		return err
+	}
+
+	return nil
+}
+
+// TransferExists checks if the transfer exists
+func TransferExists(userID string, transferID string) error {
+	stateDir := os.Getenv("STATE_DIRECTORY")
+
+	if _, err := os.Stat(filepath.Join(stateDir, "uploads", userID, transferID+".meta")); errors.Is(err, os.ErrNotExist) {
+		return fmt.Errorf("Transfer ID \"%s\" with user ID \"%s\" does not exist", transferID, userID)
 	}
 
 	return nil

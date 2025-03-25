@@ -66,9 +66,7 @@ func HandleFileUpload(transfer models.Transfer, file multipart.File, fileHeader 
 		return err
 	}
 
-	meta := models.File{
-		DownloadCount: 0,
-	}
+	meta := models.File{}
 	err = utils.WriteDataFromFile(meta, filepath.Join(uploadDest, fileHeader.Filename+".meta"))
 	if err != nil {
 		return err

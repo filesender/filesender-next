@@ -51,8 +51,6 @@ func CreateTransferAPIHandler() http.HandlerFunc {
 
 		transfer := models.Transfer{
 			UserID:     userID,
-			Subject:    requestBody.Subject,
-			Message:    requestBody.Message,
 			ExpiryDate: expiryDate,
 		}
 		err = transfer.Create()

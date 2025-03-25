@@ -41,13 +41,10 @@ Success:
   "success": true,
   "data": {
     "transfer": {
-      "id": 9,
-      "user_id": "Hello, world!",
-      "guest_voucher_id": 0,
+      "id": "rJT7yu9R5SRjYlvwXcMI9w",
+      "user_id": "dev",
       "file_count": 0,
       "total_byte_size": 0,
-      "subject": "Here are my files!",
-      "message": "Thank you for giving me additional time on the assignment",
       "download_count": 0,
       "expiry_date": "2025-04-15T00:00:00Z",
       "creation_date": "2025-03-13T12:40:35.680625+01:00"

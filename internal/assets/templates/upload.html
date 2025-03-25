@@ -24,18 +24,6 @@
             <div class="grid wrap mt-4 gap-1">
                 <div class="flex border p-4 flex-col gap-1">
                     <div>
-                        <label for="subject">Subject</label>
-                        <input name="subject" id="subject" type="text">
-                    </div>
-
-                    <div>
-                        <label for="message">Message</label>
-                        <textarea name="message" id="message" rows="4"></textarea>
-                    </div>
-                </div>
-
-                <div class="flex border p-4 flex-col gap-1">
-                    <div>
                         <label for="expiry_date">Expiry date *</label>
                         <input name="expiry-date" id="expiry_date" type="date" value="{{ .DefaultDate }}" min="{{ .MinDate }}" max="{{ .MaxDate }}" required>
                     </div>
