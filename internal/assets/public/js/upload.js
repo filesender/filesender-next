@@ -14,7 +14,7 @@ const showError = msg => {
  * @returns {Promise<false | {id: number, user_id: string, file_count: number, total_byte_size: number, subject: string, message: string, download_count: number, expiry_date: string, creation_date: string}>} Either returns false when request failed, or the newly created transfer object
  */
 const createTransfer = async (requestData) => {
-    const response = await fetch("api/v1/transfers", {
+    const response = await fetch("api/v1/transfer", {
         method: "POST",
         headers: {
             "Content-Type": "application/json"

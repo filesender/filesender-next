@@ -53,7 +53,7 @@ func main() {
 
 	router := http.NewServeMux()
 	// API endpoints
-	router.HandleFunc("POST /api/v1/transfers", handlers.CreateTransferAPI())
+	router.HandleFunc("POST /api/v1/transfer", handlers.CreateTransferAPI())
 	router.HandleFunc("POST /api/v1/upload", handlers.UploadAPI(maxUploadSize))
 
 	// Page handlers
