@@ -1,5 +1,5 @@
-// Package utils contains small utility functions
-package utils
+// Package json contains functions for writing & reading data from/into files
+package json
 
 import (
 	"encoding/json"

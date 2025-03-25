@@ -13,6 +13,7 @@ import (
 	"codeberg.org/filesender/filesender-next/internal/auth"
 	"codeberg.org/filesender/filesender-next/internal/id"
 	"codeberg.org/filesender/filesender-next/internal/models"
+	"codeberg.org/filesender/filesender-next/internal/utils"
 )
 
 // CreateTransferAPIHandler handles POST /api/v1/transfers
@@ -27,6 +28,13 @@ func CreateTransferAPIHandler() http.HandlerFunc {
 			return
 		}
 		slog.Info("user authenticated", "user_id", userID)
+
+		userID, err = utils.HashToBase64(userID)
+		if err != nil {
+			slog.Info("failed hashing user ID", "error", err)
+			sendJSON(w, http.StatusInternalServerError, false, "Failed creating user ID", nil)
+			return
+		}
 
 		// Read requets body
 		var requestBody createTransferAPIRequest
@@ -75,6 +83,13 @@ func UploadAPIHandler(maxUploadSize int64) http.HandlerFunc {
 			return
 		}
 		slog.Info("user authenticated", "user_id", userID)
+
+		userID, err = utils.HashToBase64(userID)
+		if err != nil {
+			slog.Info("failed hashing user ID", "error", err)
+			sendJSON(w, http.StatusInternalServerError, false, "Failed creating user ID", nil)
+			return
+		}
 
 		r.Body = http.MaxBytesReader(w, r.Body, maxUploadSize)
 		if err := r.ParseMultipartForm(maxUploadSize); err != nil {

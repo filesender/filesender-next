@@ -8,6 +8,7 @@ import (
 	"codeberg.org/filesender/filesender-next/internal/auth"
 	"codeberg.org/filesender/filesender-next/internal/id"
 	"codeberg.org/filesender/filesender-next/internal/models"
+	"codeberg.org/filesender/filesender-next/internal/utils"
 )
 
 // UploadTemplateHandler handles GET /{$}
@@ -43,6 +44,13 @@ func UploadDoneTemplateHandler() http.HandlerFunc {
 			return
 		}
 		slog.Info("user authenticated", "user_id", userID)
+
+		userID, err = utils.HashToBase64(userID)
+		if err != nil {
+			slog.Info("failed hashing user ID", "error", err)
+			sendError(w, http.StatusInternalServerError, "Failed creating user ID")
+			return
+		}
 
 		transferID := r.PathValue("id")
 		err = id.Validate(transferID)

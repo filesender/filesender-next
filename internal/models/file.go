@@ -7,7 +7,7 @@ import (
 	"path"
 	"path/filepath"
 
-	"codeberg.org/filesender/filesender-next/internal/utils"
+	"codeberg.org/filesender/filesender-next/internal/json"
 )
 
 // File model representing metadata
@@ -20,7 +20,7 @@ type File struct {
 func (file *File) Create(userID string, transferID string, fileName string) error {
 	uploadsPath := path.Join(os.Getenv("STATE_DIRECTORY"), "uploads")
 
-	err := utils.WriteDataToFile(file, filepath.Join(uploadsPath, userID, transferID, fileName+".meta"))
+	err := json.WriteDataToFile(file, filepath.Join(uploadsPath, userID, transferID, fileName+".meta"))
 	if err != nil {
 		slog.Error("Failed writing file data", "error", err)
 	}
@@ -35,7 +35,7 @@ func GetFileFromName(userID string, transferID string, fileName string) (File, e
 	filePath := filepath.Join(uploadsPath, userID, transferID, fileName+".meta")
 	var file File
 
-	err := utils.ReadDataFromFile(filePath, &file)
+	err := json.ReadDataFromFile(filePath, &file)
 	if err != nil {
 		slog.Error("Failed reading file: "+filePath, "error", err)
 	}

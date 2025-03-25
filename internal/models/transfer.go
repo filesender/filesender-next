@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"codeberg.org/filesender/filesender-next/internal/id"
-	"codeberg.org/filesender/filesender-next/internal/utils"
+	"codeberg.org/filesender/filesender-next/internal/json"
 )
 
 // Transfer model representing metadata
@@ -43,7 +43,7 @@ func (transfer *Transfer) Create() error {
 
 	transfer.CreationDate = time.Now().UTC().Round(time.Second)
 
-	err = utils.WriteDataToFile(transfer, filepath.Join(userDir, transfer.ID+".meta"))
+	err = json.WriteDataToFile(transfer, filepath.Join(userDir, transfer.ID+".meta"))
 	if err != nil {
 		slog.Error("Failed writing meta file", "error", err)
 		return err
@@ -56,7 +56,7 @@ func (transfer *Transfer) Create() error {
 func (transfer *Transfer) Update() error {
 	stateDir := os.Getenv("STATE_DIRECTORY")
 
-	err := utils.WriteDataToFile(transfer, filepath.Join(stateDir, "uploads", transfer.UserID, transfer.ID+".meta"))
+	err := json.WriteDataToFile(transfer, filepath.Join(stateDir, "uploads", transfer.UserID, transfer.ID+".meta"))
 	if err != nil {
 		slog.Error("Failed writing meta file", "error", err)
 		return err
@@ -96,7 +96,7 @@ func GetTransferFromIDs(userID string, transferID string) (Transfer, error) {
 	stateDir := os.Getenv("STATE_DIRECTORY")
 	var transfer Transfer
 
-	err := utils.ReadDataFromFile(filepath.Join(stateDir, "uploads", userID, transferID+".meta"), &transfer)
+	err := json.ReadDataFromFile(filepath.Join(stateDir, "uploads", userID, transferID+".meta"), &transfer)
 	if err != nil {
 		slog.Error("Failed reading metadata", "error", err)
 		return transfer, err
