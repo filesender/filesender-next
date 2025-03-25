@@ -21,7 +21,7 @@ type uploadTemplate struct {
 }
 
 type uploadDoneTemplate struct {
-	UserID     string
+	Token      string
 	TransferID string
 	FileCount  int
 	BytesSize  int

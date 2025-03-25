@@ -59,7 +59,7 @@ func main() {
 	// Page handlers
 	router.HandleFunc("GET /{$}", handlers.UploadTemplateHandler())
 	router.HandleFunc("GET /upload/{id}", handlers.UploadDoneTemplateHandler())
-	router.HandleFunc("GET /transfer/{userID}/{transferID}", handlers.GetTransferTemplateHandler())
+	router.HandleFunc("GET /transfer/{transferID}/{token}", handlers.GetTransferTemplateHandler())
 
 	// Serve static files
 	subFS, err := fs.Sub(assets.EmbeddedPublicFiles, "public")

@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"codeberg.org/filesender/filesender-next/internal/auth"
+	"codeberg.org/filesender/filesender-next/internal/crypto"
 	"codeberg.org/filesender/filesender-next/internal/id"
 	"codeberg.org/filesender/filesender-next/internal/models"
-	"codeberg.org/filesender/filesender-next/internal/utils"
 )
 
 // UploadTemplateHandler handles GET /{$}
@@ -45,7 +45,7 @@ func UploadDoneTemplateHandler() http.HandlerFunc {
 		}
 		slog.Info("user authenticated", "user_id", userID)
 
-		userID, err = utils.HashToBase64(userID)
+		userID, err = crypto.HashToBase64(userID)
 		if err != nil {
 			slog.Info("failed hashing user ID", "error", err)
 			sendError(w, http.StatusInternalServerError, "Failed creating user ID")
@@ -72,8 +72,15 @@ func UploadDoneTemplateHandler() http.HandlerFunc {
 			return
 		}
 
+		token, err := crypto.EncryptUserAndTransferID(userID, transfer.ID)
+		if err != nil {
+			slog.Error("Failed encrypting user & transfer ID", "error", err)
+			sendError(w, http.StatusInternalServerError, "Failed encrypting user & transfer ID")
+			return
+		}
+
 		sendTemplate(w, "upload_done", uploadDoneTemplate{
-			UserID:     userID,
+			Token:      token,
 			TransferID: transfer.ID,
 			FileCount:  transfer.FileCount,
 			BytesSize:  transfer.TotalByteSize,
@@ -81,12 +88,19 @@ func UploadDoneTemplateHandler() http.HandlerFunc {
 	}
 }
 
-// GetTransferTemplateHandler handles GET /transfer/{userID}/{transferID}
+// GetTransferTemplateHandler handles GET /transfer/{transferID}
 func GetTransferTemplateHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userID := r.PathValue("userID")
+		token := r.PathValue("token")
 		transferID := r.PathValue("transferID")
-		err := id.Validate(transferID)
+		userID, err := crypto.DecryptUserAndTransferID(token, transferID)
+		if err != nil {
+			slog.Error("Failed decrypting user ID", "error", err)
+			sendError(w, http.StatusBadRequest, "Transfer ID is invalid")
+			return
+		}
+
+		err = id.Validate(transferID)
 		if err != nil {
 			slog.Error("User passed invalid transfer ID", "error", err)
 			sendError(w, http.StatusBadRequest, "Transfer ID is invalid")

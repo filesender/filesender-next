@@ -1,5 +1,4 @@
-// Package utils contains small utility functions
-package utils
+package crypto
 
 import (
 	"crypto/sha256"

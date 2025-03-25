@@ -8,15 +8,15 @@
 </head>
 <body>
     <div class="wrapper">
-        <p>Uploaded {{ .FileCount }} file(s) ({{ .BytesSize }} bytes) to transfer {{ .TransferID }}</p>
+        <p>Uploaded {{ .FileCount }} file(s) ({{ .BytesSize }} bytes)</p>
 
-        <p id="dl">Download: transfer/{{ .UserID }}/{{ .TransferID }}</p>
+        <p id="dl">Download: transfer/{{ .TransferID }}/{{ .Token }}</p>
     </div>
 
     <script>
         document.body.onload = () => {
             const base = window.location.href.split('/upload/')[0];
-            document.querySelector("#dl").innerText = `Download: ${base}/transfer/{{ .UserID }}/{{ .TransferID }}`;
+            document.querySelector("#dl").innerText = `Download: ${base}/transfer/{{ .TransferID }}/{{ .Token }}`;
         }
     </script>
 </body>
