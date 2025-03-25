@@ -16,7 +16,7 @@ import (
 	"codeberg.org/filesender/filesender-next/internal/models"
 )
 
-// CreateTransferAPIHandler handles POST /api/v1/transfers
+// CreateTransferAPI handles POST /api/v1/transfers
 // Creates a transfer, returns a transfer object
 // This should be called before uploading
 func CreateTransferAPI() http.HandlerFunc {
@@ -73,7 +73,7 @@ func CreateTransferAPI() http.HandlerFunc {
 	}
 }
 
-// UploadAPIHandler handles POST /api/v1/upload
+// UploadAPI handles POST /api/v1/upload
 func UploadAPI(maxUploadSize int64) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, err := auth.Auth(r)

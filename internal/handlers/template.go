@@ -11,7 +11,7 @@ import (
 	"codeberg.org/filesender/filesender-next/internal/models"
 )
 
-// UploadTemplateHandler handles GET /{$}
+// UploadTemplate handles GET /{$}
 func UploadTemplate() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, err := auth.Auth(r)
@@ -34,7 +34,7 @@ func UploadTemplate() http.HandlerFunc {
 	}
 }
 
-// UploadDoneTemplateHandler handles GET /upload/{id}
+// UploadDoneTemplate handles GET /upload/{id}
 func UploadDoneTemplate() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, err := auth.Auth(r)
@@ -88,8 +88,8 @@ func UploadDoneTemplate() http.HandlerFunc {
 	}
 }
 
-// GetTransferTemplateHandler handles GET /transfer/{transferID}
-func GetTransferTemplate() http.HandlerFunc {
+// GetDownloadTemplate handles GET /transfer/{transferID}
+func GetDownloadTemplate() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		token := r.PathValue("token")
 		transferID := r.PathValue("transferID")

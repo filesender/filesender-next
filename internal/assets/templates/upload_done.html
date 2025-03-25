@@ -10,13 +10,13 @@
     <div class="wrapper">
         <p>Uploaded {{ .FileCount }} file(s) ({{ .BytesSize }} bytes)</p>
 
-        <p id="dl">Download: transfer/{{ .TransferID }}/{{ .Token }}</p>
+        <p id="dl">Download: download/{{ .TransferID }}/{{ .Token }}</p>
     </div>
 
     <script>
         document.body.onload = () => {
             const base = window.location.href.split('/upload/')[0];
-            document.querySelector("#dl").innerText = `Download: ${base}/transfer/{{ .TransferID }}/{{ .Token }}`;
+            document.querySelector("#dl").innerText = `Download: ${base}/download/{{ .TransferID }}/{{ .Token }}`;
         }
     </script>
 </body>
