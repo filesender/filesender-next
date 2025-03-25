@@ -53,13 +53,13 @@ func main() {
 
 	router := http.NewServeMux()
 	// API endpoints
-	router.HandleFunc("POST /api/v1/transfers", handlers.CreateTransferAPIHandler())
-	router.HandleFunc("POST /api/v1/upload", handlers.UploadAPIHandler(maxUploadSize))
+	router.HandleFunc("POST /api/v1/transfers", handlers.CreateTransferAPI())
+	router.HandleFunc("POST /api/v1/upload", handlers.UploadAPI(maxUploadSize))
 
 	// Page handlers
-	router.HandleFunc("GET /{$}", handlers.UploadTemplateHandler())
-	router.HandleFunc("GET /upload/{id}", handlers.UploadDoneTemplateHandler())
-	router.HandleFunc("GET /transfer/{transferID}/{token}", handlers.GetTransferTemplateHandler())
+	router.HandleFunc("GET /{$}", handlers.UploadTemplate())
+	router.HandleFunc("GET /upload/{id}", handlers.UploadDoneTemplate())
+	router.HandleFunc("GET /transfer/{transferID}/{token}", handlers.GetTransferTemplate())
 
 	// Serve static files
 	subFS, err := fs.Sub(assets.EmbeddedPublicFiles, "public")

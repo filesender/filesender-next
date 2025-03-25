@@ -12,7 +12,7 @@ import (
 )
 
 // UploadTemplateHandler handles GET /{$}
-func UploadTemplateHandler() http.HandlerFunc {
+func UploadTemplate() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, err := auth.Auth(r)
 		if err != nil {
@@ -35,7 +35,7 @@ func UploadTemplateHandler() http.HandlerFunc {
 }
 
 // UploadDoneTemplateHandler handles GET /upload/{id}
-func UploadDoneTemplateHandler() http.HandlerFunc {
+func UploadDoneTemplate() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, err := auth.Auth(r)
 		if err != nil {
@@ -89,7 +89,7 @@ func UploadDoneTemplateHandler() http.HandlerFunc {
 }
 
 // GetTransferTemplateHandler handles GET /transfer/{transferID}
-func GetTransferTemplateHandler() http.HandlerFunc {
+func GetTransferTemplate() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		token := r.PathValue("token")
 		transferID := r.PathValue("transferID")

@@ -19,7 +19,7 @@ import (
 // CreateTransferAPIHandler handles POST /api/v1/transfers
 // Creates a transfer, returns a transfer object
 // This should be called before uploading
-func CreateTransferAPIHandler() http.HandlerFunc {
+func CreateTransferAPI() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, err := auth.Auth(r)
 		if err != nil {
@@ -74,7 +74,7 @@ func CreateTransferAPIHandler() http.HandlerFunc {
 }
 
 // UploadAPIHandler handles POST /api/v1/upload
-func UploadAPIHandler(maxUploadSize int64) http.HandlerFunc {
+func UploadAPI(maxUploadSize int64) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, err := auth.Auth(r)
 		if err != nil {
