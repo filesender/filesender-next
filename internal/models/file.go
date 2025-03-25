@@ -12,7 +12,8 @@ import (
 
 // File model representing metadata
 type File struct {
-	ByteSize int `json:"byte_size"`
+	DownloadCount int `json:"download_count"`
+	ByteSize      int `json:"byte_size"`
 }
 
 // Create function creates a new file metadata file representing a file
