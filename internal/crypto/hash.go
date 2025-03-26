@@ -1,3 +1,4 @@
+// Package crypto contains hashing & enc/decrypting functions
 package crypto
 
 import (

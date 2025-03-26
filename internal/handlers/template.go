@@ -72,15 +72,8 @@ func UploadDoneTemplate() http.HandlerFunc {
 			return
 		}
 
-		token, err := crypto.EncryptUserAndTransferID(userID, transfer.ID)
-		if err != nil {
-			slog.Error("Failed encrypting user & transfer ID", "error", err)
-			sendError(w, http.StatusInternalServerError, "Failed encrypting user & transfer ID")
-			return
-		}
-
 		sendTemplate(w, "upload_done", uploadDoneTemplate{
-			Token:      token,
+			UserID:     userID,
 			TransferID: transfer.ID,
 			FileCount:  transfer.FileCount,
 			BytesSize:  transfer.TotalByteSize,
@@ -88,19 +81,12 @@ func UploadDoneTemplate() http.HandlerFunc {
 	}
 }
 
-// GetDownloadTemplate handles GET /transfer/{transferID}
+// GetDownloadTemplate handles GET /download/{userID}/{transferID}
 func GetDownloadTemplate() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		token := r.PathValue("token")
+		userID := r.PathValue("userID")
 		transferID := r.PathValue("transferID")
-		userID, err := crypto.DecryptUserAndTransferID(token, transferID)
-		if err != nil {
-			slog.Error("Failed decrypting user ID", "error", err)
-			sendError(w, http.StatusBadRequest, "Transfer ID is invalid")
-			return
-		}
-
-		err = id.Validate(transferID)
+		err := id.Validate(transferID)
 		if err != nil {
 			slog.Error("User passed invalid transfer ID", "error", err)
 			sendError(w, http.StatusBadRequest, "Transfer ID is invalid")
