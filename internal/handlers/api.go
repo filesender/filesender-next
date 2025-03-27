@@ -8,19 +8,18 @@ package handlers
 import (
 	"log/slog"
 	"net/http"
-	"path/filepath"
-	"strings"
 	"time"
 
 	"codeberg.org/filesender/filesender-next/internal/auth"
+	"codeberg.org/filesender/filesender-next/internal/crypto"
 	"codeberg.org/filesender/filesender-next/internal/id"
 	"codeberg.org/filesender/filesender-next/internal/models"
 )
 
-// CreateTransferAPIHandler handles POST /api/v1/transfers
+// CreateTransferAPI handles POST /api/v1/transfers
 // Creates a transfer, returns a transfer object
 // This should be called before uploading
-func CreateTransferAPIHandler() http.HandlerFunc {
+func CreateTransferAPI() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, err := auth.Auth(r)
 		if err != nil {
@@ -29,6 +28,13 @@ func CreateTransferAPIHandler() http.HandlerFunc {
 			return
 		}
 		slog.Info("user authenticated", "user_id", userID)
+
+		userID, err = crypto.HashToBase64(userID)
+		if err != nil {
+			slog.Info("failed hashing user ID", "error", err)
+			sendJSON(w, http.StatusInternalServerError, false, "Failed creating user ID", nil)
+			return
+		}
 
 		// Read requets body
 		var requestBody createTransferAPIRequest
@@ -51,8 +57,6 @@ func CreateTransferAPIHandler() http.HandlerFunc {
 
 		transfer := models.Transfer{
 			UserID:     userID,
-			Subject:    requestBody.Subject,
-			Message:    requestBody.Message,
 			ExpiryDate: expiryDate,
 		}
 		err = transfer.Create()
@@ -69,8 +73,8 @@ func CreateTransferAPIHandler() http.HandlerFunc {
 	}
 }
 
-// UploadAPIHandler handles POST /api/v1/upload
-func UploadAPIHandler(maxUploadSize int64) http.HandlerFunc {
+// UploadAPI handles POST /api/v1/upload
+func UploadAPI(maxUploadSize int64) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, err := auth.Auth(r)
 		if err != nil {
@@ -79,6 +83,13 @@ func UploadAPIHandler(maxUploadSize int64) http.HandlerFunc {
 			return
 		}
 		slog.Info("user authenticated", "user_id", userID)
+
+		userID, err = crypto.HashToBase64(userID)
+		if err != nil {
+			slog.Info("failed hashing user ID", "error", err)
+			sendJSON(w, http.StatusInternalServerError, false, "Failed creating user ID", nil)
+			return
+		}
 
 		r.Body = http.MaxBytesReader(w, r.Body, maxUploadSize)
 		if err := r.ParseMultipartForm(maxUploadSize); err != nil {
@@ -96,17 +107,6 @@ func UploadAPIHandler(maxUploadSize int64) http.HandlerFunc {
 		if err != nil {
 			sendJSON(w, http.StatusBadRequest, false, "Transfer ID is incorrectly formatted", nil)
 			return
-		}
-
-		relativePath := ""
-		relativePaths := r.MultipartForm.Value["relative_path"]
-		if len(relativePaths) == 1 {
-			relativePath = filepath.Clean(relativePaths[0])
-			if strings.Contains(relativePath, "..") {
-				slog.Error("Upload invalid relative path: trying to access parent directory")
-				sendJSON(w, http.StatusBadRequest, false, "Invalid relative path", nil)
-				return
-			}
 		}
 
 		transfer, err := models.GetTransferFromIDs(userID, transferID)
@@ -131,14 +131,14 @@ func UploadAPIHandler(maxUploadSize int64) http.HandlerFunc {
 			}
 		}()
 
-		err = HandleFileUpload(transfer, file, fileHeader, relativePath)
+		err = HandleFileUpload(transfer, file, fileHeader)
 		if err != nil {
 			slog.Error("Failed handling newly uploaded file!", "error", err)
 			sendJSON(w, http.StatusInternalServerError, false, "Handle file failed", nil)
 			return
 		}
 
-		err = transfer.NewFile(int(fileHeader.Size))
+		err = transfer.NewFile(fileHeader.Filename, int(fileHeader.Size))
 		if err != nil {
 			slog.Error("Failed adding new file to transfer object", "error", err)
 			sendJSON(w, http.StatusInternalServerError, false, "Handle file failed", nil)

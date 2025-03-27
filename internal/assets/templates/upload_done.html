@@ -4,11 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Upload success</title>
-    <link rel="stylesheet" href="styles/base.css">
+    <link rel="stylesheet" href="../styles/base.css">
 </head>
 <body>
     <div class="wrapper">
-        <p>Uploaded {{ .FileCount }} file(s) ({{ .BytesSize }} bytes) to transfer {{ .TransferID }}</p>
+        <p>Uploaded {{ .FileCount }} file(s) ({{ .BytesSize }} bytes)</p>
+
+        <p id="dl">Download: download/{{ .UserID }}/{{ .TransferID }}</p>
     </div>
+
+    <script>
+        document.body.onload = () => {
+            const base = window.location.href.split('/upload/')[0];
+            document.querySelector("#dl").innerText = `Download: ${base}/download/{{ .UserID }}/{{ .TransferID }}`;
+        }
+    </script>
 </body>
 </html>

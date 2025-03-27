@@ -72,3 +72,11 @@ div.flex.flex-col {
 div.flex.justify-center {
     justify-content: center;
 }
+
+table {
+    margin-bottom: 1rem;
+}
+
+th, td {
+    padding: 8px;
+}

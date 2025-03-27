@@ -1,23 +1,24 @@
 package models
 
 import (
+	"errors"
+	"fmt"
 	"log/slog"
 	"os"
 	"path/filepath"
 	"time"
 
 	"codeberg.org/filesender/filesender-next/internal/id"
-	"codeberg.org/filesender/filesender-next/internal/utils"
+	"codeberg.org/filesender/filesender-next/internal/json"
 )
 
 // Transfer model representing metadata
 type Transfer struct {
 	ID            string    `json:"id"`
 	UserID        string    `json:"user_id"`
+	FileNames     []string  `json:"file_names"`
 	FileCount     int       `json:"file_count"`
 	TotalByteSize int       `json:"total_byte_size"`
-	Subject       string    `json:"subject"`
-	Message       string    `json:"message"`
 	DownloadCount int       `json:"download_count"`
 	ExpiryDate    time.Time `json:"expiry_date"`
 	CreationDate  time.Time `json:"creation_date"`
@@ -42,7 +43,7 @@ func (transfer *Transfer) Create() error {
 
 	transfer.CreationDate = time.Now().UTC().Round(time.Second)
 
-	err = utils.WriteDataFromFile(transfer, filepath.Join(userDir, transfer.ID+".meta"))
+	err = json.WriteDataToFile(transfer, filepath.Join(userDir, transfer.ID+".meta"))
 	if err != nil {
 		slog.Error("Failed writing meta file", "error", err)
 		return err
@@ -55,7 +56,7 @@ func (transfer *Transfer) Create() error {
 func (transfer *Transfer) Update() error {
 	stateDir := os.Getenv("STATE_DIRECTORY")
 
-	err := utils.WriteDataFromFile(transfer, filepath.Join(stateDir, "uploads", transfer.UserID, transfer.ID+".meta"))
+	err := json.WriteDataToFile(transfer, filepath.Join(stateDir, "uploads", transfer.UserID, transfer.ID+".meta"))
 	if err != nil {
 		slog.Error("Failed writing meta file", "error", err)
 		return err
@@ -65,9 +66,10 @@ func (transfer *Transfer) Update() error {
 }
 
 // NewFile adds data of a new file to transfer
-func (transfer *Transfer) NewFile(byteSize int) error {
+func (transfer *Transfer) NewFile(fileName string, byteSize int) error {
 	transfer.TotalByteSize += byteSize
 	transfer.FileCount++
+	transfer.FileNames = append(transfer.FileNames, fileName)
 
 	err := transfer.Update()
 	if err != nil {
@@ -78,12 +80,23 @@ func (transfer *Transfer) NewFile(byteSize int) error {
 	return nil
 }
 
+// TransferExists checks if the transfer exists
+func TransferExists(userID string, transferID string) error {
+	stateDir := os.Getenv("STATE_DIRECTORY")
+
+	if _, err := os.Stat(filepath.Join(stateDir, "uploads", userID, transferID+".meta")); errors.Is(err, os.ErrNotExist) {
+		return fmt.Errorf("Transfer ID \"%s\" with user ID \"%s\" does not exist", transferID, userID)
+	}
+
+	return nil
+}
+
 // GetTransferFromIDs gets transfer based on user ID & transfer ID
 func GetTransferFromIDs(userID string, transferID string) (Transfer, error) {
 	stateDir := os.Getenv("STATE_DIRECTORY")
 	var transfer Transfer
 
-	err := utils.ReadDataFromFile(filepath.Join(stateDir, "uploads", userID, transferID+".meta"), &transfer)
+	err := json.ReadDataFromFile(filepath.Join(stateDir, "uploads", userID, transferID+".meta"), &transfer)
 	if err != nil {
 		slog.Error("Failed reading metadata", "error", err)
 		return transfer, err

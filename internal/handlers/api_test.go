@@ -16,7 +16,7 @@ import (
 )
 
 func TestCreateTransferAPIHandler(t *testing.T) {
-	handler := handlers.CreateTransferAPIHandler()
+	handler := handlers.CreateTransferAPI()
 
 	// Set a temporary directory
 	tempDir, err := os.MkdirTemp("", "test_uploads")
@@ -61,7 +61,7 @@ func TestCreateTransferAPIHandler(t *testing.T) {
 }
 
 func TestUploadAPIHandler(t *testing.T) {
-	handler := handlers.UploadAPIHandler(10 * 1024 * 1024) // 10 MB limit
+	handler := handlers.UploadAPI(10 * 1024 * 1024) // 10 MB limit
 
 	// Set a temporary directory
 	tempDir, err := os.MkdirTemp("", "test_uploads")
@@ -121,7 +121,7 @@ func TestUploadAPIHandler(t *testing.T) {
 
 	t.Run("Upload with valid transfer ID but no file", func(t *testing.T) {
 		transfer := models.Transfer{
-			UserID: "dummy_session",
+			UserID: "f4ZHx-yLnGfBdbhjzGtAP7hPora2QMFl6qcEdt1hJgk", // hashed "dummy_session"
 		}
 		err = transfer.Create()
 		if err != nil {
@@ -151,7 +151,7 @@ func TestUploadAPIHandler(t *testing.T) {
 
 	t.Run("Successful file upload", func(t *testing.T) {
 		transfer := models.Transfer{
-			UserID: "dummy_session",
+			UserID: "f4ZHx-yLnGfBdbhjzGtAP7hPora2QMFl6qcEdt1hJgk", // hashed "dummy_session"
 		}
 		err = transfer.Create()
 		if err != nil {
