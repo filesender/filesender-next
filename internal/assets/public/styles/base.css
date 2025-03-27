@@ -24,53 +24,8 @@ input[type=text], input[type=email], input[type=date], input[type=file], textare
     display: block;
 }
 
-div.flex {
-    display: flex;
-}
-
-div.grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-}
-
-div.flex.justify-around {
-    justify-content: space-around;
-}
-
-div.flex.justify-between {
-    justify-content: space-between;
-}
-
-div.flex.wrap {
-    flex-wrap: wrap;
-}
-
 .mt-4 {
     margin-top: 1rem;
-}
-
-div.gap-1 {
-    gap: 1rem;
-}
-
-div.border {
-    border: 1px solid #000;
-}
-
-.p-4 {
-    padding: 1rem;
-}
-
-div.flex-grow {
-    flex-grow: 1;
-}
-
-div.flex.flex-col {
-    flex-direction: column;
-}
-
-div.flex.justify-center {
-    justify-content: center;
 }
 
 table {
@@ -79,4 +34,16 @@ table {
 
 th, td {
     padding: 8px;
+}
+
+.w-200px {
+    width: 200px;
+}
+
+.justify-end {
+    justify-content: right;
+}
+
+.mb-0 {
+    margin-bottom: 0;
 }

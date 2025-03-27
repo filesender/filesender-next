@@ -11,6 +11,23 @@
         <p>Uploaded {{ .FileCount }} file(s) ({{ .BytesSize }} bytes)</p>
 
         <p id="dl">Download: download/{{ .UserID }}/{{ .TransferID }}</p>
+
+        <noscript>
+            <h3 class="mb-0">Add another file</h3>
+
+            <form action="../api/v1/upload" method="post" enctype="multipart/form-data">
+                <div class="w-200px">
+                    <label for="files-selector">Select file</label>
+                    <input name="file" id="files-selector" type="file"/>
+                </div>
+
+                <input type="hidden" name="transfer-id" value="{{ .TransferID }}">
+
+                <div class="mt-4">
+                    <input type="submit" value="Upload">
+                </div>
+            </form>
+        </noscript>
     </div>
 
     <script>

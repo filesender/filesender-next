@@ -1,4 +1,13 @@
 const form = document.querySelector("form");
+var transferId = null;
+
+document.body.onload = () => {
+    const filesSelector = document.querySelector("#files-selector");
+    const label = filesSelector.parentElement.querySelector("label");
+
+    filesSelector.setAttribute("multiple", "true");
+    label.innerText = "Select files";
+}
 
 /**
  * Dummy error handling function
@@ -9,55 +18,32 @@ const showError = msg => {
 }
 
 /**
- * Sends a request to initialise a new transfer before uploading files
- * @param {{subject: string|null, message: string|null, expiry_date: string|null}} requestData Transfer initialisation data
- * @returns {Promise<false | {id: number, user_id: string, file_count: number, total_byte_size: number, subject: string, message: string, download_count: number, expiry_date: string, creation_date: string}>} Either returns false when request failed, or the newly created transfer object
- */
-const createTransfer = async (requestData) => {
-    const response = await fetch("api/v1/transfer", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify(requestData)
-    });
-    const data = await response.json();
-    
-    if (data.success) {
-        return data.data.transfer;
-    }
-    return false;
-}
-
-/**
  * Uploads a file to a transfer
- * @param {number} transferId The transfer ID which the file is being uploaded to
+ * @param {string} expiryDate `YYYY-MM-DD` formatted expiry date of the transfer
  * @param {File} file 
  * @returns {Promise<bool>} If the transfer was successful or not
  */
-const uploadFile = async (transferId, file) => {
+const uploadFile = async (expiryDate, file) => {
     const formData = new FormData();
-    formData.append("transfer_id", transferId);
     formData.append("file", file);
+    formData.append("expiry-date", expiryDate);
 
-    if (file.webkitRelativePath) {
-        if (file.webkitRelativePath.split("/").slice(1, -1).join("/") !== "") {
-            showError("Not uploading relative files");
-            return false;
-        }
+    if (transferId !== null) {
+        formData.append("transfer-id", transferId);
     }
     
     const response = await fetch("api/v1/upload", {
         method: "POST",
         body: formData
     });
-    const data = await response.json();
 
-    if (data.success) {
+    if (response.status === 200) {
+        transferId = response.url.split('upload/')[1];
         return true
     }
 
-    showError(data.message);
+    showError("Something went wrong uploading file");
+    console.error(response.body)
     return false;
 }
 
@@ -65,32 +51,22 @@ form.addEventListener("submit", async e => {
     e.preventDefault();
 
     const formData = new FormData(form);
-    const folderInput = formData.getAll("folder-input");
-    const filesInput = formData.getAll("files-input");
-    const subject = formData.get("subject");
-    const message = formData.get("message");
-    const expiryDate = formData.get("expiry-date") + "T00:00:00Z";
+    const filesInput = formData.getAll("file");
+    const expiryDate = formData.get("expiry-date");
 
-    if (folderInput[0].size === 0 && filesInput[0].size === 0) {
+    if (filesInput[0].size === 0) {
         return showError("You have to select files");
     }
 
     var files = [
-        ...folderInput.filter(f => f.size !== 0),
         ...filesInput.filter(f => f.size !== 0)
     ];
-
-    const transfer = await createTransfer({
-        subject: subject === "" ? null : subject,
-        message: message === "" ? null : message,
-        "expiry_date": expiryDate
-    });
 
     for (let i = 0; i < files.length; i++) {
         let tries = 0;
         while (tries < 3) {
             try {
-                await uploadFile(transfer.id, files[i]);
+                await uploadFile(expiryDate, files[i]);
                 break;
             } catch (e) {
                 console.error("Error uploading", e);
@@ -99,5 +75,5 @@ form.addEventListener("submit", async e => {
         }
     }
 
-    window.location.replace(`upload/${transfer.id}`);
+    window.location.replace(`upload/${transferId}`);
 });

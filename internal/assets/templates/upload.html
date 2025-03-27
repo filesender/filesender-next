@@ -8,30 +8,19 @@
 </head>
 <body>
     <div class="wrapper">
-        <form action="" method="post" enctype="multipart/form-data">
-            <div class="flex justify-around border p-4">
-                <div>
-                    <label for="folder-selector">Select a folder</label>
-                    <input name="folder-input" id="folder-selector" type="file" webkitdirectory directory/>
-                </div>
-            
-                <div>
-                    <label for="files-selector">Select files</label>
-                    <input name="files-input" id="files-selector" type="file" multiple/>
-                </div>
+        <form action="api/v1/upload" method="post" enctype="multipart/form-data">
+            <div>
+                <label for="files-selector">Select file</label>
+                <input name="file" id="files-selector" type="file"/>
             </div>
 
-            <div class="grid wrap mt-4 gap-1">
-                <div class="flex border p-4 flex-col gap-1">
-                    <div>
-                        <label for="expiry_date">Expiry date *</label>
-                        <input name="expiry-date" id="expiry_date" type="date" value="{{ .DefaultDate }}" min="{{ .MinDate }}" max="{{ .MaxDate }}" required>
-                    </div>
-                </div>
+            <div class="mt-4">
+                <label for="expiry_date">Expiry date *</label>
+                <input name="expiry-date" id="expiry_date" type="date" value="{{ .DefaultDate }}" min="{{ .MinDate }}" max="{{ .MaxDate }}" required>
             </div>
 
-            <div class="flex mt-4 justify-center">
-                <input type="submit" value="Send">
+            <div class="mt-4">
+                <input type="submit" value="Upload">
             </div>
         </form>
     </div>

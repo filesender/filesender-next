@@ -66,3 +66,17 @@ func sendTemplate(w http.ResponseWriter, tmpl string, data any) {
 func sendError(w http.ResponseWriter, status int, message string) {
 	http.Error(w, message, status)
 }
+
+// Sends a redirect
+func sendRedirect(w http.ResponseWriter, status int, location string, aa string) error {
+	w.Header().Add("Location", location)
+	w.WriteHeader(status)
+
+	_, err := w.Write([]byte(aa))
+	if err != nil {
+		slog.Error("Failed writing empty response", "error", err)
+		return err
+	}
+
+	return nil
+}

@@ -8,57 +8,11 @@ import (
 	"net/http/httptest"
 	"os"
 	"path"
-	"strings"
 	"testing"
 
 	"codeberg.org/filesender/filesender-next/internal/handlers"
 	"codeberg.org/filesender/filesender-next/internal/models"
 )
-
-func TestCreateTransferAPIHandler(t *testing.T) {
-	handler := handlers.CreateTransferAPI()
-
-	// Set a temporary directory
-	tempDir, err := os.MkdirTemp("", "test_uploads")
-	if err != nil {
-		t.Fatalf("Failed to create temporary directory: %v", err)
-	}
-	defer func() {
-		if err := os.RemoveAll(tempDir); err != nil {
-			t.Errorf("Failed deleting temp directory: %v", err)
-		}
-	}()
-
-	err = os.Setenv("STATE_DIRECTORY", tempDir)
-	if err != nil {
-		t.Fatalf("Failed setting env var: %v", err)
-	}
-
-	t.Run("Unauthenticated User", func(t *testing.T) {
-		req, _ := http.NewRequest("POST", "/create", nil)
-		resp := httptest.NewRecorder()
-		handler.ServeHTTP(resp, req)
-
-		if resp.Code != http.StatusUnauthorized {
-			t.Errorf("Expected status %d, got %d", http.StatusUnauthorized, resp.Code)
-		}
-	})
-
-	t.Run("Valid Transfer Creation", func(t *testing.T) {
-		requestBody := `{"subject":"Test Transfer","message":"Test Message","expiry_date":null}`
-		req, _ := http.NewRequest("POST", "/create", strings.NewReader(requestBody))
-		req.Header.Set("REMOTE_USER", "dummy_session")
-		req.Header.Set("Content-Type", "application/json")
-		req.RemoteAddr = "127.0.0.1:12345"
-		resp := httptest.NewRecorder()
-
-		handler.ServeHTTP(resp, req)
-
-		if resp.Code != http.StatusCreated {
-			t.Errorf("Expected status %d, got %d", http.StatusCreated, resp.Code)
-		}
-	})
-}
 
 func TestUploadAPIHandler(t *testing.T) {
 	handler := handlers.UploadAPI(10 * 1024 * 1024) // 10 MB limit
