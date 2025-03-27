@@ -7,6 +7,7 @@ package handlers
 
 import (
 	"log/slog"
+	"mime/multipart"
 	"net/http"
 	"time"
 
@@ -83,38 +84,44 @@ func UploadAPI(maxUploadSize int64) http.HandlerFunc {
 			if err != nil {
 				slog.Error("Failed creating a new transfer", "error", err)
 				sendJSON(w, http.StatusInternalServerError, false, "Failed creating new transfer", nil)
+				return
 			}
 
 			slog.Info("Created a new transfer")
 		}
 
-		file, fileHeader, err := r.FormFile("file")
-		if err != nil {
-			slog.Error("Failed opening file", "error", err)
-			sendJSON(w, http.StatusInternalServerError, false, "Lost the file", nil)
-			return
-		}
-		defer func() {
-			if err := file.Close(); err != nil {
-				slog.Error("Failed closing file", "error", err)
+		for _, fileHeaders := range r.MultipartForm.File {
+			for _, fileHeader := range fileHeaders {
+				file, err := fileHeader.Open()
+				if err != nil {
+					slog.Error("Failed opening file!", "error", err)
+					sendJSON(w, http.StatusInternalServerError, false, "Failed opening file", nil)
+					return
+				}
+				defer func(f multipart.File) {
+					if err := f.Close(); err != nil {
+						slog.Error("Failed closing file", "error", err)
+					}
+				}(file)
+
+				err = HandleFileUpload(transfer, file, fileHeader)
+				if err != nil {
+					slog.Error("Failed handling newly uploaded file!", "error", err)
+					sendJSON(w, http.StatusInternalServerError, false, "Handle file failed", nil)
+					return
+				}
+
+				err = transfer.NewFile(fileHeader.Filename, int(fileHeader.Size))
+				if err != nil {
+					slog.Error("Failed adding new file to transfer object", "error", err)
+					sendJSON(w, http.StatusInternalServerError, false, "Handle file failed", nil)
+					return
+				}
+
+				slog.Debug("Successfully created new file", "user", userID, "transfer", transfer.ID, "file", fileHeader.Filename)
 			}
-		}()
-
-		err = HandleFileUpload(transfer, file, fileHeader)
-		if err != nil {
-			slog.Error("Failed handling newly uploaded file!", "error", err)
-			sendJSON(w, http.StatusInternalServerError, false, "Handle file failed", nil)
-			return
 		}
 
-		err = transfer.NewFile(fileHeader.Filename, int(fileHeader.Size))
-		if err != nil {
-			slog.Error("Failed adding new file to transfer object", "error", err)
-			sendJSON(w, http.StatusInternalServerError, false, "Handle file failed", nil)
-			return
-		}
-
-		slog.Debug("Successfully created new file", "user", userID, "transfer", transfer.ID, "file", fileHeader.Filename)
 		err = sendRedirect(w, http.StatusSeeOther, "../../upload/"+transfer.ID, transfer.ID) // Redirect to `/upload/<transfer_id>`
 
 		if err != nil {

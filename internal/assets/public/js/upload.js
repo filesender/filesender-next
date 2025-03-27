@@ -1,14 +1,6 @@
 const form = document.querySelector("form");
 var transferId = null;
 
-document.body.onload = () => {
-    const filesSelector = document.querySelector("#files-selector");
-    const label = filesSelector.parentElement.querySelector("label");
-
-    filesSelector.setAttribute("multiple", "true");
-    label.innerText = "Select files";
-}
-
 /**
  * Dummy error handling function
  * @param {string} msg Message to show to use
