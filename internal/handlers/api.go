@@ -7,7 +7,6 @@ package handlers
 
 import (
 	"log/slog"
-	"mime/multipart"
 	"net/http"
 	"time"
 
@@ -101,11 +100,11 @@ func UploadAPI(maxUploadSize int64) http.HandlerFunc {
 					sendJSON(w, http.StatusInternalServerError, false, "Failed opening file", nil)
 					return
 				}
-				defer func(f multipart.File) {
-					if err := f.Close(); err != nil {
+				defer func() {
+					if err := file.Close(); err != nil {
 						slog.Error("Failed closing file", "error", err)
 					}
-				}(file)
+				}()
 
 				err = HandleFileUpload(transfer, file, fileHeader)
 				if err != nil {

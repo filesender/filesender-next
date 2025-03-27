@@ -23,7 +23,11 @@ func TestUploadAPIHandler(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temporary directory: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() {
+		if err := os.RemoveAll(tempDir); err != nil {
+			t.Errorf("Failed closing file %v", err)
+		}
+	}()
 
 	err = os.Setenv("STATE_DIRECTORY", tempDir)
 	if err != nil {
