@@ -90,8 +90,11 @@ func UploadAPI(maxUploadSize int64) http.HandlerFunc {
 			slog.Info("Created a new transfer")
 		}
 
+		fileCount := 0
 		for _, fileHeaders := range r.MultipartForm.File {
 			for _, fileHeader := range fileHeaders {
+				fileCount++
+
 				file, err := fileHeader.Open()
 				if err != nil {
 					slog.Error("Failed opening file!", "error", err)
@@ -120,6 +123,10 @@ func UploadAPI(maxUploadSize int64) http.HandlerFunc {
 
 				slog.Debug("Successfully created new file", "user", userID, "transfer", transfer.ID, "file", fileHeader.Filename)
 			}
+		}
+
+		if fileCount == 0 {
+			sendError(w, http.StatusBadRequest, "You need to select files")
 		}
 
 		err = sendRedirect(w, http.StatusSeeOther, "../../upload/"+transfer.ID, transfer.ID) // Redirect to `/upload/<transfer_id>`
