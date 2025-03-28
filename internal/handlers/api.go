@@ -143,8 +143,6 @@ func UploadAPI(maxUploadSize int64) http.HandlerFunc {
 // Expects query parameters with file names as key if not accessed from `/all`
 func DownloadAPI(all bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		slog.Info("Requested", "url", r.URL)
-
 		userID := r.PathValue("userID")
 		transferID := r.PathValue("transferID")
 		err := id.Validate(transferID)
