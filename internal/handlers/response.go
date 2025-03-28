@@ -1,12 +1,15 @@
 package handlers
 
 import (
+	"archive/zip"
 	"embed"
 	"encoding/json"
 	"html/template"
 	"log/slog"
 	"net/http"
 	"path"
+
+	"codeberg.org/filesender/filesender-next/internal/models"
 )
 
 var templatesFS embed.FS
@@ -79,4 +82,39 @@ func sendRedirect(w http.ResponseWriter, status int, location string, body strin
 	}
 
 	return nil
+}
+
+// Sends zipped file
+func sendZippedFiles(w http.ResponseWriter, transfer *models.Transfer, files []string) {
+	w.Header().Set("Content-Type", "application/zip")
+	w.Header().Set("Content-Disposition", `attachment; filename="files.zip"`)
+
+	zipWriter := zip.NewWriter(w)
+	defer func() {
+		err := zipWriter.Close()
+		if err != nil {
+			slog.Error("Failed closing zip writer", "error", err)
+		}
+	}()
+
+	fileCount := 0
+	for _, fname := range files {
+		file, err := getFile(transfer, fname)
+		if err != nil {
+			slog.Error("Failed getting file", "file", fname, "error", err)
+			continue
+		}
+
+		err = addFileToZip(zipWriter, file.Path)
+		if err != nil {
+			slog.Error("Error adding file to zip", "file", file.Path, "error", err)
+			continue
+		}
+
+		fileCount++
+	}
+
+	if fileCount == 0 {
+		sendError(w, http.StatusInternalServerError, "No files available or could not be zipped")
+	}
 }

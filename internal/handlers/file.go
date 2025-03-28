@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"archive/zip"
 	"fmt"
 	"io"
 	"log/slog"
@@ -58,7 +59,33 @@ func FileUpload(transfer models.Transfer, file multipart.File, fileHeader *multi
 	return nil
 }
 
-func getFile(transfer models.Transfer, fileName string) (models.File, error) {
+func addFileToZip(zipWriter *zip.Writer, path string) error {
+	f, err := os.Open(path)
+	if err != nil {
+		slog.Error("Failed opening file", "file", path, "error", err)
+		return err
+	}
+	defer func() {
+		err := f.Close()
+		if err != nil {
+			slog.Error("Failed closing file", "file", path, "error", err)
+		}
+	}()
+
+	wr, err := zipWriter.Create(filepath.Base(path))
+	if err != nil {
+		slog.Error("Failed to create zip entry", "file", path, "error", err)
+		return err
+	}
+
+	_, err = io.Copy(wr, f)
+	if err != nil {
+		slog.Error("Failed to write file to zip", "file", path, "error", err)
+	}
+	return err
+}
+
+func getFile(transfer *models.Transfer, fileName string) (models.File, error) {
 	var file models.File
 
 	exists, err := models.FileExists(transfer.UserID, transfer.ID, fileName)

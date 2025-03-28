@@ -84,19 +84,12 @@ func UploadDoneTemplate() http.HandlerFunc {
 // GetDownloadTemplate handles GET /download/{userID}/{transferID}
 func GetDownloadTemplate() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userID := r.PathValue("userID")
-		transferID := r.PathValue("transferID")
-		err := id.Validate(transferID)
+		userID, transferID := r.PathValue("userID"), r.PathValue("transferID")
+
+		err := models.ValidateTransfer(userID, transferID)
 		if err != nil {
 			slog.Error("User passed invalid transfer ID", "error", err)
 			sendError(w, http.StatusBadRequest, "Transfer ID is invalid")
-			return
-		}
-
-		err = models.TransferExists(userID, transferID)
-		if err != nil {
-			slog.Error("Could not find transfer", "error", err)
-			sendError(w, http.StatusNotFound, "Could not find transfer")
 			return
 		}
 

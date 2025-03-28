@@ -80,8 +80,24 @@ func (transfer *Transfer) NewFile(fileName string, byteSize int) error {
 	return nil
 }
 
-// TransferExists checks if the transfer exists
-func TransferExists(userID string, transferID string) error {
+// ValidateTransfer checks if transfer ID is valid & if the transfer exists
+func ValidateTransfer(userID, transferID string) error {
+	err := id.Validate(transferID)
+	if err != nil {
+		slog.Error("Invalid transfer ID", "error", err)
+		return fmt.Errorf("transfer ID is invalid")
+	}
+
+	err = transferExists(userID, transferID)
+	if err != nil {
+		slog.Error("Transfer not found", "error", err)
+		return fmt.Errorf("could not find transfer")
+	}
+
+	return nil
+}
+
+func transferExists(userID string, transferID string) error {
 	stateDir := os.Getenv("STATE_DIRECTORY")
 
 	if _, err := os.Stat(filepath.Join(stateDir, "uploads", userID, transferID+".meta")); errors.Is(err, os.ErrNotExist) {
