@@ -121,6 +121,6 @@ func GetDownloadTemplate() http.HandlerFunc {
 			})
 		}
 
-		sendTemplate(w, "transfer", data)
+		sendTemplate(w, "download", data)
 	}
 }

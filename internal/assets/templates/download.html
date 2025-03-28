@@ -27,9 +27,9 @@
                     <td>{{ .FileName }}</td>
                     <td>{{ .ByteSize }} bytes</td>
                     <td>
-                        <button>
-                            Download
-                        </button>
+                        <a href="../../api/v1/download/{{ $.UserID }}/{{ $.TransferID }}?{{ .FileName }}=on" target="_blank">
+                            <button type="button">Download</button>
+                        </a>
                     </td>
                 </tr>
                 {{ end }}
