@@ -63,7 +63,7 @@ func TestHandleFileUpload_Success(t *testing.T) {
 		ID:     "testing123",
 		UserID: "weeb",
 	}
-	err = os.MkdirAll(filepath.Join(tempDir, "uploads", transfer.UserID), os.ModePerm)
+	err = os.MkdirAll(filepath.Join(tempDir, transfer.UserID), os.ModePerm)
 	if err != nil {
 		t.Fatalf("Failed to create user uploads directory: %v", err)
 	}
@@ -85,7 +85,7 @@ func TestHandleFileUpload_Success(t *testing.T) {
 	}
 
 	// Verify that the file was created
-	uploadDest := path.Join(tempDir, "uploads", transfer.UserID, transfer.ID, fileHeader.Filename)
+	uploadDest := path.Join(tempDir, transfer.UserID, transfer.ID, fileHeader.Filename)
 	if _, err := os.Stat(uploadDest); os.IsNotExist(err) {
 		t.Fatalf("Expected file %s to exist, but it does not", uploadDest)
 	}
@@ -141,7 +141,7 @@ func TestHandleFileUpload_Failure_FileCreation(t *testing.T) {
 		ID:     "testing123",
 		UserID: "weeb",
 	}
-	err = os.MkdirAll(filepath.Join(tempDir, "uploads", transfer.UserID), os.ModePerm)
+	err = os.MkdirAll(filepath.Join(tempDir, transfer.UserID), os.ModePerm)
 	if err != nil {
 		t.Fatalf("Failed to create user uploads directory: %v", err)
 	}

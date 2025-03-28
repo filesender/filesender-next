@@ -5,7 +5,6 @@ import (
 	"errors"
 	"log/slog"
 	"os"
-	"path"
 	"path/filepath"
 
 	"codeberg.org/filesender/filesender-next/internal/json"
@@ -20,9 +19,7 @@ type File struct {
 
 // Create function creates a new file metadata file representing a file
 func (file *File) Create(userID string, transferID string, fileName string) error {
-	uploadsPath := path.Join(os.Getenv("STATE_DIRECTORY"), "uploads")
-
-	err := json.WriteDataToFile(file, filepath.Join(uploadsPath, userID, transferID, fileName+".meta"))
+	err := json.WriteDataToFile(file, filepath.Join(os.Getenv("STATE_DIRECTORY"), userID, transferID, fileName+".meta"))
 	if err != nil {
 		slog.Error("Failed writing file data", "error", err)
 	}
@@ -32,8 +29,7 @@ func (file *File) Create(userID string, transferID string, fileName string) erro
 
 // FileExists checks if the file exists
 func FileExists(userID string, transferID string, fileName string) (bool, error) {
-	uploadsPath := path.Join(os.Getenv("STATE_DIRECTORY"), "uploads")
-	filePath := filepath.Join(uploadsPath, userID, transferID, fileName+".meta")
+	filePath := filepath.Join(os.Getenv("STATE_DIRECTORY"), userID, transferID, fileName+".meta")
 
 	_, err := os.Stat(filePath)
 	if err == nil {
@@ -50,8 +46,7 @@ func FileExists(userID string, transferID string, fileName string) (bool, error)
 // GetFileFromName creates new File object from given user ID, transfer ID, and file name
 // Errors when file does not exist
 func GetFileFromName(userID string, transferID string, fileName string) (File, error) {
-	uploadsPath := path.Join(os.Getenv("STATE_DIRECTORY"), "uploads")
-	filePath := filepath.Join(uploadsPath, userID, transferID, fileName)
+	filePath := filepath.Join(os.Getenv("STATE_DIRECTORY"), userID, transferID, fileName)
 	var file File
 
 	err := json.ReadDataFromFile(filePath+".meta", &file)

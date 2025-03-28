@@ -102,7 +102,7 @@ func TestUploadAPIHandler(t *testing.T) {
 			t.Errorf("Expected status %d, got %d", http.StatusSeeOther, resp.Code)
 		}
 
-		uploadedPath := path.Join(tempDir, "uploads", transfer.UserID, transfer.ID, "testfile.txt")
+		uploadedPath := path.Join(tempDir, transfer.UserID, transfer.ID, "testfile.txt")
 		if _, err := os.Stat(uploadedPath); errors.Is(err, os.ErrNotExist) {
 			t.Errorf("Expected uploaded file to exist: %s", uploadedPath)
 		}

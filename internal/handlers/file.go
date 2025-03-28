@@ -15,17 +15,8 @@ import (
 
 // FileUpload handles a new file uploaded
 func FileUpload(transfer models.Transfer, file multipart.File, fileHeader *multipart.FileHeader) error {
-	// Create uploads folder if not exist
-	uploadsPath := path.Join(os.Getenv("STATE_DIRECTORY"), "uploads")
-	if _, err := os.Stat(uploadsPath); os.IsNotExist(err) {
-		err = os.Mkdir(uploadsPath, os.ModePerm)
-		if err != nil {
-			return err
-		}
-	}
-
 	// Create transfer folder if not exists
-	uploadDest := filepath.Clean(path.Join(uploadsPath, transfer.UserID, transfer.ID))
+	uploadDest := filepath.Clean(path.Join(os.Getenv("STATE_DIRECTORY"), transfer.UserID, transfer.ID))
 	if _, err := os.Stat(uploadDest); os.IsNotExist(err) {
 		err = os.Mkdir(uploadDest, os.ModePerm)
 		if err != nil {

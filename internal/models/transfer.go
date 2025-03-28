@@ -34,7 +34,7 @@ func (transfer *Transfer) Create() error {
 	}
 	transfer.ID = transferID
 
-	userDir := filepath.Clean(filepath.Join(stateDir, "uploads", transfer.UserID))
+	userDir := filepath.Clean(filepath.Join(stateDir, transfer.UserID))
 	err = os.MkdirAll(userDir, os.ModePerm)
 	if err != nil {
 		slog.Error("Failed creating user directory", "error", err)
@@ -56,7 +56,7 @@ func (transfer *Transfer) Create() error {
 func (transfer *Transfer) Update() error {
 	stateDir := os.Getenv("STATE_DIRECTORY")
 
-	err := json.WriteDataToFile(transfer, filepath.Join(stateDir, "uploads", transfer.UserID, transfer.ID+".meta"))
+	err := json.WriteDataToFile(transfer, filepath.Join(stateDir, transfer.UserID, transfer.ID+".meta"))
 	if err != nil {
 		slog.Error("Failed writing meta file", "error", err)
 		return err
@@ -100,7 +100,7 @@ func ValidateTransfer(userID, transferID string) error {
 func transferExists(userID string, transferID string) error {
 	stateDir := os.Getenv("STATE_DIRECTORY")
 
-	if _, err := os.Stat(filepath.Join(stateDir, "uploads", userID, transferID+".meta")); errors.Is(err, os.ErrNotExist) {
+	if _, err := os.Stat(filepath.Join(stateDir, userID, transferID+".meta")); errors.Is(err, os.ErrNotExist) {
 		return fmt.Errorf("Transfer ID \"%s\" with user ID \"%s\" does not exist", transferID, userID)
 	}
 
@@ -112,7 +112,7 @@ func GetTransferFromIDs(userID string, transferID string) (Transfer, error) {
 	stateDir := os.Getenv("STATE_DIRECTORY")
 	var transfer Transfer
 
-	err := json.ReadDataFromFile(filepath.Join(stateDir, "uploads", userID, transferID+".meta"), &transfer)
+	err := json.ReadDataFromFile(filepath.Join(stateDir, userID, transferID+".meta"), &transfer)
 	if err != nil {
 		slog.Error("Failed reading metadata", "error", err)
 		return transfer, err
