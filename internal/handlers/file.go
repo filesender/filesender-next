@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"io"
 	"log/slog"
 	"mime/multipart"
@@ -11,8 +12,8 @@ import (
 	"codeberg.org/filesender/filesender-next/internal/models"
 )
 
-// HandleFileUpload handles a new file uploaded
-func HandleFileUpload(transfer models.Transfer, file multipart.File, fileHeader *multipart.FileHeader) error {
+// FileUpload handles a new file uploaded
+func FileUpload(transfer models.Transfer, file multipart.File, fileHeader *multipart.FileHeader) error {
 	// Create uploads folder if not exist
 	uploadsPath := path.Join(os.Getenv("STATE_DIRECTORY"), "uploads")
 	if _, err := os.Stat(uploadsPath); os.IsNotExist(err) {
@@ -55,4 +56,25 @@ func HandleFileUpload(transfer models.Transfer, file multipart.File, fileHeader 
 	}
 
 	return nil
+}
+
+func getFile(transfer models.Transfer, fileName string) (models.File, error) {
+	var file models.File
+
+	exists, err := models.FileExists(transfer.UserID, transfer.ID, fileName)
+	if err != nil {
+		return file, err
+	}
+
+	if !exists {
+		slog.Error("File does not exist!", "userID", transfer.UserID, "transferID", transfer.ID, "fileName", fileName)
+		return file, fmt.Errorf("file does not exist: %s", fileName)
+	}
+
+	file, err = models.GetFileFromName(transfer.UserID, transfer.ID, fileName)
+	if err != nil {
+		return file, err
+	}
+
+	return file, nil
 }

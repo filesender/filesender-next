@@ -68,11 +68,11 @@ func sendError(w http.ResponseWriter, status int, message string) {
 }
 
 // Sends a redirect
-func sendRedirect(w http.ResponseWriter, status int, location string, aa string) error {
+func sendRedirect(w http.ResponseWriter, status int, location string, body string) error {
 	w.Header().Add("Location", location)
 	w.WriteHeader(status)
 
-	_, err := w.Write([]byte(aa))
+	_, err := w.Write([]byte(body))
 	if err != nil {
 		slog.Error("Failed writing empty response", "error", err)
 		return err

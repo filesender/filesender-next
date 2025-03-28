@@ -6,8 +6,12 @@
 package handlers
 
 import (
+	"archive/zip"
+	"io"
 	"log/slog"
 	"net/http"
+	"os"
+	"path/filepath"
 	"time"
 
 	"codeberg.org/filesender/filesender-next/internal/auth"
@@ -106,7 +110,7 @@ func UploadAPI(maxUploadSize int64) http.HandlerFunc {
 					}
 				}()
 
-				err = HandleFileUpload(transfer, file, fileHeader)
+				err = FileUpload(transfer, file, fileHeader)
 				if err != nil {
 					slog.Error("Failed handling newly uploaded file!", "error", err)
 					sendJSON(w, http.StatusInternalServerError, false, "Handle file failed", nil)
@@ -129,9 +133,123 @@ func UploadAPI(maxUploadSize int64) http.HandlerFunc {
 		}
 
 		err = sendRedirect(w, http.StatusSeeOther, "../../upload/"+transfer.ID, transfer.ID) // Redirect to `/upload/<transfer_id>`
-
 		if err != nil {
 			sendError(w, http.StatusInternalServerError, "Failed sending redirect")
+		}
+	}
+}
+
+// DownloadAPI handles `GET /api/v1/download/{userID}/{transferID}` AND `GET /api/v1/download/{userID}/{transferID}/all`
+// Expects query parameters with file names as key if not accessed from `/all`
+func DownloadAPI(all bool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		slog.Info("Requested", "url", r.URL)
+
+		userID := r.PathValue("userID")
+		transferID := r.PathValue("transferID")
+		err := id.Validate(transferID)
+		if err != nil {
+			slog.Error("User passed invalid transfer ID", "error", err)
+			sendError(w, http.StatusBadRequest, "Transfer ID is invalid")
+			return
+		}
+
+		err = models.TransferExists(userID, transferID)
+		if err != nil {
+			slog.Error("Could not find transfer", "error", err)
+			sendError(w, http.StatusNotFound, "Could not find transfer")
+			return
+		}
+
+		transfer, err := models.GetTransferFromIDs(userID, transferID)
+		if err != nil {
+			slog.Error("Failed getting transfer from id", "error", err)
+			sendError(w, http.StatusInternalServerError, "Failed getting specified transfer")
+			return
+		}
+
+		// contains file paths
+		var files []string
+		if all {
+			files = transfer.FileNames
+		} else {
+			err := r.ParseForm()
+			if err != nil {
+				slog.Error("Failed parsing request body", "error", err)
+			}
+
+			for k := range r.Form {
+				files = append(files, k)
+			}
+		}
+
+		parent := "../../../.."
+		if all {
+			parent += "/.."
+		}
+
+		if len(files) == 0 {
+			slog.Info("User accessed download API endpoint without any files selected!")
+			err := sendRedirect(w, http.StatusSeeOther, filepath.Join(parent, "download", transfer.UserID, transfer.ID), "")
+			if err != nil {
+				slog.Error("Failed redirecting", "error", err)
+			}
+			return
+
+		}
+
+		w.Header().Set("Content-Type", "application/zip")
+		w.Header().Set("Content-Disposition", `attachment; filename="files.zip"`)
+
+		zipWriter := zip.NewWriter(w)
+		defer func() {
+			err := zipWriter.Close()
+			if err != nil {
+				slog.Error("Failed closing zip writer", "error", err)
+			}
+		}()
+
+		fileCount := 0
+		for i := range files {
+			file, err := getFile(transfer, files[i])
+			if err != nil {
+				slog.Error("Failed getting file", "error", err)
+				continue // Skip file on fail
+			}
+
+			f, err := os.Open(file.Path)
+			if err != nil {
+				slog.Error("Failed to open file", "file", file.Path, "error", err)
+				continue
+			}
+			defer func() {
+				err := f.Close()
+				if err != nil {
+					slog.Error("Failed closing file", "file", file.Path, "error", err)
+				}
+			}()
+
+			wr, err := zipWriter.Create(filepath.Base(file.Path))
+			if err != nil {
+				slog.Error("Failed to create zip entry", "file", file.Path, "error", err)
+				continue
+			}
+
+			_, err = io.Copy(wr, f)
+			if err != nil {
+				slog.Error("Failed to write file to zip", "file", file.Path, "error", err)
+				continue
+			}
+
+			fileCount++
+		}
+
+		if fileCount == 0 {
+			// Just extra check, if no files have been added we just errored hard..
+			err := sendRedirect(w, http.StatusSeeOther, filepath.Join(parent, "download", transfer.UserID, transfer.ID), "")
+			if err != nil {
+				slog.Error("Failed redirecting", "error", err)
+			}
 		}
 	}
 }

@@ -108,8 +108,10 @@ func GetDownloadTemplate() http.HandlerFunc {
 		}
 
 		data := getTransferTemplate{
-			FileCount: transfer.FileCount,
-			ByteSize:  transfer.TotalByteSize,
+			FileCount:  transfer.FileCount,
+			ByteSize:   transfer.TotalByteSize,
+			UserID:     userID,
+			TransferID: transferID,
 		}
 
 		for i := range transfer.FileCount {

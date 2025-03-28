@@ -79,7 +79,7 @@ func TestHandleFileUpload_Success(t *testing.T) {
 		}
 	}()
 
-	err = handlers.HandleFileUpload(transfer, file, fileHeader)
+	err = handlers.FileUpload(transfer, file, fileHeader)
 	if err != nil {
 		t.Fatalf("HandleFileUpload failed: %v", err)
 	}
@@ -114,7 +114,7 @@ func TestHandleFileUpload_Failure_InvalidDirectory(t *testing.T) {
 	}()
 
 	// Expect an error
-	err = handlers.HandleFileUpload(transfer, file, fileHeader)
+	err = handlers.FileUpload(transfer, file, fileHeader)
 	if err == nil {
 		t.Fatal("Expected an error but got nil")
 	}
@@ -161,7 +161,7 @@ func TestHandleFileUpload_Failure_FileCreation(t *testing.T) {
 	fileHeader.Filename = ""
 
 	// Expect an error
-	err = handlers.HandleFileUpload(transfer, file, fileHeader)
+	err = handlers.FileUpload(transfer, file, fileHeader)
 	if err == nil {
 		t.Fatal("Expected an error but got nil")
 	}

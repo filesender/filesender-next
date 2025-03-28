@@ -10,37 +10,41 @@
     <div class="wrapper">
         <p>{{ .FileCount }} file(s) ({{ .ByteSize }} bytes)</p>
 
-        <table>
-            <tr>
-                <th></th>
-                <th>File name</th>
-                <th>Byte size</th>
-                <th></th>
-            </tr>
+        <form action="../../api/v1/download/{{ .UserID }}/{{ .TransferID }}" method="get" target="_blank">
+            <table>
+                <tr>
+                    <th></th>
+                    <th>File name</th>
+                    <th>Byte size</th>
+                    <th></th>
+                </tr>
+    
+                {{ range .Files }}
+                <tr>
+                    <td>
+                        <input type="checkbox" name="{{ .FileName }}">
+                    </td>
+                    <td>{{ .FileName }}</td>
+                    <td>{{ .ByteSize }} bytes</td>
+                    <td>
+                        <button>
+                            Download
+                        </button>
+                    </td>
+                </tr>
+                {{ end }}
+            </table>
+    
+            <button>
+                Download Selected
+            </button>
+        </form>
 
-            {{ range .Files }}
-            <tr>
-                <td>
-                    <input type="checkbox" name="{{ .FileName }}">
-                </td>
-                <td>{{ .FileName }}</td>
-                <td>{{ .ByteSize }} bytes</td>
-                <td>
-                    <button>
-                        Download
-                    </button>
-                </td>
-            </tr>
-            {{ end }}
-        </table>
-
-        <button>
-            Download Selected
-        </button>
-
-        <button>
-            Download All
-        </button>
+        <form action="../../api/v1/download/{{ .UserID }}/{{ .TransferID }}/all" method="get" target="_blank">
+            <button class="mt-4">
+                Download All
+            </button>
+        </form>
     </div>
 </body>
 </html>

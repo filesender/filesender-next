@@ -54,6 +54,8 @@ func main() {
 	router := http.NewServeMux()
 	// API endpoints
 	router.HandleFunc("POST /api/v1/upload", handlers.UploadAPI(maxUploadSize))
+	router.HandleFunc("GET /api/v1/download/{userID}/{transferID}", handlers.DownloadAPI(false))
+	router.HandleFunc("GET /api/v1/download/{userID}/{transferID}/all", handlers.DownloadAPI(true))
 
 	// Page handlers
 	router.HandleFunc("GET /{$}", handlers.UploadTemplate())
