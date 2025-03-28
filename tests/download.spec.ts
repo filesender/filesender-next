@@ -18,7 +18,7 @@ test('should download link be available', async ({ page }) => {
     }
 });
 
-test('should download', async ({ page, context }) => {
+test('should download', async ({ page }) => {
     const { cleanup } = await uploadTestFile(page);
     try {
         const uploadPageBody = await page.content();
