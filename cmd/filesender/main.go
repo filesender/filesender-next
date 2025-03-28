@@ -43,7 +43,7 @@ func main() {
 		slog.Error("environment variable \"STATE_DIRECTORY\" not set")
 		os.Exit(1)
 	}
-	err = os.MkdirAll(stateDir, 0700)
+	err = os.MkdirAll(stateDir, 0o700)
 	if err != nil {
 		slog.Error("Failed creating state directory", "error", err)
 	}

@@ -18,7 +18,7 @@ func FileUpload(transfer models.Transfer, file multipart.File, fileHeader *multi
 	// Create transfer folder if not exists
 	uploadDest := filepath.Clean(path.Join(os.Getenv("STATE_DIRECTORY"), transfer.UserID, transfer.ID))
 	if _, err := os.Stat(uploadDest); os.IsNotExist(err) {
-		err = os.Mkdir(uploadDest, 0700)
+		err = os.Mkdir(uploadDest, 0o700)
 		if err != nil {
 			return err
 		}
@@ -42,7 +42,7 @@ func FileUpload(transfer models.Transfer, file multipart.File, fileHeader *multi
 	meta := models.File{
 		ByteSize: int(fileHeader.Size),
 	}
-	err = meta.Create(transfer.UserID, transfer.ID, fileHeader.Filename)
+	err = meta.Save(transfer.UserID, transfer.ID, fileHeader.Filename)
 	if err != nil {
 		return err
 	}

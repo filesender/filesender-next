@@ -176,6 +176,14 @@ func DownloadAPI(all bool) http.HandlerFunc {
 			return
 		}
 
+		transfer.DownloadCount++
+		err = transfer.Save()
+		if err != nil {
+			slog.Error("Failed saving new transfer data", "error", err)
+			sendError(w, http.StatusInternalServerError, "Failed saving new transfer data")
+			return
+		}
+
 		sendZippedFiles(w, &transfer, files)
 	}
 }

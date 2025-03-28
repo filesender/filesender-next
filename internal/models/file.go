@@ -17,14 +17,15 @@ type File struct {
 	Path          string
 }
 
-// Create function creates a new file metadata file representing a file
-func (file *File) Create(userID string, transferID string, fileName string) error {
+// Save the current Transfer state to disk
+func (file *File) Save(userID string, transferID string, fileName string) error {
 	err := json.WriteDataToFile(file, filepath.Join(os.Getenv("STATE_DIRECTORY"), userID, transferID, fileName+".meta"))
 	if err != nil {
-		slog.Error("Failed writing file data", "error", err)
+		slog.Error("Failed writing meta file", "error", err)
+		return err
 	}
 
-	return err
+	return nil
 }
 
 // FileExists checks if the file exists

@@ -111,6 +111,13 @@ func sendZippedFiles(w http.ResponseWriter, transfer *models.Transfer, files []s
 			continue
 		}
 
+		file.DownloadCount++
+		err = file.Save(transfer.UserID, transfer.ID, fname)
+		if err != nil {
+			slog.Error("Failed saving meta file", "file", file.Path, "error", err)
+			// it wouldn't make sense to `continue` here
+		}
+
 		fileCount++
 	}
 

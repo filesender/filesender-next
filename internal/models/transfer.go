@@ -35,25 +35,18 @@ func (transfer *Transfer) Create() error {
 	transfer.ID = transferID
 
 	userDir := filepath.Clean(filepath.Join(stateDir, transfer.UserID))
-	err = os.MkdirAll(userDir, 0700)
+	err = os.MkdirAll(userDir, 0o700)
 	if err != nil {
 		slog.Error("Failed creating user directory", "error", err)
 		return err
 	}
 
 	transfer.CreationDate = time.Now().UTC().Round(time.Second)
-
-	err = json.WriteDataToFile(transfer, filepath.Join(userDir, transfer.ID+".meta"))
-	if err != nil {
-		slog.Error("Failed writing meta file", "error", err)
-		return err
-	}
-
-	return nil
+	return transfer.Save()
 }
 
-// Update saves the current Transfer state to disk
-func (transfer *Transfer) Update() error {
+// Save the current Transfer state to disk
+func (transfer *Transfer) Save() error {
 	stateDir := os.Getenv("STATE_DIRECTORY")
 
 	err := json.WriteDataToFile(transfer, filepath.Join(stateDir, transfer.UserID, transfer.ID+".meta"))
@@ -71,7 +64,7 @@ func (transfer *Transfer) NewFile(fileName string, byteSize int) error {
 	transfer.FileCount++
 	transfer.FileNames = append(transfer.FileNames, fileName)
 
-	err := transfer.Update()
+	err := transfer.Save()
 	if err != nil {
 		slog.Error("Failed adding new file data to transfer metadata", "error", err)
 		return err
