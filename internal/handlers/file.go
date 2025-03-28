@@ -18,13 +18,13 @@ func FileUpload(transfer models.Transfer, file multipart.File, fileHeader *multi
 	// Create transfer folder if not exists
 	uploadDest := filepath.Clean(path.Join(os.Getenv("STATE_DIRECTORY"), transfer.UserID, transfer.ID))
 	if _, err := os.Stat(uploadDest); os.IsNotExist(err) {
-		err = os.Mkdir(uploadDest, os.ModePerm)
+		err = os.Mkdir(uploadDest, 0700)
 		if err != nil {
 			return err
 		}
 	}
 
-	dst, err := os.Create(path.Join(uploadDest, fileHeader.Filename))
+	dst, err := os.OpenFile(path.Join(uploadDest, fileHeader.Filename), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o600)
 	if err != nil {
 		return err
 	}

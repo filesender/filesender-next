@@ -35,7 +35,7 @@ func (transfer *Transfer) Create() error {
 	transfer.ID = transferID
 
 	userDir := filepath.Clean(filepath.Join(stateDir, transfer.UserID))
-	err = os.MkdirAll(userDir, os.ModePerm)
+	err = os.MkdirAll(userDir, 0700)
 	if err != nil {
 		slog.Error("Failed creating user directory", "error", err)
 		return err
