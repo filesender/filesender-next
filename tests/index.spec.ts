@@ -7,9 +7,9 @@ test('should return a successful response', async ({ page }) => {
     await expect(page).toHaveTitle("Upload");
 });
 
-test('should contain two file inputs', async ({ page }) => {
+test('should contain a file input', async ({ page }) => {
     await page.goto('http://localhost:8080');
 
     const fileInputs = page.locator('input[type="file"]');
-    await expect(fileInputs).toHaveCount(2);
+    await expect(fileInputs).toHaveCount(1);
 });
