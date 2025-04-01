@@ -10,8 +10,8 @@
     <div class="wrapper">
         <form action="api/v1/upload" method="post" enctype="multipart/form-data">
             <div>
-                <label for="files-selector">Select files</label>
-                <input name="file" id="files-selector" type="file" multiple/>
+                <label for="files-selector">Select file</label>
+                <input name="file" id="files-selector" type="file"/>
             </div>
 
             <div class="mt-4">
@@ -25,6 +25,7 @@
         </form>
     </div>
 
+    <script src="js/tar.js"></script>
     <script src="js/upload.js"></script>
 </body>
 </html>

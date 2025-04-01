@@ -6,7 +6,7 @@
  * @param {string} str - The string to pad.
  * @param {number} length - The desired total length of the output string.
  * @param {string} [padding=' '] - The character to use for padding.
- * @returns {string} - The padded string.
+ * @returns {string} The padded string.
  */
 const pad = (str, length, padding = ' ') => {
     str = String(str);
@@ -20,7 +20,7 @@ const pad = (str, length, padding = ' ') => {
  * 
  * @param {number} number - The number to convert to octal.
  * @param {number} length - The total length of the resulting string.
- * @returns {string} - The padded octal string ending in '\0'.
+ * @returns {string} The padded octal string ending in '\0'.
  */
 const padOctal = (number, length) => {
     return number.toString(8).padStart(length - 1, '0') + '\0';
