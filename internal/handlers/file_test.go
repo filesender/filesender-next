@@ -4,16 +4,15 @@ import (
 	"io"
 	"mime/multipart"
 	"os"
-	"path"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"codeberg.org/filesender/filesender-next/internal/handlers"
 	"codeberg.org/filesender/filesender-next/internal/models"
 )
 
-// Helper function for tests
-func createMultipartFile(content string) (*multipart.FileHeader, *os.File, error) {
+func createMultipartFile(content string) (multipart.File, func(), error) {
 	tmpFile, err := os.CreateTemp("", "testfile-*.txt")
 	if err != nil {
 		return nil, nil, err
@@ -21,148 +20,133 @@ func createMultipartFile(content string) (*multipart.FileHeader, *os.File, error
 
 	_, err = tmpFile.Write([]byte(content))
 	if err != nil {
-		err = tmpFile.Close()
-		if err != nil {
-			return nil, nil, err
+		e := tmpFile.Close()
+		if e != nil {
+			return nil, nil, e
 		}
 		return nil, nil, err
 	}
 
 	_, err = tmpFile.Seek(0, io.SeekStart)
 	if err != nil {
-		err = tmpFile.Close()
-		if err != nil {
-			return nil, nil, err
+		e := tmpFile.Close()
+		if e != nil {
+			return nil, nil, e
 		}
 		return nil, nil, err
 	}
 
-	fileHeader := &multipart.FileHeader{Filename: "testfile.txt"}
+	cleanup := func() {
+		_ = tmpFile.Close()
+		_ = os.Remove(tmpFile.Name())
+	}
 
-	return fileHeader, tmpFile, nil
+	return tmpFile, cleanup, nil
 }
 
-func TestHandleFileUpload_Success(t *testing.T) {
-	// Set up a temporary directory for testing
+func TestFileUpload_Success(t *testing.T) {
 	tempDir, err := os.MkdirTemp("", "test_uploads")
 	if err != nil {
-		t.Fatalf("Failed to create temporary directory: %v", err)
+		t.Fatal(err)
 	}
 	defer func() {
-		if err := os.RemoveAll(tempDir); err != nil {
-			t.Errorf("Failed deleting temp directory: %v", err)
+		err = os.RemoveAll(tempDir)
+		if err != nil {
+			t.Errorf("Failed deleting temp dir: %v", err)
 		}
 	}()
 
 	err = os.Setenv("STATE_DIRECTORY", tempDir)
 	if err != nil {
-		t.Fatalf("Failed setting env var: %v", err)
+		t.Fatal(err)
 	}
 
-	transfer := models.Transfer{
-		ID:     "testing123",
-		UserID: "weeb",
-	}
-	err = os.MkdirAll(filepath.Join(tempDir, transfer.UserID), os.ModePerm)
+	fileContent := "This is a test file"
+	testFile, cleanup, err := createMultipartFile(fileContent)
 	if err != nil {
-		t.Fatalf("Failed to create user uploads directory: %v", err)
+		t.Fatal(err)
+	}
+	defer cleanup()
+
+	fileMeta := models.File{
+		ID:         "test123",
+		UserID:     "user456",
+		ByteSize:   len(fileContent),
+		ExpiryDate: time.Now().Add(24 * time.Hour),
 	}
 
-	// Create a fake file
-	fileHeader, file, err := createMultipartFile("This is a test file.")
+	err = handlers.FileUpload(fileMeta, testFile)
 	if err != nil {
-		t.Fatalf("Failed to create multipart file: %v", err)
-	}
-	defer func() {
-		if err := file.Close(); err != nil {
-			t.Errorf("Failed closing file: %v", err)
-		}
-	}()
-
-	err = handlers.FileUpload(transfer, file, fileHeader)
-	if err != nil {
-		t.Fatalf("HandleFileUpload failed: %v", err)
+		t.Fatalf("Expected success, got error: %v", err)
 	}
 
-	// Verify that the file was created
-	uploadDest := path.Join(tempDir, transfer.UserID, transfer.ID, fileHeader.Filename)
-	if _, err := os.Stat(uploadDest); os.IsNotExist(err) {
-		t.Fatalf("Expected file %s to exist, but it does not", uploadDest)
+	expectedPath := filepath.Join(tempDir, fileMeta.UserID, fileMeta.ID+".tar")
+	if _, err := os.Stat(expectedPath); os.IsNotExist(err) {
+		t.Errorf("Expected file to exist at %s", expectedPath)
 	}
 }
 
-func TestHandleFileUpload_Failure_InvalidDirectory(t *testing.T) {
-	// Set an invalid directory
-	err := os.Setenv("STATE_DIRECTORY", "/invalid/directory")
+func TestFileUpload_InvalidDirectory(t *testing.T) {
+	err := os.Setenv("STATE_DIRECTORY", "/invalid/directory/should/fail")
 	if err != nil {
-		t.Fatalf("Failed setting env var: %v", err)
+		t.Fatal(err)
 	}
 
-	transfer := models.Transfer{
-		ID:     "testing123",
-		UserID: "weeb",
-	}
-
-	fileHeader, file, err := createMultipartFile("Test file.")
+	testFile, cleanup, err := createMultipartFile("test")
 	if err != nil {
-		t.Fatalf("Failed to create multipart file: %v", err)
+		t.Fatal(err)
 	}
-	defer func() {
-		if err := file.Close(); err != nil {
-			t.Errorf("Failed closing file: %v", err)
-		}
-	}()
+	defer cleanup()
 
-	// Expect an error
-	err = handlers.FileUpload(transfer, file, fileHeader)
+	fileMeta := models.File{
+		ID:         "doesn't matter",
+		UserID:     "----------",
+		ByteSize:   -10,
+		ExpiryDate: time.Now().Add(24 * time.Hour),
+	}
+
+	err = handlers.FileUpload(fileMeta, testFile)
 	if err == nil {
-		t.Fatal("Expected an error but got nil")
+		t.Fatal("Expected error due to invalid directory, got nil")
 	}
 }
 
-func TestHandleFileUpload_Failure_FileCreation(t *testing.T) {
-	// Set a temporary directory
+func TestFileUpload_CopyFailure(t *testing.T) {
 	tempDir, err := os.MkdirTemp("", "test_uploads")
 	if err != nil {
-		t.Fatalf("Failed to create temporary directory: %v", err)
+		t.Fatal(err)
 	}
 	defer func() {
-		if err := os.RemoveAll(tempDir); err != nil {
-			t.Errorf("Failed deleting temp directory: %v", err)
+		err = os.RemoveAll(tempDir)
+		if err != nil {
+			t.Errorf("Failed deleting temp dir: %v", err)
 		}
 	}()
 
 	err = os.Setenv("STATE_DIRECTORY", tempDir)
 	if err != nil {
-		t.Fatalf("Failed setting env var: %v", err)
+		t.Fatal(err)
 	}
 
-	transfer := models.Transfer{
-		ID:     "testing123",
-		UserID: "weeb",
-	}
-	err = os.MkdirAll(filepath.Join(tempDir, transfer.UserID), os.ModePerm)
+	// Simulate a closed file (io.Copy will fail)
+	fakeFile, _, err := createMultipartFile("test")
 	if err != nil {
-		t.Fatalf("Failed to create user uploads directory: %v", err)
+		t.Fatal(err)
 	}
-
-	// Create a fake file
-	fileHeader, file, err := createMultipartFile("File content.")
+	err = fakeFile.Close() // manually close it to trigger failure
 	if err != nil {
-		t.Fatalf("Failed to create multipart file: %v", err)
+		t.Fatalf("Couldn't close file: %v", err)
 	}
-	defer func() {
-		if err := file.Close(); err != nil {
-			t.Errorf("Failed closing file: %v", err)
-		}
-	}()
 
-	// Set empty filename to cause failure
-	fileHeader.Filename = ""
+	fileMeta := models.File{
+		ID:         "testfail",
+		UserID:     "user123",
+		ByteSize:   4,
+		ExpiryDate: time.Now().Add(24 * time.Hour),
+	}
 
-	// Expect an error
-	err = handlers.FileUpload(transfer, file, fileHeader)
+	err = handlers.FileUpload(fileMeta, fakeFile)
 	if err == nil {
-		t.Fatal("Expected an error but got nil")
+		t.Fatal("Expected error due to file copy failure, got nil")
 	}
 }

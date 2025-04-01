@@ -52,73 +52,57 @@ func UploadDoneTemplate() http.HandlerFunc {
 			return
 		}
 
-		transferID := r.PathValue("id")
-		err = id.Validate(transferID)
+		fileID := r.PathValue("id")
+		err = id.Validate(fileID)
 		if err != nil {
-			slog.Error("User passed invalid transfer ID", "error", err)
-			sendError(w, http.StatusBadRequest, "Transfer ID is invalid")
+			slog.Error("User passed invalid file ID", "error", err)
+			sendError(w, http.StatusBadRequest, "File ID is invalid")
 			return
 		}
 
-		transfer, err := models.GetTransferFromIDs(userID, transferID)
+		file, err := models.GetFileFromIDs(userID, fileID)
 		if err != nil {
-			slog.Error("Failed getting transfer from id", "error", err)
-			sendError(w, http.StatusInternalServerError, "Failed getting specified transfer")
+			slog.Error("Failed getting file from id", "error", err)
+			sendError(w, http.StatusInternalServerError, "Failed getting specified file")
 			return
 		}
 
-		if transfer.UserID != userID {
+		if file.UserID != userID {
 			sendError(w, http.StatusUnauthorized, "You're not authorized")
 			return
 		}
 
 		sendTemplate(w, "upload_done", uploadDoneTemplate{
-			UserID:     userID,
-			TransferID: transfer.ID,
-			FileCount:  transfer.FileCount,
-			BytesSize:  transfer.TotalByteSize,
+			UserID:    file.UserID,
+			FileID:    file.ID,
+			BytesSize: file.ByteSize,
 		})
 	}
 }
 
-// GetDownloadTemplate handles GET /download/{userID}/{transferID}
+// GetDownloadTemplate handles GET /download/{userID}/{fileID}
 func GetDownloadTemplate() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userID, transferID := r.PathValue("userID"), r.PathValue("transferID")
+		userID, fileID := r.PathValue("userID"), r.PathValue("fileID")
 
-		err := models.ValidateTransfer(userID, transferID)
+		err := models.ValidateFile(userID, fileID)
 		if err != nil {
-			slog.Error("User passed invalid transfer ID", "error", err)
-			sendError(w, http.StatusBadRequest, "Transfer ID is invalid")
+			slog.Error("User passed invalid file ID", "error", err)
+			sendError(w, http.StatusBadRequest, "File ID is invalid")
 			return
 		}
 
-		transfer, err := models.GetTransferFromIDs(userID, transferID)
+		file, err := models.GetFileFromIDs(userID, fileID)
 		if err != nil {
-			slog.Error("Failed getting transfer from id", "error", err)
-			sendError(w, http.StatusInternalServerError, "Failed getting specified transfer")
+			slog.Error("Failed getting file from id", "error", err)
+			sendError(w, http.StatusInternalServerError, "Failed getting specified file")
 			return
 		}
 
-		data := getTransferTemplate{
-			FileCount:  transfer.FileCount,
-			ByteSize:   transfer.TotalByteSize,
-			UserID:     userID,
-			TransferID: transferID,
-		}
-
-		for i := range transfer.FileCount {
-			fileName := transfer.FileNames[i]
-			file, err := models.GetFileFromName(userID, transferID, fileName)
-			if err != nil {
-				slog.Error("Failed getting file metadata", "error", err)
-				continue
-			}
-
-			data.Files = append(data.Files, getTransferTemplateFile{
-				FileName: fileName,
-				ByteSize: file.ByteSize,
-			})
+		data := downloadTemplate{
+			ByteSize: file.ByteSize,
+			UserID:   file.UserID,
+			FileID:   file.ID,
 		}
 
 		sendTemplate(w, "download", data)

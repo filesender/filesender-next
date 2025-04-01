@@ -1,5 +1,4 @@
 const form = document.querySelector("form");
-var transferId = null;
 
 document.body.onload = () => {
     const filesSelector = document.querySelector("#files-selector");
@@ -18,19 +17,15 @@ const showError = msg => {
 }
 
 /**
- * Uploads a file to a transfer
- * @param {string} expiryDate `YYYY-MM-DD` formatted expiry date of the transfer
+ * Uploads a file
+ * @param {string} expiryDate `YYYY-MM-DD` formatted expiry date of the file
  * @param {File} file 
- * @returns {Promise<bool>} If the transfer was successful or not
+ * @returns {Promise<string|false>} Contains file ID with successful, otherwise `false`
  */
 const uploadFile = async (expiryDate, file) => {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("expiry-date", expiryDate);
-
-    if (transferId !== null) {
-        formData.append("transfer-id", transferId);
-    }
     
     const response = await fetch("api/v1/upload", {
         method: "POST",
@@ -38,8 +33,7 @@ const uploadFile = async (expiryDate, file) => {
     });
 
     if (response.status === 200) {
-        transferId = response.url.split('upload/')[1];
-        return true
+        return response.url.split('upload/')[1];
     }
 
     showError("Something went wrong uploading file");
@@ -92,9 +86,10 @@ form.addEventListener("submit", async e => {
     const file = new File([tarBlob], "archive.tar");
     
     let tries = 0;
+    var fileId;
     while (tries < 3) {
         try {
-            await uploadFile(expiryDate, file);
+            fileId = await uploadFile(expiryDate, file);
             break;
         } catch (e) {
             console.error("Error uploading", e);
@@ -102,5 +97,6 @@ form.addEventListener("submit", async e => {
         }
     }
 
-    window.location.replace(`upload/${transferId}`);
+    if (fileId !== false)
+        window.location.replace(`upload/${fileId}`);
 });

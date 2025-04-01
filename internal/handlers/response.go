@@ -1,12 +1,13 @@
 package handlers
 
 import (
-	"archive/zip"
 	"embed"
 	"encoding/json"
 	"html/template"
+	"io"
 	"log/slog"
 	"net/http"
+	"os"
 	"path"
 
 	"codeberg.org/filesender/filesender-next/internal/models"
@@ -84,44 +85,26 @@ func sendRedirect(w http.ResponseWriter, status int, location string, body strin
 	return nil
 }
 
-// Sends zipped file
-func sendZippedFiles(w http.ResponseWriter, transfer *models.Transfer, files []string) {
-	w.Header().Set("Content-Type", "application/zip")
-	w.Header().Set("Content-Disposition", `attachment; filename="files.zip"`)
-
-	zipWriter := zip.NewWriter(w)
+// Sends file
+func sendFile(w http.ResponseWriter, file *models.File) {
+	f, err := os.Open(file.Path)
+	if err != nil {
+		sendError(w, http.StatusNotFound, "File not found") // This should never happen, this is already checked before...
+		return
+	}
 	defer func() {
-		err := zipWriter.Close()
+		err := f.Close()
 		if err != nil {
-			slog.Error("Failed closing zip writer", "error", err)
+			slog.Error("Failed closing file", "error", err)
 		}
 	}()
 
-	fileCount := 0
-	for _, fname := range files {
-		file, err := getFile(transfer, fname)
-		if err != nil {
-			slog.Error("Failed getting file", "file", fname, "error", err)
-			continue
-		}
+	w.Header().Set("Content-Type", "application/x-tar")
+	w.Header().Set("Content-Disposition", `attachment; filename="archive.tar"`)
+	w.Header().Set("Content-Length", string(rune(file.ByteSize)))
 
-		err = addFileToZip(zipWriter, file.Path)
-		if err != nil {
-			slog.Error("Error adding file to zip", "file", file.Path, "error", err)
-			continue
-		}
-
-		file.DownloadCount++
-		err = file.Save(transfer.UserID, transfer.ID, fname)
-		if err != nil {
-			slog.Error("Failed saving meta file", "file", file.Path, "error", err)
-			// it wouldn't make sense to `continue` here
-		}
-
-		fileCount++
-	}
-
-	if fileCount == 0 {
-		sendError(w, http.StatusInternalServerError, "No files available or could not be zipped")
+	_, err = io.Copy(w, f)
+	if err != nil {
+		sendError(w, http.StatusInternalServerError, "Error while downloading the file")
 	}
 }
