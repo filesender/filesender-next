@@ -75,12 +75,12 @@ func TestFileUpload_Success(t *testing.T) {
 		ExpiryDate: time.Now().Add(24 * time.Hour),
 	}
 
-	err = handlers.FileUpload(fileMeta, testFile)
+	err = handlers.FileUpload(fileMeta, testFile, "test.txt")
 	if err != nil {
 		t.Fatalf("Expected success, got error: %v", err)
 	}
 
-	expectedPath := filepath.Join(tempDir, fileMeta.UserID, fileMeta.ID+".tar")
+	expectedPath := filepath.Join(tempDir, fileMeta.UserID, fileMeta.ID+".txt")
 	if _, err := os.Stat(expectedPath); os.IsNotExist(err) {
 		t.Errorf("Expected file to exist at %s", expectedPath)
 	}
@@ -105,7 +105,7 @@ func TestFileUpload_InvalidDirectory(t *testing.T) {
 		ExpiryDate: time.Now().Add(24 * time.Hour),
 	}
 
-	err = handlers.FileUpload(fileMeta, testFile)
+	err = handlers.FileUpload(fileMeta, testFile, "test.txt")
 	if err == nil {
 		t.Fatal("Expected error due to invalid directory, got nil")
 	}
@@ -145,7 +145,7 @@ func TestFileUpload_CopyFailure(t *testing.T) {
 		ExpiryDate: time.Now().Add(24 * time.Hour),
 	}
 
-	err = handlers.FileUpload(fileMeta, fakeFile)
+	err = handlers.FileUpload(fileMeta, fakeFile, "test.txt")
 	if err == nil {
 		t.Fatal("Expected error due to file copy failure, got nil")
 	}

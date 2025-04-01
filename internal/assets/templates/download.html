@@ -8,7 +8,7 @@
 </head>
 <body>
     <div class="wrapper">
-        <p>1 tar file ({{ .ByteSize }} bytes)</p>
+        <p>1 file ({{ .ByteSize }} bytes)</p>
 
         <form action="../../api/v1/download/{{ .UserID }}/{{ .FileID }}" method="get" target="_blank">
             <button class="mt-4">

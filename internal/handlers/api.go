@@ -79,7 +79,7 @@ func UploadAPI(maxUploadSize int64) http.HandlerFunc {
 			ByteSize:   int(fileHeader.Size),
 			ExpiryDate: expiryDate,
 		}
-		err = FileUpload(fileMeta, file)
+		err = FileUpload(fileMeta, file, fileHeader.Filename)
 		if err != nil {
 			slog.Error("Failed handling file upload", "error", err)
 			sendJSON(w, http.StatusInternalServerError, false, "Failed handling new file upload", nil)

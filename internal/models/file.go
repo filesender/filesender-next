@@ -21,7 +21,7 @@ type File struct {
 	FileCount     int       `json:"file_count"`
 	DownloadCount int       `json:"download_count"`
 	ByteSize      int       `json:"byte_size"`
-	Path          string    `json:"path"`
+	FileName      string    `json:"path"`
 	ExpiryDate    time.Time `json:"expiry_date"`
 	CreationDate  time.Time `json:"creation_date"`
 }
@@ -34,7 +34,7 @@ func (file *File) Create() error {
 
 // Save the current File meta state to disk
 func (file *File) Save() error {
-	err := json.WriteDataToFile(file, filepath.Join(os.Getenv("STATE_DIRECTORY"), file.UserID, file.ID+".tar.meta"))
+	err := json.WriteDataToFile(file, filepath.Join(os.Getenv("STATE_DIRECTORY"), file.UserID, file.ID+".meta"))
 	if err != nil {
 		slog.Error("Failed writing meta file", "error", err)
 		return err
@@ -45,7 +45,7 @@ func (file *File) Save() error {
 
 // FileExists checks if the file exists
 func FileExists(userID string, fileID string) (bool, error) {
-	filePath := filepath.Join(os.Getenv("STATE_DIRECTORY"), userID, fileID+".tar.meta")
+	filePath := filepath.Join(os.Getenv("STATE_DIRECTORY"), userID, fileID+".meta")
 
 	_, err := os.Stat(filePath)
 	if err == nil {
@@ -84,14 +84,13 @@ func ValidateFile(userID, fileID string) error {
 // GetFileFromIDs creates new File object from given user ID & file ID
 // Errors when file does not exist
 func GetFileFromIDs(userID string, fileID string) (File, error) {
-	filePath := filepath.Join(os.Getenv("STATE_DIRECTORY"), userID, fileID+".tar")
+	filePath := filepath.Join(os.Getenv("STATE_DIRECTORY"), userID, fileID+".meta")
 	var file File
 
-	err := json.ReadDataFromFile(filePath+".meta", &file)
+	err := json.ReadDataFromFile(filePath, &file)
 	if err != nil {
-		slog.Error("Failed reading file: "+filePath+".meta", "error", err)
+		slog.Error("Failed reading file: "+filePath, "error", err)
 	}
 
-	file.Path = filePath
 	return file, err
 }
