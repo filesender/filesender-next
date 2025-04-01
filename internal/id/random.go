@@ -4,7 +4,7 @@ package id
 import (
 	"crypto/rand"
 	"encoding/base64"
-	"errors"
+	"fmt"
 	"log/slog"
 )
 
@@ -25,10 +25,10 @@ func Validate(encodedID string) error {
 	// in order to validate the ID, we decode it and verify the length
 	id, err := base64.RawURLEncoding.DecodeString(encodedID)
 	if err != nil {
-		return errors.New("invalid format")
+		return fmt.Errorf("invalid format: %v", err)
 	}
 	if len(id) != 16 {
-		return errors.New("invalid length")
+		return fmt.Errorf("invalid length: %d", len(id))
 	}
 
 	return nil

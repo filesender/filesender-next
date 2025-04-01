@@ -14,9 +14,11 @@ type uploadDoneTemplate struct {
 }
 
 type getTransferTemplate struct {
-	FileCount int
-	ByteSize  int
-	Files     []getTransferTemplateFile
+	FileCount  int
+	ByteSize   int
+	Files      []getTransferTemplateFile
+	UserID     string
+	TransferID string
 }
 
 type getTransferTemplateFile struct {

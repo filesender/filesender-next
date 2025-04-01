@@ -1,12 +1,15 @@
 package handlers
 
 import (
+	"archive/zip"
 	"embed"
 	"encoding/json"
 	"html/template"
 	"log/slog"
 	"net/http"
 	"path"
+
+	"codeberg.org/filesender/filesender-next/internal/models"
 )
 
 var templatesFS embed.FS
@@ -68,15 +71,57 @@ func sendError(w http.ResponseWriter, status int, message string) {
 }
 
 // Sends a redirect
-func sendRedirect(w http.ResponseWriter, status int, location string, aa string) error {
+func sendRedirect(w http.ResponseWriter, status int, location string, body string) error {
 	w.Header().Add("Location", location)
 	w.WriteHeader(status)
 
-	_, err := w.Write([]byte(aa))
+	_, err := w.Write([]byte(body))
 	if err != nil {
 		slog.Error("Failed writing empty response", "error", err)
 		return err
 	}
 
 	return nil
+}
+
+// Sends zipped file
+func sendZippedFiles(w http.ResponseWriter, transfer *models.Transfer, files []string) {
+	w.Header().Set("Content-Type", "application/zip")
+	w.Header().Set("Content-Disposition", `attachment; filename="files.zip"`)
+
+	zipWriter := zip.NewWriter(w)
+	defer func() {
+		err := zipWriter.Close()
+		if err != nil {
+			slog.Error("Failed closing zip writer", "error", err)
+		}
+	}()
+
+	fileCount := 0
+	for _, fname := range files {
+		file, err := getFile(transfer, fname)
+		if err != nil {
+			slog.Error("Failed getting file", "file", fname, "error", err)
+			continue
+		}
+
+		err = addFileToZip(zipWriter, file.Path)
+		if err != nil {
+			slog.Error("Error adding file to zip", "file", file.Path, "error", err)
+			continue
+		}
+
+		file.DownloadCount++
+		err = file.Save(transfer.UserID, transfer.ID, fname)
+		if err != nil {
+			slog.Error("Failed saving meta file", "file", file.Path, "error", err)
+			// it wouldn't make sense to `continue` here
+		}
+
+		fileCount++
+	}
+
+	if fileCount == 0 {
+		sendError(w, http.StatusInternalServerError, "No files available or could not be zipped")
+	}
 }

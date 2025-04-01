@@ -106,7 +106,7 @@ func UploadAPI(maxUploadSize int64) http.HandlerFunc {
 					}
 				}()
 
-				err = HandleFileUpload(transfer, file, fileHeader)
+				err = FileUpload(transfer, file, fileHeader)
 				if err != nil {
 					slog.Error("Failed handling newly uploaded file!", "error", err)
 					sendJSON(w, http.StatusInternalServerError, false, "Handle file failed", nil)
@@ -129,9 +129,61 @@ func UploadAPI(maxUploadSize int64) http.HandlerFunc {
 		}
 
 		err = sendRedirect(w, http.StatusSeeOther, "../../upload/"+transfer.ID, transfer.ID) // Redirect to `/upload/<transfer_id>`
-
 		if err != nil {
 			sendError(w, http.StatusInternalServerError, "Failed sending redirect")
 		}
+	}
+}
+
+// DownloadAPI handles `GET /api/v1/download/{userID}/{transferID}` AND `GET /api/v1/download/{userID}/{transferID}/all`
+// Expects query parameters with file names as key if not accessed from `/all`
+func DownloadAPI(all bool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID, transferID := r.PathValue("userID"), r.PathValue("transferID")
+
+		err := models.ValidateTransfer(userID, transferID)
+		if err != nil {
+			slog.Error("User passed invalid transfer ID", "error", err)
+			sendError(w, http.StatusBadRequest, "Transfer ID is invalid")
+			return
+		}
+
+		transfer, err := models.GetTransferFromIDs(userID, transferID)
+		if err != nil {
+			slog.Error("Failed getting transfer from id", "error", err)
+			sendError(w, http.StatusInternalServerError, "Failed getting specified transfer")
+			return
+		}
+
+		// contains file paths
+		var files []string
+		if all {
+			files = transfer.FileNames
+		} else {
+			err := r.ParseForm()
+			if err != nil {
+				slog.Error("Failed parsing request body", "error", err)
+			}
+
+			for k := range r.Form {
+				files = append(files, k)
+			}
+		}
+
+		if len(files) == 0 {
+			slog.Info("User accessed download API endpoint without any files selected!")
+			sendError(w, http.StatusInternalServerError, "Either you haven't selected any files, or there are no files in this tranfer")
+			return
+		}
+
+		transfer.DownloadCount++
+		err = transfer.Save()
+		if err != nil {
+			slog.Error("Failed saving new transfer data", "error", err)
+			sendError(w, http.StatusInternalServerError, "Failed saving new transfer data")
+			return
+		}
+
+		sendZippedFiles(w, &transfer, files)
 	}
 }
