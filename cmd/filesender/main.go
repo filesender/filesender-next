@@ -46,6 +46,7 @@ func main() {
 	err = os.MkdirAll(stateDir, 0o700)
 	if err != nil {
 		slog.Error("Failed creating state directory", "error", err)
+		os.Exit(1)
 	}
 
 	// Initialise handler, pass embedded template files
@@ -65,7 +66,8 @@ func main() {
 	// Serve static files
 	subFS, err := fs.Sub(assets.EmbeddedPublicFiles, "public")
 	if err != nil {
-		panic(err)
+		slog.Error("Failed serving static files", "error", err)
+		os.Exit(1)
 	}
 	fs := http.FileServer(http.FS(subFS))
 	router.Handle("GET /", http.StripPrefix("/", fs))
@@ -83,5 +85,6 @@ func main() {
 	err = s.ListenAndServe()
 	if err != nil {
 		slog.Error("Error running HTTP server", "error", err)
+		os.Exit(1)
 	}
 }
