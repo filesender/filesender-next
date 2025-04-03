@@ -39,7 +39,7 @@ jobs:
 
       - name: Build and start Filesender
         run: |
-          make filesender GOBUILDFLAGS="-tags=dev"
+          make filesender
           mkdir -p ./data
 
       - name: Run playwright tests
