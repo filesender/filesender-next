@@ -1,6 +1,3 @@
-//go:build !dev
-
-// Package auth contains authentication functions
 package auth
 
 import (
@@ -9,8 +6,9 @@ import (
 	"net/http"
 )
 
-// Auth checks `REMOTE_ADDR` header for authentication
-func Auth(r *http.Request) (string, error) {
+type ProxyAuth struct{}
+
+func (s *ProxyAuth) UserAuth(r *http.Request) (string, error) {
 	tcpAddr, err := net.ResolveTCPAddr("tcp", r.RemoteAddr)
 	if err != nil {
 		return "", err
@@ -18,9 +16,9 @@ func Auth(r *http.Request) (string, error) {
 	if !tcpAddr.IP.IsLoopback() {
 		return "", errors.New("REMOTE_ADDR is NOT `localhost`")
 	}
-	remoteUser := r.Header.Get("REMOTE_USER")
+	remoteUser := r.Header.Get("X-Remote-User")
 	if remoteUser == "" {
-		return "", errors.New("HTTP header REMOTE_USER is NOT set")
+		return "", errors.New("HTTP header X-Remote-User is NOT set")
 	}
 
 	return remoteUser, nil

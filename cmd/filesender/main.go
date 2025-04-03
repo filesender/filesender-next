@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"codeberg.org/filesender/filesender-next/internal/assets"
+	"codeberg.org/filesender/filesender-next/internal/auth"
 	"codeberg.org/filesender/filesender-next/internal/handlers"
 	"codeberg.org/filesender/filesender-next/internal/logging"
 )
@@ -37,6 +38,17 @@ func main() {
 		logging.SetLogLevel(slog.LevelDebug)
 	}
 
+	var authModule auth.Auth
+	switch os.Getenv("AUTH_METHOD") {
+	case "CGI":
+		authModule = &auth.CgiAuth{}
+	case "DUMMY":
+		// for development & testing
+		authModule = &auth.DummyAuth{}
+	default:
+		authModule = &auth.ProxyAuth{}
+	}
+
 	maxUploadSize := maxUploadSize()
 	slog.Info("MAX_UPLOAD_SIZE", "bytes", maxUploadSize)
 
@@ -57,12 +69,12 @@ func main() {
 
 	router := http.NewServeMux()
 	// API endpoints
-	router.HandleFunc("POST /api/v1/upload", handlers.UploadAPI(maxUploadSize))
+	router.HandleFunc("POST /api/v1/upload", handlers.UploadAPI(authModule, maxUploadSize))
 	router.HandleFunc("GET /api/v1/download/{userID}/{fileID}", handlers.DownloadAPI())
 
 	// Page handlers
-	router.HandleFunc("GET /{$}", handlers.UploadTemplate())
-	router.HandleFunc("GET /upload/{id}", handlers.UploadDoneTemplate())
+	router.HandleFunc("GET /{$}", handlers.UploadTemplate(authModule))
+	router.HandleFunc("GET /upload/{id}", handlers.UploadDoneTemplate(authModule))
 	router.HandleFunc("GET /download/{userID}/{fileID}", handlers.GetDownloadTemplate())
 
 	// Serve static files

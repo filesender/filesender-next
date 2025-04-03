@@ -12,9 +12,9 @@ import (
 )
 
 // UploadTemplate handles GET /{$}
-func UploadTemplate() http.HandlerFunc {
+func UploadTemplate(authModule auth.Auth) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userID, err := auth.Auth(r)
+		userID, err := authModule.UserAuth(r)
 		if err != nil {
 			slog.Info("unable to authenticate user", "error", err)
 			sendError(w, http.StatusUnauthorized, "You're not authenticated")
@@ -35,9 +35,9 @@ func UploadTemplate() http.HandlerFunc {
 }
 
 // UploadDoneTemplate handles GET /upload/{id}
-func UploadDoneTemplate() http.HandlerFunc {
+func UploadDoneTemplate(authModule auth.Auth) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userID, err := auth.Auth(r)
+		userID, err := authModule.UserAuth(r)
 		if err != nil {
 			slog.Info("unable to authenticate user", "error", err)
 			sendError(w, http.StatusUnauthorized, "You're not authenticated")

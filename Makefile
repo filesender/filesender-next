@@ -6,7 +6,7 @@ filesender: cmd/filesender/main.go
 	go build $(GOBUILDFLAGS) -o $@ codeberg.org/filesender/filesender-next/cmd/filesender
 
 test:
-	go test -v -tags="dev" ./...
+	go test -v ./...
 
 update:
 	# update Go dependencies
@@ -41,7 +41,7 @@ run:
 
 run-dev:
 	mkdir -p ./data
-	STATE_DIRECTORY=./data go run -tags="dev" ./cmd/filesender -d
+	AUTH_METHOD=DUMMY STATE_DIRECTORY=./data go run ./cmd/filesender -d
 
 hotreload:
 	watchexec --shell=none -r -w ./internal/assets -- make run-dev
