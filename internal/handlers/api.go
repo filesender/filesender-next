@@ -86,7 +86,7 @@ func UploadAPI(maxUploadSize int64) http.HandlerFunc {
 			return
 		}
 
-		err = sendRedirect(w, http.StatusSeeOther, "../../download/"+userID+"/"+fileMeta.ID, fileMeta.ID) // Redirect to `/download/<user_id>/<file_id>`
+		err = sendRedirect(w, http.StatusSeeOther, "../../download/"+userID+"/"+fileMeta.ID, "") // Redirect to `/download/<user_id>/<file_id>`
 		if err != nil {
 			sendError(w, http.StatusInternalServerError, "Failed sending redirect")
 		}
