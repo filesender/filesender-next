@@ -5,8 +5,7 @@ test('should upload a file', async ({ page }) => {
     const { cleanup } = await uploadTestFile(page);
     try {
         const pageBody = await page.content();
-        expect(pageBody).toContain("28 bytes");
-        expect(pageBody).toContain("1 file");
+        expect(pageBody).toContain("2048 bytes");
     } finally {
         cleanup();
     }

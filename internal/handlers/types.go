@@ -7,21 +7,13 @@ type uploadTemplate struct {
 }
 
 type uploadDoneTemplate struct {
-	UserID     string
-	TransferID string
-	FileCount  int
-	BytesSize  int
+	UserID    string
+	FileID    string
+	BytesSize int
 }
 
-type getTransferTemplate struct {
-	FileCount  int
-	ByteSize   int
-	Files      []getTransferTemplateFile
-	UserID     string
-	TransferID string
-}
-
-type getTransferTemplateFile struct {
-	FileName string
+type downloadTemplate struct {
 	ByteSize int
+	UserID   string
+	FileID   string
 }

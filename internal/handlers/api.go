@@ -17,8 +17,7 @@ import (
 )
 
 // UploadAPI handles POST /api/v1/upload
-// Expects either `transfer_id` or `expiry_date` in form data
-// If `transfer_id` is not set, it creates a new transfer.
+// Expects `expiry_date` in form data
 func UploadAPI(maxUploadSize int64) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, err := auth.Auth(r)
@@ -42,148 +41,85 @@ func UploadAPI(maxUploadSize int64) http.HandlerFunc {
 			return
 		}
 
-		var transfer models.Transfer
-		transferIDs := r.MultipartForm.Value["transfer-id"]
-		if len(transferIDs) == 1 {
-			transferID := transferIDs[0]
-			err = id.Validate(transferID)
-			if err != nil {
-				sendJSON(w, http.StatusBadRequest, false, "Transfer ID is incorrectly formatted", nil)
-				return
-			}
-
-			transfer, err = models.GetTransferFromIDs(userID, transferID)
-			if err != nil {
-				sendJSON(w, http.StatusNotFound, false, "Could not find the transfer", nil)
-				return
-			}
-			if transfer.UserID != userID {
-				sendJSON(w, http.StatusUnauthorized, false, "You're not authorized to modify this transfer", nil)
-				return
-			}
-		} else {
-			expiryDates := r.MultipartForm.Value["expiry-date"]
-			if len(expiryDates) != 1 {
-				sendJSON(w, http.StatusBadRequest, false, "Expected a transfer id or expiry date", nil)
-				return
-			}
-
-			expiryDate, err := time.Parse("2006-02-03", expiryDates[0])
-			if err != nil {
-				slog.Error("Failed parsing date", "error", err, "input", expiryDates[0])
-				sendJSON(w, http.StatusBadRequest, false, "Invalid date format, expected YYYY-MM-DD", nil)
-				return
-			}
-
-			transfer = models.Transfer{
-				UserID:     userID,
-				ExpiryDate: expiryDate,
-			}
-			err = transfer.Create()
-			if err != nil {
-				slog.Error("Failed creating a new transfer", "error", err)
-				sendJSON(w, http.StatusInternalServerError, false, "Failed creating new transfer", nil)
-				return
-			}
-
-			slog.Info("Created a new transfer")
+		expiryDates := r.MultipartForm.Value["expiry-date"]
+		if len(expiryDates) != 1 {
+			sendJSON(w, http.StatusBadRequest, false, "Expected an expiry date", nil)
+			return
 		}
 
-		fileCount := 0
-		for _, fileHeaders := range r.MultipartForm.File {
-			for _, fileHeader := range fileHeaders {
-				fileCount++
+		expiryDate, err := time.Parse("2006-02-03", expiryDates[0])
+		if err != nil {
+			slog.Error("Failed parsing date", "error", err, "input", expiryDates[0])
+			sendJSON(w, http.StatusBadRequest, false, "Invalid date format, expected YYYY-MM-DD", nil)
+			return
+		}
 
-				file, err := fileHeader.Open()
-				if err != nil {
-					slog.Error("Failed opening file!", "error", err)
-					sendJSON(w, http.StatusInternalServerError, false, "Failed opening file", nil)
-					return
-				}
-				defer func() {
-					if err := file.Close(); err != nil {
-						slog.Error("Failed closing file", "error", err)
-					}
-				}()
-
-				err = FileUpload(transfer, file, fileHeader)
-				if err != nil {
-					slog.Error("Failed handling newly uploaded file!", "error", err)
-					sendJSON(w, http.StatusInternalServerError, false, "Handle file failed", nil)
-					return
-				}
-
-				err = transfer.NewFile(fileHeader.Filename, int(fileHeader.Size))
-				if err != nil {
-					slog.Error("Failed adding new file to transfer object", "error", err)
-					sendJSON(w, http.StatusInternalServerError, false, "Handle file failed", nil)
-					return
-				}
-
-				slog.Debug("Successfully created new file", "user", userID, "transfer", transfer.ID, "file", fileHeader.Filename)
+		file, fileHeader, err := r.FormFile("file")
+		if err != nil {
+			slog.Error("Failed opening file", "error", err)
+			sendJSON(w, http.StatusInternalServerError, false, "Lost the file", nil)
+			return
+		}
+		defer func() {
+			if err := file.Close(); err != nil {
+				slog.Error("Failed closing file", "error", err)
 			}
+		}()
+
+		fileID, err := id.New()
+		if err != nil {
+			slog.Error("Failed creating file ID", "error", err)
+			sendJSON(w, http.StatusInternalServerError, false, "Failed to create a random file ID!", nil)
+			return
 		}
 
-		if fileCount == 0 {
-			sendError(w, http.StatusBadRequest, "You need to select files")
+		fileMeta := models.File{
+			ID:         fileID,
+			UserID:     userID,
+			ByteSize:   int(fileHeader.Size),
+			ExpiryDate: expiryDate,
+		}
+		err = FileUpload(fileMeta, file, fileHeader.Filename)
+		if err != nil {
+			slog.Error("Failed handling file upload", "error", err)
+			sendJSON(w, http.StatusInternalServerError, false, "Failed handling new file upload", nil)
+			return
 		}
 
-		err = sendRedirect(w, http.StatusSeeOther, "../../upload/"+transfer.ID, transfer.ID) // Redirect to `/upload/<transfer_id>`
+		err = sendRedirect(w, http.StatusSeeOther, "../../upload/"+fileMeta.ID, fileMeta.ID) // Redirect to `/upload/<file_id>`
 		if err != nil {
 			sendError(w, http.StatusInternalServerError, "Failed sending redirect")
 		}
 	}
 }
 
-// DownloadAPI handles `GET /api/v1/download/{userID}/{transferID}` AND `GET /api/v1/download/{userID}/{transferID}/all`
-// Expects query parameters with file names as key if not accessed from `/all`
-func DownloadAPI(all bool) http.HandlerFunc {
+// DownloadAPI handles `GET /api/v1/download/{userID}/{fileID}`
+func DownloadAPI() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userID, transferID := r.PathValue("userID"), r.PathValue("transferID")
+		userID, fileID := r.PathValue("userID"), r.PathValue("fileID")
 
-		err := models.ValidateTransfer(userID, transferID)
+		err := models.ValidateFile(userID, fileID)
 		if err != nil {
-			slog.Error("User passed invalid transfer ID", "error", err)
-			sendError(w, http.StatusBadRequest, "Transfer ID is invalid")
+			slog.Error("User passed invalid file ID", "error", err)
+			sendError(w, http.StatusBadRequest, "File ID is invalid")
 			return
 		}
 
-		transfer, err := models.GetTransferFromIDs(userID, transferID)
+		file, err := models.GetFileFromIDs(userID, fileID)
 		if err != nil {
-			slog.Error("Failed getting transfer from id", "error", err)
-			sendError(w, http.StatusInternalServerError, "Failed getting specified transfer")
+			slog.Error("Failed getting file from id", "error", err)
+			sendError(w, http.StatusInternalServerError, "Failed getting specified file")
 			return
 		}
 
-		// contains file paths
-		var files []string
-		if all {
-			files = transfer.FileNames
-		} else {
-			err := r.ParseForm()
-			if err != nil {
-				slog.Error("Failed parsing request body", "error", err)
-			}
-
-			for k := range r.Form {
-				files = append(files, k)
-			}
-		}
-
-		if len(files) == 0 {
-			slog.Info("User accessed download API endpoint without any files selected!")
-			sendError(w, http.StatusInternalServerError, "Either you haven't selected any files, or there are no files in this tranfer")
-			return
-		}
-
-		transfer.DownloadCount++
-		err = transfer.Save()
+		file.DownloadCount++
+		err = file.Save()
 		if err != nil {
-			slog.Error("Failed saving new transfer data", "error", err)
-			sendError(w, http.StatusInternalServerError, "Failed saving new transfer data")
+			slog.Error("Failed increasing download count on file", "error", err, "userID", userID, "fileID", fileID)
+			sendError(w, http.StatusInternalServerError, "Failed setting new file meta data")
 			return
 		}
 
-		sendZippedFiles(w, &transfer, files)
+		sendFile(w, &file)
 	}
 }

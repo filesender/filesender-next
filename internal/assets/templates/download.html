@@ -3,46 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Download transfer</title>
+    <title>Download file</title>
     <link rel="stylesheet" href="../../styles/base.css">
 </head>
 <body>
     <div class="wrapper">
-        <p>{{ .FileCount }} file(s) ({{ .ByteSize }} bytes)</p>
+        <p>1 file ({{ .ByteSize }} bytes)</p>
 
-        <form action="../../api/v1/download/{{ .UserID }}/{{ .TransferID }}" method="get" target="_blank">
-            <table>
-                <tr>
-                    <th></th>
-                    <th>File name</th>
-                    <th>Byte size</th>
-                    <th></th>
-                </tr>
-    
-                {{ range .Files }}
-                <tr>
-                    <td>
-                        <input type="checkbox" name="{{ .FileName }}">
-                    </td>
-                    <td>{{ .FileName }}</td>
-                    <td>{{ .ByteSize }} bytes</td>
-                    <td>
-                        <a href="../../api/v1/download/{{ $.UserID }}/{{ $.TransferID }}?{{ .FileName }}=on" target="_blank">
-                            <button type="button">Download</button>
-                        </a>
-                    </td>
-                </tr>
-                {{ end }}
-            </table>
-    
-            <button>
-                Download Selected
-            </button>
-        </form>
-
-        <form action="../../api/v1/download/{{ .UserID }}/{{ .TransferID }}/all" method="get" target="_blank">
+        <form action="../../api/v1/download/{{ .UserID }}/{{ .FileID }}" method="get" target="_blank">
             <button class="mt-4">
-                Download All
+                Download
             </button>
         </form>
     </div>
