@@ -39,16 +39,16 @@ func main() {
 	}
 
 	var authModule auth.Auth
-	switch os.Getenv("AUTH_METHOD") {
-	case "CGI":
-		slog.Info("Using CGI authentication method")
+	switch os.Getenv("FILESENDER_AUTH_METHOD") {
+	case "cgi":
+		slog.Info("Using `cgi` authentication method")
 		authModule = &auth.CgiAuth{}
-	case "DUMMY":
+	case "dummy":
 		// for development & testing
-		slog.Info("Using DUMMY authentication method")
+		slog.Info("Using `dummy` authentication method")
 		authModule = &auth.DummyAuth{}
 	default:
-		slog.Info("Using PROXY authentication method")
+		slog.Info("Using `proxy` authentication method")
 		authModule = &auth.ProxyAuth{}
 	}
 

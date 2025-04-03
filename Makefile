@@ -41,7 +41,7 @@ run:
 
 run-dev:
 	mkdir -p ./data
-	AUTH_METHOD=DUMMY STATE_DIRECTORY=./data go run ./cmd/filesender -d
+	FILESENDER_AUTH_METHOD=dummy STATE_DIRECTORY=./data go run ./cmd/filesender -d
 
 hotreload:
 	watchexec --shell=none -r -w ./internal/assets -- make run-dev
