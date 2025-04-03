@@ -1,4 +1,5 @@
 const form = document.querySelector("form");
+var userId = "";
 
 document.body.onload = () => {
     const filesSelector = document.querySelector("#files-selector");
@@ -33,7 +34,8 @@ const uploadFile = async (expiryDate, file) => {
     });
 
     if (response.status === 200) {
-        return response.url.split('upload/')[1];
+        const parials = response.url.split('download/')[1];
+        return parials.split("/")[1];
     }
 
     showError("Something went wrong uploading file");
@@ -98,5 +100,5 @@ form.addEventListener("submit", async e => {
     }
 
     if (fileId !== false)
-        window.location.replace(`upload/${fileId}`);
+        window.location.replace(`download/${userId}/${fileId}`);
 });

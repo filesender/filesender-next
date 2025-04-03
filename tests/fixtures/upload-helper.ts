@@ -21,7 +21,7 @@ export async function uploadTestFile(page: Page) {
     });
 
     await page.click('input[type="submit"]');
-    await page.waitForURL('**/upload/**', { timeout: 5000 });
+    await page.waitForURL('**/download/**', { timeout: 5000 });
 
     return {
         fileName,
