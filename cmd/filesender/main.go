@@ -15,6 +15,18 @@ import (
 	"codeberg.org/filesender/filesender-next/internal/logging"
 )
 
+func maxUploadSize() int64 {
+	// parse MAX_UPLOAD_SIZE environment variable as an unsigned integer. If
+	// not specified, or parsing fails, return the default
+	muInt, err := strconv.ParseUint(os.Getenv("MAX_UPLOAD_SIZE"), 10, 0)
+	if err != nil {
+		// default = 2 GiB
+		return 2 * 1024 * 1024 * 1024
+	}
+
+	return int64(muInt)
+}
+
 func main() {
 	enableDebug := flag.Bool("d", false, "enable DEBUG output")
 	addr := flag.String("listen", "127.0.0.1:8080", "specify the LISTEN address")
@@ -25,17 +37,8 @@ func main() {
 		logging.SetLogLevel(slog.LevelDebug)
 	}
 
-	// Get max upload size (per chunk)
-	maxUploadSizeStr := os.Getenv("MAX_UPLOAD_SIZE")
-	if maxUploadSizeStr == "" {
-		slog.Info("environment variable \"MAX_UPLOAD_SIZE\" is not set, using default: 2147483648 (2GB)")
-		maxUploadSizeStr = "2147483648"
-	}
-	maxUploadSize, err := strconv.ParseInt(maxUploadSizeStr, 10, 0)
-	if err != nil {
-		slog.Error("Failed converting \"MAX_UPLOAD_SIZE\" to int", "error", err)
-		os.Exit(1)
-	}
+	maxUploadSize := maxUploadSize()
+	slog.Info("MAX_UPLOAD_SIZE", "bytes", maxUploadSize)
 
 	// Initialise database
 	stateDir := os.Getenv("STATE_DIRECTORY")
@@ -43,7 +46,7 @@ func main() {
 		slog.Error("environment variable \"STATE_DIRECTORY\" not set")
 		os.Exit(1)
 	}
-	err = os.MkdirAll(stateDir, 0o700)
+	err := os.MkdirAll(stateDir, 0o700)
 	if err != nil {
 		slog.Error("Failed creating state directory", "error", err)
 		os.Exit(1)
