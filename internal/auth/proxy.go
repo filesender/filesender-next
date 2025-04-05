@@ -6,8 +6,10 @@ import (
 	"net/http"
 )
 
+// ProxyAuth contains... nothing (yet again)
 type ProxyAuth struct{}
 
+// UserAuth authenticates user
 func (s *ProxyAuth) UserAuth(r *http.Request) (string, error) {
 	tcpAddr, err := net.ResolveTCPAddr("tcp", r.RemoteAddr)
 	if err != nil {

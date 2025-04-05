@@ -42,7 +42,7 @@ func UploadTemplate(authModule auth.Auth) http.HandlerFunc {
 }
 
 // GetDownloadTemplate handles GET /download/{userID}/{fileID}
-func GetDownloadTemplate(authModule auth.Auth) http.HandlerFunc {
+func GetDownloadTemplate() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, fileID := r.PathValue("userID"), r.PathValue("fileID")
 

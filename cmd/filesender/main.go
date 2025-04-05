@@ -77,7 +77,7 @@ func main() {
 
 	// Page handlers
 	router.HandleFunc("GET /{$}", handlers.UploadTemplate(authModule))
-	router.HandleFunc("GET /download/{userID}/{fileID}", handlers.GetDownloadTemplate(authModule))
+	router.HandleFunc("GET /download/{userID}/{fileID}", handlers.GetDownloadTemplate())
 
 	// Serve static files
 	subFS, err := fs.Sub(assets.EmbeddedPublicFiles, "public")
