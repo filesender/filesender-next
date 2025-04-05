@@ -36,12 +36,13 @@ func UploadTemplate(authModule auth.Auth) http.HandlerFunc {
 			MinDate:     minDate.Format(time.DateOnly),
 			DefaultDate: defaultDate.Format(time.DateOnly),
 			MaxDate:     maxDate.Format(time.DateOnly),
+			UserID:      userID,
 		})
 	}
 }
 
 // GetDownloadTemplate handles GET /download/{userID}/{fileID}
-func GetDownloadTemplate() http.HandlerFunc {
+func GetDownloadTemplate(authModule auth.Auth) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, fileID := r.PathValue("userID"), r.PathValue("fileID")
 
