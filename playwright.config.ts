@@ -17,6 +17,7 @@ export default defineConfig({
         stdout: 'pipe',
         stderr: 'pipe',
         env: {
+            FILESENDER_AUTH_METHOD: 'dummy',
             FILESENDER_DEBUG: 'true',
             STATE_DIRECTORY: './data',
         }

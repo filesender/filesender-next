@@ -10,12 +10,13 @@ import (
 	"testing"
 	"time"
 
+	"codeberg.org/filesender/filesender-next/internal/auth"
 	"codeberg.org/filesender/filesender-next/internal/crypto"
 	"codeberg.org/filesender/filesender-next/internal/handlers"
 )
 
 func TestUploadAPIHandler(t *testing.T) {
-	handler := handlers.UploadAPI(10 * 1024 * 1024) // 10 MB limit
+	handler := handlers.UploadAPI(&auth.DummyAuth{}, 10*1024*1024) // 10 MB limit
 
 	tempDir, err := os.MkdirTemp("", "test_uploads")
 	if err != nil {

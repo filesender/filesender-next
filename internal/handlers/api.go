@@ -18,9 +18,9 @@ import (
 
 // UploadAPI handles POST /api/v1/upload
 // Expects `expiry_date` in form data
-func UploadAPI(maxUploadSize int64) http.HandlerFunc {
+func UploadAPI(authModule auth.Auth, maxUploadSize int64) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userID, err := auth.Auth(r)
+		userID, err := authModule.UserAuth(r)
 		if err != nil {
 			slog.Info("unable to authenticate user", "error", err)
 			sendJSON(w, http.StatusUnauthorized, false, "You're not authenticated", nil)
