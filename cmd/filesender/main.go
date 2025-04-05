@@ -77,7 +77,6 @@ func main() {
 
 	// Page handlers
 	router.HandleFunc("GET /{$}", handlers.UploadTemplate(authModule))
-	router.HandleFunc("GET /upload/{id}", handlers.UploadDoneTemplate(authModule))
 	router.HandleFunc("GET /download/{userID}/{fileID}", handlers.GetDownloadTemplate())
 
 	// Serve static files

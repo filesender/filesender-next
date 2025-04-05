@@ -2,6 +2,7 @@
 package models
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -10,7 +11,6 @@ import (
 	"time"
 
 	"codeberg.org/filesender/filesender-next/internal/id"
-	"codeberg.org/filesender/filesender-next/internal/json"
 )
 
 // File model representing metadata
@@ -34,9 +34,27 @@ func (file *File) Create() error {
 
 // Save the current File meta state to disk
 func (file *File) Save() error {
-	err := json.WriteDataToFile(file, filepath.Join(os.Getenv("STATE_DIRECTORY"), file.UserID, file.ID+".meta"))
+	JSONData, err := json.Marshal(file)
 	if err != nil {
-		slog.Error("Failed writing meta file", "error", err)
+		slog.Error("Failed marshalling data", "error", err)
+		return err
+	}
+
+	metaPath := filepath.Join(os.Getenv("STATE_DIRECTORY"), file.UserID, file.ID+".meta")
+	f, err := os.OpenFile(metaPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o600)
+	if err != nil {
+		slog.Error("Failed opening file", "error", err, "path", metaPath)
+		return err
+	}
+	defer func() {
+		if err := f.Close(); err != nil {
+			slog.Error("Failed closing file", "error", err, "path", metaPath)
+		}
+	}()
+
+	_, err = f.Write(JSONData)
+	if err != nil {
+		slog.Error("Failed writing data", "error", err, "path", metaPath)
 		return err
 	}
 
@@ -84,12 +102,18 @@ func ValidateFile(userID, fileID string) error {
 // GetFileFromIDs creates new File object from given user ID & file ID
 // Errors when file does not exist
 func GetFileFromIDs(userID string, fileID string) (File, error) {
-	filePath := filepath.Join(os.Getenv("STATE_DIRECTORY"), userID, fileID+".meta")
+	metaPath := filepath.Join(os.Getenv("STATE_DIRECTORY"), userID, fileID+".meta")
 	var file File
 
-	err := json.ReadDataFromFile(filePath, &file)
+	data, err := os.ReadFile(metaPath)
 	if err != nil {
-		slog.Error("Failed reading file: "+filePath, "error", err)
+		slog.Error("Failed reading file", "error", err, "path", metaPath)
+		return file, err
+	}
+
+	err = json.Unmarshal(data, &file)
+	if err != nil {
+		slog.Error("Failed unmarshalling meta file", "error", err, "path", metaPath)
 	}
 
 	return file, err
