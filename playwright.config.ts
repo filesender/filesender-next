@@ -12,7 +12,7 @@ export default defineConfig({
         { name: 'webkit', use: { browserName: 'webkit' } },
     ],
     webServer: {
-        command: 'filesender.exe',
+        command: './filesender',
         url: 'http://localhost:8080',
         stdout: 'pipe',
         stderr: 'pipe',
