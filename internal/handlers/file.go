@@ -27,7 +27,7 @@ func FileUpload(fileMeta models.File, file multipart.File, fileName string) erro
 	if _, err := os.Stat(uploadDest); os.IsNotExist(err) {
 		err = os.Mkdir(uploadDest, 0o700)
 		if err != nil {
-			slog.Error("Could not create new user directory")
+			slog.Error("Could not create new user directory", "error", err)
 			return err
 		}
 	}
