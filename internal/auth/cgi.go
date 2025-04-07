@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-// CgiAuth contains... nothing?
+// CgiAuth implements Auth using the REMOTE_USER heade
 type CgiAuth struct{}
 
 // UserAuth authenticates user

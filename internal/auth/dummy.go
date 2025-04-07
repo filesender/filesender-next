@@ -4,7 +4,7 @@ import (
 	"net/http"
 )
 
-// DummyAuth contains... nothing?
+// DummyAuth provides a hardcoded user for development/testing.
 type DummyAuth struct{}
 
 // UserAuth authenticates user

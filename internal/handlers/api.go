@@ -47,7 +47,7 @@ func UploadAPI(authModule auth.Auth, maxUploadSize int64) http.HandlerFunc {
 			return
 		}
 
-		expiryDate, err := time.Parse("2006-02-03", expiryDates[0])
+		expiryDate, err := time.Parse("2006-01-02", expiryDates[0])
 		if err != nil {
 			slog.Error("Failed parsing date", "error", err, "input", expiryDates[0])
 			sendJSON(w, http.StatusBadRequest, false, "Invalid date format, expected YYYY-MM-DD", nil)

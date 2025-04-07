@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-// ProxyAuth contains... nothing (yet again)
+// ProxyAuth authenticates based on localhost check and X-Remote-User header.
 type ProxyAuth struct{}
 
 // UserAuth authenticates user
