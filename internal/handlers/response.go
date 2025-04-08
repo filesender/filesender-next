@@ -10,6 +10,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 
 	"codeberg.org/filesender/filesender-next/internal/models"
 )
@@ -103,7 +104,7 @@ func sendFile(stateDir string, w http.ResponseWriter, file *models.File) {
 
 	w.Header().Set("Content-Type", "application/octet-stream")
 	w.Header().Set("Content-Disposition", `attachment; filename="`+file.FileName+`"`)
-	w.Header().Set("Content-Length", string(rune(file.ByteSize)))
+	w.Header().Set("Content-Length", strconv.Itoa(file.ByteSize))
 
 	_, err = io.Copy(w, f)
 	if err != nil {
