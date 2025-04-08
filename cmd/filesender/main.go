@@ -59,6 +59,7 @@ func main() {
 		slog.Error("Failed creating state directory", "error", err)
 		os.Exit(1)
 	}
+	slog.Info("State directory set", "dir", stateDir)
 
 	// Initialise handler, pass embedded template files
 	handlers.Init(assets.EmbeddedTemplateFiles)
