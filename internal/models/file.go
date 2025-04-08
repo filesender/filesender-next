@@ -27,20 +27,20 @@ type File struct {
 }
 
 // Create function creates a new meta file & sets the creation date
-func (file *File) Create() error {
+func (file *File) Create(stateDir string) error {
 	file.CreationDate = time.Now().UTC().Round(time.Second)
-	return file.Save()
+	return file.Save(stateDir)
 }
 
 // Save the current File meta state to disk
-func (file *File) Save() error {
+func (file *File) Save(stateDir string) error {
 	JSONData, err := json.Marshal(file)
 	if err != nil {
 		slog.Error("Failed marshalling data", "error", err)
 		return err
 	}
 
-	metaPath := filepath.Join(os.Getenv("STATE_DIRECTORY"), file.UserID, file.ID+".meta")
+	metaPath := filepath.Join(stateDir, file.UserID, file.ID+".meta")
 	f, err := os.OpenFile(metaPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o600)
 	if err != nil {
 		slog.Error("Failed opening file", "error", err, "path", metaPath)
@@ -62,8 +62,8 @@ func (file *File) Save() error {
 }
 
 // FileExists checks if the file exists
-func FileExists(userID string, fileID string) (bool, error) {
-	filePath := filepath.Join(os.Getenv("STATE_DIRECTORY"), userID, fileID+".meta")
+func FileExists(stateDir string, userID string, fileID string) (bool, error) {
+	filePath := filepath.Join(stateDir, userID, fileID+".meta")
 
 	_, err := os.Stat(filePath)
 	if err == nil {
@@ -78,14 +78,14 @@ func FileExists(userID string, fileID string) (bool, error) {
 }
 
 // ValidateFile checks if file ID is valid & if the file exists
-func ValidateFile(userID, fileID string) error {
+func ValidateFile(stateDir string, userID string, fileID string) error {
 	err := id.Validate(fileID)
 	if err != nil {
 		slog.Error("Invalid file ID", "error", err)
 		return fmt.Errorf("file ID is invalid")
 	}
 
-	exists, err := FileExists(userID, fileID)
+	exists, err := FileExists(stateDir, userID, fileID)
 	if err != nil {
 		slog.Error("File not found", "error", err)
 		return fmt.Errorf("could not find file")
@@ -101,8 +101,8 @@ func ValidateFile(userID, fileID string) error {
 
 // GetFileFromIDs creates new File object from given user ID & file ID
 // Errors when file does not exist
-func GetFileFromIDs(userID string, fileID string) (File, error) {
-	metaPath := filepath.Join(os.Getenv("STATE_DIRECTORY"), userID, fileID+".meta")
+func GetFileFromIDs(stateDir string, userID string, fileID string) (File, error) {
+	metaPath := filepath.Join(stateDir, userID, fileID+".meta")
 	var file File
 
 	data, err := os.ReadFile(metaPath)

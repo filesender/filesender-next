@@ -42,18 +42,18 @@ func UploadTemplate(authModule auth.Auth) http.HandlerFunc {
 }
 
 // GetDownloadTemplate handles GET /download/{userID}/{fileID}
-func GetDownloadTemplate() http.HandlerFunc {
+func GetDownloadTemplate(stateDir string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, fileID := r.PathValue("userID"), r.PathValue("fileID")
 
-		err := models.ValidateFile(userID, fileID)
+		err := models.ValidateFile(stateDir, userID, fileID)
 		if err != nil {
 			slog.Error("User passed invalid file ID", "error", err)
 			sendError(w, http.StatusBadRequest, "File ID is invalid")
 			return
 		}
 
-		file, err := models.GetFileFromIDs(userID, fileID)
+		file, err := models.GetFileFromIDs(stateDir, userID, fileID)
 		if err != nil {
 			slog.Error("Failed getting file from id", "error", err)
 			sendError(w, http.StatusInternalServerError, "Failed getting specified file")

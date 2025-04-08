@@ -65,12 +65,12 @@ func main() {
 
 	router := http.NewServeMux()
 	// API endpoints
-	router.HandleFunc("POST /api/v1/upload", handlers.UploadAPI(authModule, maxUploadSize))
-	router.HandleFunc("GET /api/v1/download/{userID}/{fileID}", handlers.DownloadAPI())
+	router.HandleFunc("POST /api/v1/upload", handlers.UploadAPI(authModule, stateDir, maxUploadSize))
+	router.HandleFunc("GET /api/v1/download/{userID}/{fileID}", handlers.DownloadAPI(stateDir))
 
 	// Page handlers
 	router.HandleFunc("GET /{$}", handlers.UploadTemplate(authModule))
-	router.HandleFunc("GET /download/{userID}/{fileID}", handlers.GetDownloadTemplate())
+	router.HandleFunc("GET /download/{userID}/{fileID}", handlers.GetDownloadTemplate(stateDir))
 
 	// Serve static files
 	subFS, err := fs.Sub(assets.EmbeddedPublicFiles, "public")

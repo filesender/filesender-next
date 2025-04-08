@@ -16,8 +16,6 @@ import (
 )
 
 func TestUploadAPIHandler(t *testing.T) {
-	handler := handlers.UploadAPI(&auth.DummyAuth{}, 10*1024*1024) // 10 MB limit
-
 	tempDir, err := os.MkdirTemp("", "test_uploads")
 	if err != nil {
 		t.Fatalf("Failed to create temporary directory: %v", err)
@@ -28,10 +26,7 @@ func TestUploadAPIHandler(t *testing.T) {
 		}
 	}()
 
-	err = os.Setenv("STATE_DIRECTORY", tempDir)
-	if err != nil {
-		t.Fatalf("Failed setting env var: %v", err)
-	}
+	handler := handlers.UploadAPI(&auth.DummyAuth{}, tempDir, 10*1024*1024) // 10 MB limit
 
 	// Hash "dev" for test use
 	hashedID, err := crypto.HashToBase64("dev")

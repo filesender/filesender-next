@@ -56,11 +56,6 @@ func TestFileUpload_Success(t *testing.T) {
 		}
 	}()
 
-	err = os.Setenv("STATE_DIRECTORY", tempDir)
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	fileContent := "This is a test file"
 	testFile, cleanup, err := createMultipartFile(fileContent)
 	if err != nil {
@@ -75,7 +70,7 @@ func TestFileUpload_Success(t *testing.T) {
 		ExpiryDate: time.Now().Add(24 * time.Hour),
 	}
 
-	err = handlers.FileUpload(fileMeta, testFile, "test.txt")
+	err = handlers.FileUpload(tempDir, fileMeta, testFile, "test.txt")
 	if err != nil {
 		t.Fatalf("Expected success, got error: %v", err)
 	}
@@ -87,11 +82,6 @@ func TestFileUpload_Success(t *testing.T) {
 }
 
 func TestFileUpload_InvalidDirectory(t *testing.T) {
-	err := os.Setenv("STATE_DIRECTORY", "/invalid/directory/should/fail")
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	testFile, cleanup, err := createMultipartFile("test")
 	if err != nil {
 		t.Fatal(err)
@@ -105,7 +95,7 @@ func TestFileUpload_InvalidDirectory(t *testing.T) {
 		ExpiryDate: time.Now().Add(24 * time.Hour),
 	}
 
-	err = handlers.FileUpload(fileMeta, testFile, "test.txt")
+	err = handlers.FileUpload("/invalid/directory/should/fail", fileMeta, testFile, "test.txt")
 	if err == nil {
 		t.Fatal("Expected error due to invalid directory, got nil")
 	}
@@ -122,11 +112,6 @@ func TestFileUpload_CopyFailure(t *testing.T) {
 			t.Errorf("Failed deleting temp dir: %v", err)
 		}
 	}()
-
-	err = os.Setenv("STATE_DIRECTORY", tempDir)
-	if err != nil {
-		t.Fatal(err)
-	}
 
 	// Simulate a closed file (io.Copy will fail)
 	fakeFile, _, err := createMultipartFile("test")
@@ -145,7 +130,7 @@ func TestFileUpload_CopyFailure(t *testing.T) {
 		ExpiryDate: time.Now().Add(24 * time.Hour),
 	}
 
-	err = handlers.FileUpload(fileMeta, fakeFile, "test.txt")
+	err = handlers.FileUpload(tempDir, fileMeta, fakeFile, "test.txt")
 	if err == nil {
 		t.Fatal("Expected error due to file copy failure, got nil")
 	}

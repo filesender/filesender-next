@@ -18,7 +18,7 @@ import (
 
 // UploadAPI handles POST /api/v1/upload
 // Expects `expiry_date` in form data
-func UploadAPI(authModule auth.Auth, maxUploadSize int64) http.HandlerFunc {
+func UploadAPI(authModule auth.Auth, stateDir string, maxUploadSize int64) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, err := authModule.UserAuth(r)
 		if err != nil {
@@ -79,7 +79,7 @@ func UploadAPI(authModule auth.Auth, maxUploadSize int64) http.HandlerFunc {
 			ByteSize:   int(fileHeader.Size),
 			ExpiryDate: expiryDate,
 		}
-		err = FileUpload(fileMeta, file, fileHeader.Filename)
+		err = FileUpload(stateDir, fileMeta, file, fileHeader.Filename)
 		if err != nil {
 			slog.Error("Failed handling file upload", "error", err)
 			sendJSON(w, http.StatusInternalServerError, false, "Failed handling new file upload", nil)
@@ -94,18 +94,18 @@ func UploadAPI(authModule auth.Auth, maxUploadSize int64) http.HandlerFunc {
 }
 
 // DownloadAPI handles `GET /api/v1/download/{userID}/{fileID}`
-func DownloadAPI() http.HandlerFunc {
+func DownloadAPI(stateDir string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, fileID := r.PathValue("userID"), r.PathValue("fileID")
 
-		err := models.ValidateFile(userID, fileID)
+		err := models.ValidateFile(stateDir, userID, fileID)
 		if err != nil {
 			slog.Error("User passed invalid file ID", "error", err)
 			sendError(w, http.StatusBadRequest, "File ID is invalid")
 			return
 		}
 
-		file, err := models.GetFileFromIDs(userID, fileID)
+		file, err := models.GetFileFromIDs(stateDir, userID, fileID)
 		if err != nil {
 			slog.Error("Failed getting file from id", "error", err)
 			sendError(w, http.StatusInternalServerError, "Failed getting specified file")
@@ -113,13 +113,13 @@ func DownloadAPI() http.HandlerFunc {
 		}
 
 		file.DownloadCount++
-		err = file.Save()
+		err = file.Save(stateDir)
 		if err != nil {
 			slog.Error("Failed increasing download count on file", "error", err, "userID", userID, "fileID", fileID)
 			sendError(w, http.StatusInternalServerError, "Failed setting new file meta data")
 			return
 		}
 
-		sendFile(w, &file)
+		sendFile(stateDir, w, &file)
 	}
 }

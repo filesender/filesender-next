@@ -87,8 +87,8 @@ func sendRedirect(w http.ResponseWriter, status int, location string, body strin
 }
 
 // Sends file
-func sendFile(w http.ResponseWriter, file *models.File) {
-	filePath := filepath.Join(os.Getenv("STATE_DIRECTORY"), file.UserID, file.FileName)
+func sendFile(stateDir string, w http.ResponseWriter, file *models.File) {
+	filePath := filepath.Join(stateDir, file.UserID, file.FileName)
 	f, err := os.Open(filePath)
 	if err != nil {
 		sendError(w, http.StatusNotFound, "File not found") // This should never happen, this is already checked before...
