@@ -10,6 +10,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 
 	"codeberg.org/filesender/filesender-next/internal/models"
 )
@@ -87,8 +88,8 @@ func sendRedirect(w http.ResponseWriter, status int, location string, body strin
 }
 
 // Sends file
-func sendFile(w http.ResponseWriter, file *models.File) {
-	filePath := filepath.Join(os.Getenv("STATE_DIRECTORY"), file.UserID, file.FileName)
+func sendFile(stateDir string, w http.ResponseWriter, file *models.File) {
+	filePath := filepath.Join(stateDir, file.UserID, file.FileName)
 	f, err := os.Open(filePath)
 	if err != nil {
 		sendError(w, http.StatusNotFound, "File not found") // This should never happen, this is already checked before...
@@ -103,7 +104,7 @@ func sendFile(w http.ResponseWriter, file *models.File) {
 
 	w.Header().Set("Content-Type", "application/octet-stream")
 	w.Header().Set("Content-Disposition", `attachment; filename="`+file.FileName+`"`)
-	w.Header().Set("Content-Length", string(rune(file.ByteSize)))
+	w.Header().Set("Content-Length", strconv.Itoa(file.ByteSize))
 
 	_, err = io.Copy(w, f)
 	if err != nil {

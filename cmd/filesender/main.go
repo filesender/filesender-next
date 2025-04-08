@@ -59,18 +59,19 @@ func main() {
 		slog.Error("Failed creating state directory", "error", err)
 		os.Exit(1)
 	}
+	slog.Info("State directory set", "dir", stateDir)
 
 	// Initialise handler, pass embedded template files
 	handlers.Init(assets.EmbeddedTemplateFiles)
 
 	router := http.NewServeMux()
 	// API endpoints
-	router.HandleFunc("POST /api/v1/upload", handlers.UploadAPI(authModule, maxUploadSize))
-	router.HandleFunc("GET /api/v1/download/{userID}/{fileID}", handlers.DownloadAPI())
+	router.HandleFunc("POST /api/v1/upload", handlers.UploadAPI(authModule, stateDir, maxUploadSize))
+	router.HandleFunc("GET /api/v1/download/{userID}/{fileID}", handlers.DownloadAPI(stateDir))
 
 	// Page handlers
 	router.HandleFunc("GET /{$}", handlers.UploadTemplate(authModule))
-	router.HandleFunc("GET /download/{userID}/{fileID}", handlers.GetDownloadTemplate())
+	router.HandleFunc("GET /download/{userID}/{fileID}", handlers.GetDownloadTemplate(stateDir))
 
 	// Serve static files
 	subFS, err := fs.Sub(assets.EmbeddedPublicFiles, "public")

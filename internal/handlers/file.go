@@ -21,9 +21,9 @@ func getFullExtension(filename string) string {
 }
 
 // FileUpload handles a new file uploaded
-func FileUpload(fileMeta models.File, file multipart.File, fileName string) error {
+func FileUpload(stateDir string, fileMeta models.File, file multipart.File, fileName string) error {
 	// Create transfer folder for user if not exists
-	uploadDest := filepath.Join(os.Getenv("STATE_DIRECTORY"), fileMeta.UserID)
+	uploadDest := filepath.Join(stateDir, fileMeta.UserID)
 	if _, err := os.Stat(uploadDest); os.IsNotExist(err) {
 		err = os.Mkdir(uploadDest, 0o700)
 		if err != nil {
@@ -51,7 +51,7 @@ func FileUpload(fileMeta models.File, file multipart.File, fileName string) erro
 	}
 
 	fileMeta.FileName = fileName
-	err = fileMeta.Create()
+	err = fileMeta.Create(stateDir)
 	if err != nil {
 		slog.Error("Failed creating upload meta file", "error", err)
 		return err
