@@ -76,12 +76,12 @@ form.addEventListener("submit", async e => {
     const filesInput = formData.getAll("file");
     const expiryDate = formData.get("expiry-date");
 
-    if (filesInput[0].size === 0) {
+    if (filesInput[0].name === "") {
         return showError("You have to select files");
     }
 
     var files = [
-        ...filesInput.filter(f => f.size !== 0)
+        ...filesInput.filter(f => f.name !== "")
     ];
 
     const tarBlob = await archiveFiles(files);
