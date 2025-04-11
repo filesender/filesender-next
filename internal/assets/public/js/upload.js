@@ -1,14 +1,6 @@
 const form = document.querySelector("form");
 var userId = "";
 
-document.body.onload = () => {
-    const filesSelector = document.querySelector("#files-selector");
-    const label = filesSelector.parentElement.querySelector("label");
-
-    filesSelector.setAttribute("multiple", "true");
-    label.innerText = "Select files";
-}
-
 /**
  * Dummy error handling function
  * @param {string} msg Message to show to use
@@ -43,49 +35,16 @@ const uploadFile = async (expiryDate, file) => {
     return false;
 }
 
-/**
- * Archives files and returns a .tar Blob object
- * This is a placeholder function for now..
- * @param {FileList | File[]} files - The files to be added to the tar archive
- * @returns {Promise<Blob>} A blob containing the FULL .tar (not chunked or a stream)
- */
-const archiveFiles = async (files) => {
-    const stream = new ReadableStream({
-        async start(controller) {
-            const generator = generateTarStream(files);
-            for await (const chunk of generator) {
-                console.log(chunk);
-                controller.enqueue(chunk);
-            }
-            controller.close();
-        }
-    });
-
-    const response = new Response(stream, {
-        headers: {
-            "Content-Type": "application/x-tar"
-        }
-    });
-    return response.blob();
-}
-
 form.addEventListener("submit", async e => {
     e.preventDefault();
 
     const formData = new FormData(form);
-    const filesInput = formData.getAll("file");
+    const file = formData.get("file");
     const expiryDate = formData.get("expiry-date");
 
-    if (filesInput[0].name === "") {
-        return showError("You have to select files");
+    if (file.name === "") {
+        return showError("You have to select a file");
     }
-
-    var files = [
-        ...filesInput.filter(f => f.name !== "")
-    ];
-
-    const tarBlob = await archiveFiles(files);
-    const file = new File([tarBlob], "archive.tar");
     
     let tries = 0;
     var fileId;
