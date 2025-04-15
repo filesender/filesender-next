@@ -26,7 +26,7 @@ test('should download', async ({ page }) => {
 
         await download.path(); // Waits until download is complete
         const suggestedFilename = download.suggestedFilename();
-        expect(suggestedFilename).toMatch(/\.txt$/i);
+        expect(suggestedFilename).toMatch(/\.bin$/i);
 
     } finally {
         cleanup();
