@@ -20,8 +20,10 @@ type File struct {
 	FileNames     []string  `json:"file_names"`
 	FileCount     int       `json:"file_count"`
 	DownloadCount int       `json:"download_count"`
-	ByteSize      int       `json:"byte_size"`
+	ByteSize      int64     `json:"byte_size"`
 	FileName      string    `json:"path"`
+	Chunked       bool      `json:"chunked"`
+	Partial       bool      `json:"partial"`
 	ExpiryDate    time.Time `json:"expiry_date"`
 	CreationDate  time.Time `json:"creation_date"`
 }

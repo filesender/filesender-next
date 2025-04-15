@@ -2,6 +2,7 @@ const CHUNK_SIZE = 1024 * 1024;
 
 const form = document.querySelector("form");
 var userId = "";
+var partialUploadLocation = "";
 
 /**
  * Dummy error handling function
@@ -15,17 +16,64 @@ const showError = msg => {
  * Uploads a file
  * @param {string} expiryDate `YYYY-MM-DD` formatted expiry date of the file
  * @param {File} file 
+ * @param {boolean} partial
  * @returns {Promise<string|false>} Contains file ID with successful, otherwise `false`
  */
-const uploadFile = async (expiryDate, file) => {
+const uploadFile = async (expiryDate, file, partial) => {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("expiry-date", expiryDate);
+
+    var uploadComplete = "?1";
+    if (partial) {
+        uploadComplete = "?0"
+    }
     
     const response = await fetch("api/v1/upload", {
         method: "POST",
-        body: formData
+        body: formData,
+        headers: {
+            "Upload-Complete": uploadComplete
+        }
     });
+
+    if (response.status === 202 && partial) {
+        partialUploadLocation = response.headers.get("Location");
+        return true;
+    }
+
+    if (response.status === 200) {
+        const parials = response.url.split('download/')[1];
+        return parials.split("/")[1];
+    }
+
+    showError("Something went wrong uploading file");
+    console.error(response.body)
+    return false;
+}
+
+const uploadPartialFile = async (file, offset, done) => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    var uploadComplete = "?0";
+    if (done) {
+        uploadComplete = "?1"
+    }
+
+    const response = await fetch(partialUploadLocation, {
+        method: "PATCH",
+        body: formData,
+        headers: {
+            "Upload-Complete": uploadComplete,
+            "Upload-Offset": offset
+        }
+    });
+
+    if (response.status === 202) {
+        partialUploadLocation = response.headers.get("Location");
+        return true;
+    }
 
     if (response.status === 200) {
         const parials = response.url.split('download/')[1];
@@ -132,7 +180,7 @@ async function* fileChunkGenerator(stream, chunkSize) {
         }
     }
 
-    if (accumulatedSize > 0) {
+    if (accumulatedSize >= 0) {
         const blob = new Blob(chunks);
         const file = new File([blob], `${fileIndex}.bin`);
         yield file;
@@ -158,7 +206,48 @@ form.addEventListener("submit", async e => {
     console.log("Key", key);
     console.log("Header", header);
 
-    for await (const file of fileChunkGenerator(stream, CHUNK_SIZE)) {
-        console.log(file);
+    let total = 0;
+    let fileId = false;
+    const chunkIterator = fileChunkGenerator(stream, CHUNK_SIZE);
+
+    let first = true;
+    let result = await chunkIterator.next();
+    while (!result.done || first) {
+        first = false;
+        const file = result.value;
+
+        const nextResult = await chunkIterator.next();
+        const isLastChunk = nextResult.done;
+
+        if (total === 0) {
+            const res = await uploadFile(expiryDate, file, !isLastChunk);
+            console.log(res);
+            if (res === false) return;
+
+            total += file.size;
+    
+            if (res !== true) {
+                fileId = res;
+                break;
+            }
+        } else {
+            const res = await uploadPartialFile(file, total, isLastChunk);
+            if (res === false) return;
+
+            total += file.size;
+    
+            if (res !== true) {
+                fileId = res;
+                break;
+            }
+        }
+    
+        result = nextResult;
     }
+
+    if (fileId !== false) {
+        console.log(userId, fileId)
+        window.location.replace(`download/${userId}/${fileId}`);
+    }
+
 });
