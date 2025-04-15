@@ -17,8 +17,6 @@ import (
 type File struct {
 	ID            string    `json:"id"`
 	UserID        string    `json:"user_id"`
-	FileNames     []string  `json:"file_names"`
-	FileCount     int       `json:"file_count"`
 	DownloadCount int       `json:"download_count"`
 	ByteSize      int64     `json:"byte_size"`
 	FileName      string    `json:"path"`
