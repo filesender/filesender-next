@@ -95,7 +95,7 @@ func UploadAPI(authModule auth.Auth, stateDir string, maxUploadSize int64) http.
 		}
 
 		if !uploadComplete {
-			sendIncompleteResponse(w, userID, fileID, maxUploadSize, fileHeader.Size)
+			sendIncompleteResponse(w, fileID, maxUploadSize, fileHeader.Size)
 			return
 		}
 
@@ -109,7 +109,7 @@ func UploadAPI(authModule auth.Auth, stateDir string, maxUploadSize int64) http.
 // ChunkedUploadAPI handles PATCH /api/v1/upload/{userID}/{fileID}
 func ChunkedUploadAPI(authModule auth.Auth, stateDir string, maxUploadSize int64) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		pathUserID, fileID := r.PathValue("userID"), r.PathValue("fileID")
+		fileID := r.PathValue("fileID")
 
 		userID, err := authModule.UserAuth(r)
 		if err != nil {
@@ -123,11 +123,6 @@ func ChunkedUploadAPI(authModule auth.Auth, stateDir string, maxUploadSize int64
 		if err != nil {
 			slog.Info("failed hashing user ID", "error", err)
 			sendJSON(w, http.StatusInternalServerError, false, "Failed creating user ID", nil)
-			return
-		}
-		if pathUserID != userID {
-			slog.Info("Authenticated user does not match uploaded user", "authenticated", userID, "in url", pathUserID, "file ID", fileID, "error", err)
-			sendJSON(w, http.StatusUnauthorized, false, "You're not authorized", nil)
 			return
 		}
 
@@ -205,7 +200,7 @@ func ChunkedUploadAPI(authModule auth.Auth, stateDir string, maxUploadSize int64
 				sendError(w, http.StatusInternalServerError, "Failed sending redirect")
 			}
 		} else {
-			sendIncompleteResponse(w, userID, fileID, maxUploadSize, fileHeader.Size)
+			sendIncompleteResponse(w, fileID, maxUploadSize, fileMeta.ByteSize)
 		}
 	}
 }

@@ -67,7 +67,7 @@ func main() {
 	router := http.NewServeMux()
 	// API endpoints
 	router.HandleFunc("POST /api/v1/upload", handlers.UploadAPI(authModule, stateDir, maxUploadSize))
-	router.HandleFunc("PATCH /api/v1/upload/{userID}/{fileID}", handlers.ChunkedUploadAPI(authModule, stateDir, maxUploadSize))
+	router.HandleFunc("PATCH /api/v1/upload/{fileID}", handlers.ChunkedUploadAPI(authModule, stateDir, maxUploadSize))
 	router.HandleFunc("GET /api/v1/download/{userID}/{fileID}", handlers.DownloadAPI(stateDir))
 
 	// Page handlers

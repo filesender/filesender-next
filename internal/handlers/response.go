@@ -114,9 +114,9 @@ func sendFile(stateDir string, w http.ResponseWriter, file *models.File) {
 
 // Send incomplete upload response
 // Based on https://datatracker.ietf.org/doc/draft-ietf-httpbis-resumable-upload/
-func sendIncompleteResponse(w http.ResponseWriter, userID string, fileID string, maxUploadSize int64, bytesReceived int64) {
+func sendIncompleteResponse(w http.ResponseWriter, fileID string, maxUploadSize int64, bytesReceived int64) {
 	w.Header().Add("Upload-Draft-Interop-Version", "7")
-	w.Header().Add("Location", filepath.Join("api/v1/upload", userID, fileID))
+	w.Header().Add("Location", filepath.Join("api/v1/upload", fileID))
 	w.Header().Add("Upload-Limit", strconv.FormatInt(maxUploadSize, 10))
 	w.Header().Add("Upload-Offset", strconv.FormatInt(bytesReceived, 10))
 	w.WriteHeader(http.StatusAccepted)
