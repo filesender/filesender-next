@@ -13,11 +13,21 @@ const showError = msg => {
 }
 
 /**
+ * Encodes bytes to base64
+ * @param {Uint8Array} uint8Array Bytes to encode
+ * @returns Base64 URL-safe encoded bytes
+ */
+const toBase64Url = (uint8Array) => {
+    const base64 = btoa(String.fromCharCode(...uint8Array));
+    return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+/**
  * Uploads a file
  * @param {string} expiryDate `YYYY-MM-DD` formatted expiry date of the file
  * @param {File} file 
  * @param {boolean} partial
- * @returns {Promise<string|false>} Contains file ID with successful, otherwise `false`
+ * @returns `false` if errored, `string` if last chunk & successful, `true` if successful
  */
 const uploadFile = async (expiryDate, file, partial) => {
     const formData = new FormData();
@@ -52,6 +62,13 @@ const uploadFile = async (expiryDate, file, partial) => {
     return false;
 }
 
+/**
+ * Uploads a file chunk
+ * @param {File} file The chunk as a `File` object
+ * @param {number} offset Byte offset of the chunk
+ * @param {boolean} done If this is the last chunk
+ * @returns `false` if errored, `string` if last chunk & successful, `true` if successful
+ */
 const uploadPartialFile = async (file, offset, done) => {
     const formData = new FormData();
     formData.append("file", file);
@@ -221,7 +238,6 @@ form.addEventListener("submit", async e => {
 
         if (total === 0) {
             const res = await uploadFile(expiryDate, file, !isLastChunk);
-            console.log(res);
             if (res === false) return;
 
             total += file.size;
@@ -245,9 +261,11 @@ form.addEventListener("submit", async e => {
         result = nextResult;
     }
 
+    const keyEncoded = toBase64Url(key);
+    const headerEncoded = toBase64Url(header);
+
     if (fileId !== false) {
-        console.log(userId, fileId)
-        window.location.replace(`download/${userId}/${fileId}`);
+        window.location.replace(`download/${userId}/${fileId}#${keyEncoded}.${headerEncoded}`);
     }
 
 });
