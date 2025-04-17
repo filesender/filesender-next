@@ -1,4 +1,4 @@
-const CHUNK_SIZE = 1024 * 1024;
+const ENC_CHUNK_SIZE = 1024 * 1024;
 
 const form = document.querySelector("form");
 var userId = "";
@@ -104,105 +104,62 @@ const uploadPartialFile = async (file, offset, done) => {
 
 /**
  * Turns selected file into an encrypted readable byte stream.
- * Keeps a maximum of 10 chunks in memory (10 x `CHUNK_SIZE`)
+ * Keeps a maximum of 10 chunks in memory (10 x `ENC_CHUNK_SIZE`)
  * @param {File} f 
  * @param {Uint8Array} key
  * @returns {[ReadableStream<Uint8Array>, Uint8Array]}
  */
 const createEncryptedStream = (f, key) => {
-    let res = sodium.crypto_secretstream_xchacha20poly1305_init_push(key);
-    let [state_out, header] = [res.state, res.header];
+    const { state, header } = sodium.crypto_secretstream_xchacha20poly1305_init_push(key);
+    const reader = f.stream().getReader();
 
-    const fileReader = f.stream().getReader();
+    let buffer = new Uint8Array(0);
+    let doneReading = false;
 
-    let prevChunk = null;
     const encryptedStream = new ReadableStream({
-        async start(_controller) {
-            const { value } = await fileReader.read();
-            prevChunk = value;
-        },
-
         async pull(controller) {
-            const { done, value } = await fileReader.read();
-            if (done) {
-                if (prevChunk) {
-                    let msg = sodium.crypto_secretstream_xchacha20poly1305_push(state_out, prevChunk, null, sodium.crypto_secretstream_xchacha20poly1305_TAG_FINAL);
-                    controller.enqueue(msg);
+            while (buffer.byteLength < ENC_CHUNK_SIZE && !doneReading) {
+                const { value, done } = await reader.read();
+                if (done) {
+                    doneReading = true;
+                    break;
                 }
 
-                controller.close();
-                return;
+                // Append new chunk to buffer
+                const tmp = new Uint8Array(buffer.length + value.length);
+                tmp.set(buffer, 0);
+                tmp.set(value, buffer.length);
+                buffer = tmp;
             }
 
-            let msg = sodium.crypto_secretstream_xchacha20poly1305_push(state_out, prevChunk, null, sodium.crypto_secretstream_xchacha20poly1305_TAG_MESSAGE);
-            controller.enqueue(msg);
-        
-            prevChunk = value;
+            if (buffer.length >= ENC_CHUNK_SIZE) {
+                const chunk = buffer.slice(0, ENC_CHUNK_SIZE);
+                buffer = buffer.slice(ENC_CHUNK_SIZE);
+
+                const encrypted = sodium.crypto_secretstream_xchacha20poly1305_push(
+                    state, chunk, null, sodium.crypto_secretstream_xchacha20poly1305_TAG_MESSAGE
+                );
+                controller.enqueue(encrypted);
+            } else if (doneReading && buffer.length > 0) {
+                const encrypted = sodium.crypto_secretstream_xchacha20poly1305_push(
+                    state, buffer, null, sodium.crypto_secretstream_xchacha20poly1305_TAG_FINAL
+                );
+                controller.enqueue(encrypted);
+                controller.close();
+            } else if (doneReading) {
+                // No remaining data to encrypt, just close
+                controller.close();
+            }
         }
     }, {
-        highWaterMark: CHUNK_SIZE * 10,
+        highWaterMark: ENC_CHUNK_SIZE * 10,
         size(chunk) {
             return chunk.byteLength;
         }
     });
 
-    return [
-        encryptedStream,
-        header
-    ]
-}
-
-/**
- * Takes readable byte stream, creates a `File` generator in chunks of `CHUNK_SIZE`
- * @param {ReadableStream<Uint8Array>} stream 
- * @param {number} chunkSize 
- */
-async function* fileChunkGenerator(stream, chunkSize) {
-    const reader = stream.getReader();
-    let chunks = [];
-    let accumulatedSize = 0;
-    let fileIndex = 0;
-
-    while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        chunks.push(value);
-        accumulatedSize += value.length;
-
-        while (accumulatedSize >= chunkSize) {
-            let sizeToUse = 0;
-            const tempChunks = [];
-
-            while (sizeToUse < chunkSize && chunks.length > 0) {
-                const chunk = chunks.shift();
-                const remaining = chunkSize - sizeToUse;
-
-                if (chunk.length <= remaining) {
-                    tempChunks.push(chunk);
-                    sizeToUse += chunk.length;
-                    accumulatedSize -= chunk.length;
-                } else {
-                    tempChunks.push(chunk.slice(0, remaining));
-                    chunks.unshift(chunk.slice(remaining));
-                    accumulatedSize -= remaining;
-                    sizeToUse += remaining;
-                }
-            }
-
-            const blob = new Blob(tempChunks);
-            const file = new File([blob], `${fileIndex}.bin`);
-            fileIndex++;
-            yield file;
-        }
-    }
-
-    if (accumulatedSize >= 0) {
-        const blob = new Blob(chunks);
-        const file = new File([blob], `${fileIndex}.bin`);
-        yield file;
-    }
-}
+    return [encryptedStream, header];
+};
 
 form.addEventListener("submit", async e => {
     e.preventDefault();
@@ -223,21 +180,18 @@ form.addEventListener("submit", async e => {
     console.log("Key", key);
     console.log("Header", header);
 
-    let total = 0;
     let fileId = false;
-    const chunkIterator = fileChunkGenerator(stream, CHUNK_SIZE);
+    let total = 0;
+    let i = 0;
 
-    let first = true;
-    let result = await chunkIterator.next();
-    while (!result.done || first) {
-        first = false;
-        const file = result.value;
-
-        const nextResult = await chunkIterator.next();
-        const isLastChunk = nextResult.done;
+    const reader = stream.getReader();
+    var { value, done } = await reader.read();
+    while (true) {
+        const blob = new Blob(value);
+        const file = new File([blob], `${i}.bin`);
 
         if (total === 0) {
-            const res = await uploadFile(expiryDate, file, !isLastChunk);
+            const res = await uploadFile(expiryDate, file, !done);
             if (res === false) return;
 
             total += file.size;
@@ -247,7 +201,7 @@ form.addEventListener("submit", async e => {
                 break;
             }
         } else {
-            const res = await uploadPartialFile(file, total, isLastChunk);
+            const res = await uploadPartialFile(file, total, done);
             if (res === false) return;
 
             total += file.size;
@@ -257,8 +211,12 @@ form.addEventListener("submit", async e => {
                 break;
             }
         }
-    
-        result = nextResult;
+
+        if (done) break;
+        const res = await reader.read();
+        value = res.value;
+        done = res.done;
+        i++;
     }
 
     const keyEncoded = toBase64Url(key);
