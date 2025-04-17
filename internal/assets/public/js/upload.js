@@ -4,12 +4,35 @@ const form = document.querySelector("form");
 var userId = "";
 var partialUploadLocation = "";
 
+const setLoader = (progress) => {
+    const loader = document.querySelector("div.loader");
+    loader.style.width = `${progress * 100}%`;
+
+    const loaderText = document.querySelector("p#progress");
+    loaderText.innerText = `${Math.round(progress * 10000) / 100}%`;
+}
+
 /**
  * Dummy error handling function
  * @param {string} msg Message to show to use
  */
 const showError = msg => {
     console.log(`ERROR: ${msg}`);
+}
+
+/**
+ * Calculate expected size of encrypted file using libsodium secretstream
+ * @param {number} fileSize - The original file size in bytes
+ * @returns {number} - Expected encrypted file size in bytes
+ */
+function calculateEncryptedSize(fileSize) {
+    const headerSize = sodium.crypto_secretstream_xchacha20poly1305_HEADERBYTES;
+    const chunkOverhead = sodium.crypto_secretstream_xchacha20poly1305_ABYTES;
+  
+    const chunkCount = Math.ceil(fileSize / ENC_CHUNK_SIZE);
+    const encryptedSize = fileSize + headerSize + chunkCount * chunkOverhead;
+  
+    return encryptedSize;
 }
 
 /**
@@ -165,6 +188,8 @@ const createEncryptedStream = (f, key) => {
 
 form.addEventListener("submit", async e => {
     e.preventDefault();
+    setLoader(0);
+
     await window.sodium.ready;
     const sodium = window.sodium;
 
@@ -175,6 +200,8 @@ form.addEventListener("submit", async e => {
     if (file.name === "") {
         return showError("You have to select a file");
     }
+
+    const expectedFileSize = calculateEncryptedSize(file.size);
 
     let key = sodium.crypto_secretstream_xchacha20poly1305_keygen();
     let [stream, header] = createEncryptedStream(file, key);
@@ -226,12 +253,15 @@ form.addEventListener("submit", async e => {
                 break;
             }
         }
+
+        setLoader(total/expectedFileSize);
     
         // Move to next chunk
         value = nextChunk.value;
         done = nextChunk.done;
         i++;
     }
+    setLoader(1);
     
     const keyEncoded = toBase64Url(key);
     const headerEncoded = toBase64Url(header);

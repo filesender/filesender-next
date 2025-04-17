@@ -47,3 +47,23 @@ th, td {
 .mb-0 {
     margin-bottom: 0;
 }
+
+.p2 {
+    padding: 0.5rem;
+}
+
+.loader {
+    margin-top: 1rem;
+    background: black;
+    height: 1rem;
+    width: 0;
+
+    -webkit-transition: width 1s linear;
+    -moz-transition: width 1s linear;
+    -o-transition: width 1s linear;
+    transition: width 1s linear;
+}
+
+p#progress {
+    margin-top: 2px;
+}
