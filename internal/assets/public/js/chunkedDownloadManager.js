@@ -24,7 +24,7 @@ class ChunkedDownloadManager {
         this.fileInfo = fileInfo;
         this.id = Math.random().toString(36).substring(2);
         this.broadcast = new BroadcastChannel(this.id);
-        this.broadcast.addEventListener("message", e => this.handleBoardcastMessage(e.data));
+        this.broadcast.addEventListener("message", e => this.handleBroadcastMessage(e.data));
         this.done = false;
 
         this.chunks = [
@@ -49,18 +49,17 @@ class ChunkedDownloadManager {
         return await response.bytes()
     }
 
-    handleBoardcastMessage(data) {
+    handleBroadcastMessage(data) {
         console.log(data);
 
         // Handle messages sent by service worker
         if (data.type === "downloadAvailable") {
             if (data.id === this.id) {
-                const a = document.createElement("a");
-                a.href = `../../download/${this.id}`;
-                a.download = "";
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
+
+                const iframe = document.createElement('iframe');
+                iframe.style.display = 'none';
+                iframe.src = `../../download/${this.id}`;
+                document.body.appendChild(iframe);
             }
         }
     }
@@ -125,13 +124,28 @@ class ChunkedDownloadManager {
     }
 
     async start() {
-        const { stream, addResponse } = this.createDecryptionStream();
+        const channel = new MessageChannel();
         this.sw.postMessage({
-            "type": "download",
+            type: "download",
             id: this.id,
             fileName: this.fileInfo.fileName,
-            stream
-        }, [stream]);
+            port: channel.port2
+        }, [channel.port2]);
+
+        const { stream, addResponse } = this.createDecryptionStream();
+        const reader = stream.getReader();
+        (async() => {
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) {
+                    channel.port1.postMessage({ done: true });
+                    break;
+                }
+                console.log(value);
+
+                channel.port1.postMessage({ chunk: value }, [value.buffer]);
+            }
+        })();
 
         for (const chunk of this.chunks) {
             addResponse(await this.downloadChunk(chunk));

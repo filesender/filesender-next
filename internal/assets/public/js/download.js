@@ -4,20 +4,6 @@ const form = document.querySelector("form");
 // Register service worker
 navigator.serviceWorker.register("../../sw.js").then(async e => {
     console.log('Service Worker registered!');
-
-    navigator.serviceWorker.addEventListener("message", e => {
-        if (e.data.url) {
-            console.log('SW Controller:', navigator.serviceWorker.controller);
-            console.log(e.data.url);
-
-            const a = document.createElement("a");
-            a.href = e.data.url;
-            a.download = "";
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-        }
-    });
 });
 
 /**

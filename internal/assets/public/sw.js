@@ -13,18 +13,33 @@ const downloads = new Map();
 // When receiving a message from the client
 self.addEventListener("message", e => {
 
-    // When receiving new file info
-    if (e.data.type === "download") {
-        const broadcast = new BroadcastChannel(e.data.id);
-        downloads.set(e.data.id, {
+    if (e.data.type === "download" && e.data.port) {
+        const { id, fileName, port } = e.data;
+
+        const stream = new ReadableStream({
+            start(controller) {
+                port.onmessage = ({ data }) => {
+                    console.log(data);
+                    
+                    if (data.done) {
+                        controller.close();
+                    } else if (data.chunk) {
+                        controller.enqueue(new Uint8Array(data.chunk));
+                    }
+                };
+            }
+        });
+
+        const broadcast = new BroadcastChannel(id);
+        downloads.set(id, {
             broadcast,
-            fileName: e.data.fileName,
-            stream: e.data.stream
+            fileName,
+            stream
         });
 
         broadcast.postMessage({
             type: "downloadAvailable",
-            id: e.data.id
+            id
         });
     }
 });
