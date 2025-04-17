@@ -60,17 +60,15 @@ form.addEventListener("submit", async e => {
     const fileId = formData.get("file-id").toString();
 
     const fileInfo = await getFileInfo(userId, fileId);
-    sw.active.postMessage({
-        type: "info",
-        info: {
-            userId,
-            fileId,
-            ...fileInfo
-        }
-    });
-
     const [key, header] = window.location.hash.substring(1).split(".").map(v => fromBase64Url(v));
 
-    console.log(userId, fileId);
-    console.log(key, header);
+    console.log("Key", key)
+    console.log("Header", header);
+
+    const manager = new ChunkedDownloadManager(sw.active, key, header, {
+        userId,
+        fileId,
+        ...fileInfo
+    });
+    manager.start();
 });

@@ -183,17 +183,25 @@ form.addEventListener("submit", async e => {
     let fileId = false;
     let total = 0;
     let i = 0;
-
+    
     const reader = stream.getReader();
-    var { value, done } = await reader.read();
-    while (true) {
-        const blob = new Blob(value);
+    
+    // Read the first chunk up front
+    let { value, done } = await reader.read();
+    
+    while (!done) {
+        const blob = new Blob([value]);
         const file = new File([blob], `${i}.bin`);
-
+    
+        // Peek ahead to check if there's more after this
+        const nextChunk = await reader.read();
+        const moreComing = !nextChunk.done;
+    
         if (total === 0) {
-            const res = await uploadFile(expiryDate, file, !done);
+            // First chunk — use uploadFile
+            const res = await uploadFile(expiryDate, file, moreComing);
             if (res === false) return;
-
+    
             total += file.size;
     
             if (res !== true) {
@@ -201,9 +209,10 @@ form.addEventListener("submit", async e => {
                 break;
             }
         } else {
-            const res = await uploadPartialFile(file, total, done);
+            // Subsequent chunks — use uploadPartialFile
+            const res = await uploadPartialFile(file, total, !moreComing);
             if (res === false) return;
-
+    
             total += file.size;
     
             if (res !== true) {
@@ -211,19 +220,19 @@ form.addEventListener("submit", async e => {
                 break;
             }
         }
-
-        if (done) break;
-        const res = await reader.read();
-        value = res.value;
-        done = res.done;
+    
+        // Move to next chunk
+        value = nextChunk.value;
+        done = nextChunk.done;
         i++;
     }
-
+    
     const keyEncoded = toBase64Url(key);
     const headerEncoded = toBase64Url(header);
-
+    
     if (fileId !== false) {
         window.location.replace(`download/${userId}/${fileId}#${keyEncoded}.${headerEncoded}`);
     }
+    
 
 });
