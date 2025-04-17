@@ -44,7 +44,8 @@ const getFileInfo = async (userId, fileId) => {
     return {
         available: response.headers.get("available") === "true",
         chunked: response.headers.get("chunked") === "true",
-        chunkCount: parseInt(response.headers.get("chunk-count"))
+        chunkCount: parseInt(response.headers.get("chunk-count")),
+        fileName: response.headers.get("file-name")
     }
 }
 
@@ -60,10 +61,15 @@ form.addEventListener("submit", async e => {
     const fileId = formData.get("file-id").toString();
 
     const fileInfo = await getFileInfo(userId, fileId);
-    const [key, header] = window.location.hash.substring(1).split(".").map(v => fromBase64Url(v));
+    const [key, header, nonce] = window.location.hash.substring(1).split(".").map(v => fromBase64Url(v));
 
     console.log("Key", key)
     console.log("Header", header);
+    console.log("Nonce", nonce);
+
+    if (fileInfo.fileName && fileInfo.fileName !== "") {
+        fileInfo.fileName = sodium.to_string(sodium.crypto_secretbox_open_easy(fromBase64Url(fileInfo.fileName), nonce, key));
+    }
 
     const manager = new ChunkedDownloadManager(sw.active, key, header, {
         userId,

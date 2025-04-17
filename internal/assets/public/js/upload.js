@@ -1,4 +1,4 @@
-const ENC_CHUNK_SIZE = 1024 * 1024;
+const ENC_CHUNK_SIZE = 1024 * 1024 * 10;
 
 const form = document.querySelector("form");
 var userId = "";
@@ -26,13 +26,15 @@ const toBase64Url = (uint8Array) => {
  * Uploads a file
  * @param {string} expiryDate `YYYY-MM-DD` formatted expiry date of the file
  * @param {File} file 
- * @param {boolean} partial
+ * @param {boolean} partial If the file being uploaded is chunked or not
+ * @param {string} fileName Encrypted file name
  * @returns `false` if errored, `string` if last chunk & successful, `true` if successful
  */
-const uploadFile = async (expiryDate, file, partial) => {
+const uploadFile = async (expiryDate, file, partial, fileName) => {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("expiry-date", expiryDate);
+    formData.append("file-name", fileName);
 
     var uploadComplete = "?1";
     if (partial) {
@@ -177,6 +179,10 @@ form.addEventListener("submit", async e => {
     let key = sodium.crypto_secretstream_xchacha20poly1305_keygen();
     let [stream, header] = createEncryptedStream(file, key);
 
+    let nonce = sodium.randombytes_buf(sodium.crypto_secretbox_NONCEBYTES);
+    let ciphertext = sodium.crypto_secretbox_easy(sodium.from_string(file.name), nonce, key);
+    const fileName = toBase64Url(ciphertext);
+
     console.log("Key", key);
     console.log("Header", header);
 
@@ -199,7 +205,7 @@ form.addEventListener("submit", async e => {
     
         if (total === 0) {
             // First chunk — use uploadFile
-            const res = await uploadFile(expiryDate, file, moreComing);
+            const res = await uploadFile(expiryDate, file, moreComing, fileName);
             if (res === false) return;
     
             total += file.size;
@@ -229,10 +235,9 @@ form.addEventListener("submit", async e => {
     
     const keyEncoded = toBase64Url(key);
     const headerEncoded = toBase64Url(header);
+    const nonceEncoded = toBase64Url(nonce);
     
     if (fileId !== false) {
-        window.location.replace(`download/${userId}/${fileId}#${keyEncoded}.${headerEncoded}`);
+        window.location.replace(`download/${userId}/${fileId}#${keyEncoded}.${headerEncoded}.${nonceEncoded}`);
     }
-    
-
 });

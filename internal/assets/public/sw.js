@@ -18,6 +18,7 @@ self.addEventListener("message", e => {
         const broadcast = new BroadcastChannel(e.data.id);
         downloads.set(e.data.id, {
             broadcast,
+            fileName: e.data.fileName,
             stream: e.data.stream
         });
 
@@ -40,7 +41,7 @@ self.addEventListener("fetch", e => {
             e.respondWith(new Response(download.stream, {
                 headers: {
                     'Content-Type': 'application/octet-stream',
-                    'Content-Disposition': `attachment; filename="test.jpg"`
+                    'Content-Disposition': `attachment; filename="${download.fileName}"`
                 }
             }));
             download.delete(id);

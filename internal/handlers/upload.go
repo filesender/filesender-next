@@ -82,6 +82,12 @@ func UploadAPI(authModule auth.Auth, stateDir string, maxUploadSize int64) http.
 			Chunked:    !uploadComplete,
 			Partial:    !uploadComplete,
 		}
+
+		fileNames := r.MultipartForm.Value["file-name"]
+		if len(fileNames) == 1 {
+			fileMeta.EncryptedFileName = fileNames[0]
+		}
+
 		err = FileUpload(stateDir, fileMeta, file, fileHeader.Filename)
 		if err != nil {
 			slog.Error("Failed handling file upload", "error", err)

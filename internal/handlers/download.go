@@ -124,6 +124,7 @@ func DownloadInfo(stateDir string) http.HandlerFunc {
 		w.Header().Add("Chunked", strconv.FormatBool(file.Chunked))
 		w.Header().Add("Available", strconv.FormatBool(!file.Partial))
 		w.Header().Add("Chunk-Count", strconv.FormatInt(int64(len(file.Chunks)), 10))
+		w.Header().Add("File-Name", file.EncryptedFileName)
 
 		sendEmptyResponse(w, http.StatusOK)
 	}

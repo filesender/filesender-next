@@ -6,6 +6,7 @@
  * @property {number} chunkCount
  * @property {string} userId
  * @property {string} fileId
+ * @property {string} fileName
  */
 
 class ChunkedDownloadManager {
@@ -50,7 +51,7 @@ class ChunkedDownloadManager {
 
     handleBoardcastMessage(data) {
         console.log(data);
-        
+
         // Handle messages sent by service worker
         if (data.type === "downloadAvailable") {
             if (data.id === this.id) {
@@ -128,6 +129,7 @@ class ChunkedDownloadManager {
         this.sw.postMessage({
             "type": "download",
             id: this.id,
+            fileName: this.fileInfo.fileName,
             stream
         }, [stream]);
 
