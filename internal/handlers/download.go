@@ -1,43 +1,45 @@
+// Package handlers contains everything that has anything to do with handling (something)
+// Handlers for API requests, template requests
+// Handlers for file(s)
+// Handlers for response
+// Handlers for request
 package handlers
 
 import (
 	"log/slog"
 	"net/http"
-	"time"
 
-	"codeberg.org/filesender/filesender-next/internal/auth"
-	"codeberg.org/filesender/filesender-next/internal/crypto"
 	"codeberg.org/filesender/filesender-next/internal/models"
 )
 
-// UploadTemplate handles GET /{$}
-func UploadTemplate(authModule auth.Auth) http.HandlerFunc {
+// DownloadAPI handles `GET /api/v1/download/{userID}/{fileID}`
+func DownloadAPI(stateDir string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userID, err := authModule.UserAuth(r)
-		if err != nil {
-			slog.Info("unable to authenticate user", "error", err)
-			sendError(w, http.StatusUnauthorized, "You're not authenticated")
-			return
-		}
-		slog.Info("user authenticated", "user_id", userID)
+		userID, fileID := r.PathValue("userID"), r.PathValue("fileID")
 
-		userID, err = crypto.HashToBase64(userID)
+		err := models.ValidateFile(stateDir, userID, fileID)
 		if err != nil {
-			slog.Info("failed hashing user ID", "error", err)
-			sendJSON(w, http.StatusInternalServerError, false, "Failed creating user ID", nil)
+			slog.Error("User passed invalid file ID", "error", err)
+			sendError(w, http.StatusBadRequest, "File ID is invalid")
 			return
 		}
 
-		minDate := time.Now().UTC().Add(time.Hour * 24)
-		defaultDate := time.Now().UTC().Add(time.Hour * 24 * 7)
-		maxDate := time.Now().UTC().Add(time.Hour * 24 * 30)
+		file, err := models.GetFileFromIDs(stateDir, userID, fileID)
+		if err != nil {
+			slog.Error("Failed getting file from id", "error", err)
+			sendError(w, http.StatusInternalServerError, "Failed getting specified file")
+			return
+		}
 
-		sendTemplate(w, "upload", uploadTemplate{
-			MinDate:     minDate.Format(time.DateOnly),
-			DefaultDate: defaultDate.Format(time.DateOnly),
-			MaxDate:     maxDate.Format(time.DateOnly),
-			UserID:      userID,
-		})
+		file.DownloadCount++
+		err = file.Save(stateDir)
+		if err != nil {
+			slog.Error("Failed increasing download count on file", "error", err, "userID", userID, "fileID", fileID)
+			sendError(w, http.StatusInternalServerError, "Failed setting new file meta data")
+			return
+		}
+
+		sendFile(stateDir, w, &file)
 	}
 }
 
