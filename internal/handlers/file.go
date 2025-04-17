@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -62,7 +63,7 @@ func FileUpload(stateDir string, fileMeta models.File, file multipart.File, file
 }
 
 // PartialFileUpload handles a chunk being uploaded
-func PartialFileUpload(stateDir string, fileMeta models.File, file multipart.File, offset int64) error {
+func PartialFileUpload(stateDir string, fileMeta *models.File, file multipart.File, offset int64) error {
 	// This should already exist
 	uploadDest := filepath.Join(stateDir, fileMeta.UserID)
 
@@ -95,6 +96,14 @@ func PartialFileUpload(stateDir string, fileMeta models.File, file multipart.Fil
 
 	// TODO: Maybe do something with meta to keep track of which offsets & sizes exist?
 	// We could also just read directory contents of course..
+	fileMeta.Chunks = append(fileMeta.Chunks, hexOffset)
+
+	// Make sure the chunks are sorted in the array
+	sort.Slice(fileMeta.Chunks, func(i int, j int) bool {
+		a, _ := strconv.ParseInt(fileMeta.Chunks[i], 16, 64)
+		b, _ := strconv.ParseInt(fileMeta.Chunks[j], 16, 64)
+		return a < b
+	})
 
 	return nil
 }

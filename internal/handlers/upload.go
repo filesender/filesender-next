@@ -171,7 +171,7 @@ func ChunkedUploadAPI(authModule auth.Auth, stateDir string, maxUploadSize int64
 			}
 		}()
 
-		err = PartialFileUpload(stateDir, fileMeta, file, uploadOffset)
+		err = PartialFileUpload(stateDir, &fileMeta, file, uploadOffset)
 		if err != nil {
 			slog.Error("Failed handling file upload", "error", err)
 			sendJSON(w, http.StatusInternalServerError, false, "Failed handling new file upload", nil)
@@ -190,7 +190,7 @@ func ChunkedUploadAPI(authModule auth.Auth, stateDir string, maxUploadSize int64
 		}
 
 		if uploadComplete {
-			err = sendRedirect(w, http.StatusSeeOther, "../../download/"+userID+"/"+fileMeta.ID, "")
+			err = sendRedirect(w, http.StatusSeeOther, "../../../download/"+userID+"/"+fileMeta.ID, "")
 			if err != nil {
 				sendError(w, http.StatusInternalServerError, "Failed sending redirect")
 			}

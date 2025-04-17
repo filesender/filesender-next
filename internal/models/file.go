@@ -22,6 +22,7 @@ type File struct {
 	FileName      string    `json:"path"`
 	Chunked       bool      `json:"chunked"`
 	Partial       bool      `json:"partial"`
+	Chunks        []string  `json:"chunks"`
 	ExpiryDate    time.Time `json:"expiry_date"`
 	CreationDate  time.Time `json:"creation_date"`
 }

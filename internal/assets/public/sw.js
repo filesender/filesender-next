@@ -8,7 +8,22 @@ self.addEventListener("activate", event => {
     event.waitUntil(clients.claim());
 });
 
+/**
+ * @typedef {Object} FileInfo
+ * @property {boolean} available
+ * @property {boolean} chunked
+ * @property {number} chunkCount
+ * @property {string} userId
+ * @property {string} fileId
+ */
+/** @type {FileInfo} */
+var fileInfo;
+
 // When receiving a message from the client
 self.addEventListener("message", e => {
-    const { type, data, readableStream } = e.data;
+
+    // When receiving new file info
+    if (e.data.type === "info") {
+        fileInfo = e.data.info;
+    }
 });
