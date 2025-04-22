@@ -8,7 +8,7 @@ type uploadTemplate struct {
 }
 
 type downloadTemplate struct {
-	ByteSize int
+	ByteSize int64
 	UserID   string
 	FileID   string
 }

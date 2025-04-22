@@ -66,7 +66,7 @@ func TestFileUpload_Success(t *testing.T) {
 	fileMeta := models.File{
 		ID:         "test123",
 		UserID:     "user456",
-		ByteSize:   len(fileContent),
+		ByteSize:   int64(len(fileContent)),
 		ExpiryDate: time.Now().Add(24 * time.Hour),
 	}
 

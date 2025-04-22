@@ -15,15 +15,17 @@ import (
 
 // File model representing metadata
 type File struct {
-	ID            string    `json:"id"`
-	UserID        string    `json:"user_id"`
-	FileNames     []string  `json:"file_names"`
-	FileCount     int       `json:"file_count"`
-	DownloadCount int       `json:"download_count"`
-	ByteSize      int       `json:"byte_size"`
-	FileName      string    `json:"path"`
-	ExpiryDate    time.Time `json:"expiry_date"`
-	CreationDate  time.Time `json:"creation_date"`
+	ID                string    `json:"id"`
+	UserID            string    `json:"user_id"`
+	DownloadCount     int       `json:"download_count"`
+	ByteSize          int64     `json:"byte_size"`
+	FileName          string    `json:"file_name"`
+	EncryptedFileName string    `json:"encrypted_file_name"`
+	Chunked           bool      `json:"chunked"`
+	Partial           bool      `json:"partial"`
+	Chunks            []string  `json:"chunks"`
+	ExpiryDate        time.Time `json:"expiry_date"`
+	CreationDate      time.Time `json:"creation_date"`
 }
 
 // Create function creates a new meta file & sets the creation date
