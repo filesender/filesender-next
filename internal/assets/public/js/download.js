@@ -6,6 +6,14 @@ navigator.serviceWorker.register("../../sw.js").then(async e => {
     console.log('Service Worker registered!');
 });
 
+const setLoader = (progress) => {
+    const loader = document.querySelector("div.loader");
+    loader.style.width = `${progress * 100}%`;
+
+    const loaderText = document.querySelector("p#progress");
+    loaderText.innerText = `${Math.round(progress * 10000) / 100}%`;
+}
+
 /**
  * Decodes base64 string to bytes
  * @param {string} base64url 
@@ -63,4 +71,14 @@ form.addEventListener("submit", async e => {
         ...fileInfo
     });
     manager.start();
+
+    while (true) {
+        const progress = manager.progress / manager.total;
+        setLoader(progress);
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        if (progress >= 1) {
+            break;
+        }
+    }
 });

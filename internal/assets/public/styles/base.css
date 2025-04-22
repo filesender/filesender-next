@@ -4,6 +4,10 @@
     font-weight: 100 900;
 }
 
+* {
+    box-sizing: border-box;
+}
+
 body {
     margin: 0;
     font-family: 'Lexend', sans-serif;
@@ -14,7 +18,7 @@ body {
 
 div.wrapper {
     width: 100%;
-    max-width: 900px;
+    max-width: 800px;
     margin: 0 auto;
     background: #fff;
     padding: 1rem;
@@ -58,10 +62,10 @@ th, td {
     height: 1rem;
     width: 0;
 
-    -webkit-transition: width 1s linear;
-    -moz-transition: width 1s linear;
-    -o-transition: width 1s linear;
-    transition: width 1s linear;
+    -webkit-transition: width 0.1s linear;
+    -moz-transition: width 0.1s linear;
+    -o-transition: width 0.1s linear;
+    transition: width 0.1s linear;
 }
 
 p#progress {

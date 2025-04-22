@@ -26,6 +26,7 @@ class ChunkedDownloadManager {
         this.broadcast = new BroadcastChannel(this.id);
         this.broadcast.addEventListener("message", e => this.handleBroadcastMessage(e.data));
         this.done = false;
+        this.progress = 0;
 
         this.chunks = [
             `../../api/v1/download/${fileInfo.userId}/${fileInfo.fileId}`
@@ -37,6 +38,8 @@ class ChunkedDownloadManager {
                 ...Array.from({ length: this.fileInfo.chunkCount }, (_, i) => `../../api/v1/download/${fileInfo.userId}/${fileInfo.fileId}/${i}`)
             ]
         }
+
+        this.total = this.chunks.length;
     }
 
     /**
@@ -46,6 +49,7 @@ class ChunkedDownloadManager {
      */
     async downloadChunk(url) {
         const response = await fetch(url);
+        this.progress += 1;
         return await response.bytes()
     }
 
