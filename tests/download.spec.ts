@@ -9,7 +9,7 @@ test('should download', async ({ page }) => {
         // Set up a download watcher
         const [download] = await Promise.all([
             page.waitForEvent('download', req => 
-                req.url().includes('/api/v1/download')
+                req.url().includes('/download')
             ),
             (async () => {
                 for (const button of buttons) {
@@ -22,11 +22,11 @@ test('should download', async ({ page }) => {
         ]);
 
         console.log('Download request URL:', download.url());
-        expect(download.url()).toMatch(/\/api\/v1\/download\/.+\/.+/);
+        expect(download.url()).toMatch(/\/download\/.+/);
 
         await download.path(); // Waits until download is complete
         const suggestedFilename = download.suggestedFilename();
-        expect(suggestedFilename).toMatch(/\.bin$/i);
+        expect(suggestedFilename).toMatch(/^temp-file-.+\.txt$/);
 
     } finally {
         cleanup();
