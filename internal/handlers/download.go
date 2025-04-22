@@ -44,7 +44,7 @@ func DownloadAPI(stateDir string) http.HandlerFunc {
 		}
 
 		filePath := filepath.Join(stateDir, file.UserID, file.FileName)
-		sendFile(stateDir, w, filePath, file.FileName)
+		sendFile(w, filePath, file.FileName)
 	}
 }
 
@@ -98,7 +98,7 @@ func ChunkedDownloadAPI(stateDir string) http.HandlerFunc {
 		}
 
 		filePath := filepath.Join(stateDir, file.UserID, file.ID, chunkOffset+".bin")
-		sendFile(stateDir, w, filePath, file.FileName)
+		sendFile(w, filePath, file.FileName)
 	}
 }
 
