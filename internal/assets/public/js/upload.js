@@ -268,6 +268,6 @@ form.addEventListener("submit", async e => {
     const nonceEncoded = toBase64Url(nonce);
     
     if (fileId !== false) {
-        window.location.replace(`download/${userId}/${fileId}#${keyEncoded}.${headerEncoded}.${nonceEncoded}`);
+        window.location.href = `download/${userId}/${fileId}#${keyEncoded}.${headerEncoded}.${nonceEncoded}`;
     }
 });
