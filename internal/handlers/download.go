@@ -14,40 +14,6 @@ import (
 	"codeberg.org/filesender/filesender-next/internal/models"
 )
 
-// DownloadAPI handles `GET /api/v1/download/{userID}/{fileID}`
-func DownloadAPI(stateDir string) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		userID, fileID := r.PathValue("userID"), r.PathValue("fileID")
-
-		err := models.ValidateFile(stateDir, userID, fileID)
-		if err != nil {
-			slog.Error("User passed invalid file ID", "error", err)
-			sendError(w, http.StatusBadRequest, "File ID is invalid")
-			return
-		}
-
-		file, err := models.GetFileFromIDs(stateDir, userID, fileID)
-		if err != nil {
-			slog.Error("Failed getting file from id", "error", err)
-			sendError(w, http.StatusInternalServerError, "Failed getting specified file")
-			return
-		}
-
-		if !file.Chunked {
-			file.DownloadCount++
-			err = file.Save(stateDir)
-			if err != nil {
-				slog.Error("Failed increasing download count on file", "error", err, "userID", userID, "fileID", fileID)
-				sendError(w, http.StatusInternalServerError, "Failed setting new file meta data")
-				return
-			}
-		}
-
-		filePath := filepath.Join(stateDir, file.UserID, file.FileName)
-		sendFile(w, filePath, file.FileName)
-	}
-}
-
 // ChunkedDownloadAPI handles `GET /api/v1/download/{userID}/{fileID}/{chunk}`
 func ChunkedDownloadAPI(stateDir string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -79,13 +45,19 @@ func ChunkedDownloadAPI(stateDir string) http.HandlerFunc {
 			return
 		}
 
-		if chunk < 0 || int(chunk) >= len(file.Chunks) {
+		if chunk < 0 || int(chunk) > len(file.Chunks) {
 			slog.Error("Chunk index is out of bounds", "index", chunkStr)
 			sendError(w, http.StatusBadRequest, "Chunk index is out of bounds")
 			return
 		}
 
-		chunkOffset := file.Chunks[chunk]
+		var filePath string
+		if chunk == 0 {
+			filePath = filepath.Join(stateDir, file.UserID, file.ID+".bin")
+		} else {
+			chunkOffset := file.Chunks[chunk-1]
+			filePath = filepath.Join(stateDir, file.UserID, file.ID, chunkOffset+".bin")
+		}
 
 		if int(chunk) == len(file.Chunks)-1 {
 			file.DownloadCount++
@@ -97,7 +69,6 @@ func ChunkedDownloadAPI(stateDir string) http.HandlerFunc {
 			}
 		}
 
-		filePath := filepath.Join(stateDir, file.UserID, file.ID, chunkOffset+".bin")
 		sendFile(w, filePath, file.FileName)
 	}
 }

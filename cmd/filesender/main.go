@@ -70,7 +70,6 @@ func main() {
 	router.HandleFunc("PATCH /api/v1/upload/{fileID}", handlers.ChunkedUploadAPI(authModule, stateDir, maxUploadSize))
 
 	router.HandleFunc("HEAD /api/v1/download/{userID}/{fileID}", handlers.DownloadInfo(stateDir))
-	router.HandleFunc("GET /api/v1/download/{userID}/{fileID}", handlers.DownloadAPI(stateDir))
 	router.HandleFunc("GET /api/v1/download/{userID}/{fileID}/{chunk}", handlers.ChunkedDownloadAPI(stateDir))
 
 	// Page handlers
