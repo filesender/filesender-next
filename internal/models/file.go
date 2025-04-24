@@ -15,11 +15,7 @@ import (
 
 // File model representing metadata
 type File struct {
-	ID                string    `json:"id"`
-	UserID            string    `json:"user_id"`
-	DownloadCount     int       `json:"download_count"`
 	ByteSize          int64     `json:"byte_size"`
-	FileName          string    `json:"file_name"`
 	EncryptedFileName string    `json:"encrypted_file_name"`
 	Chunked           bool      `json:"chunked"`
 	Partial           bool      `json:"partial"`
@@ -29,20 +25,20 @@ type File struct {
 }
 
 // Create function creates a new meta file & sets the creation date
-func (file *File) Create(stateDir string) error {
+func (file *File) Create(stateDir string, userID string, fileID string) error {
 	file.CreationDate = time.Now().UTC().Round(time.Second)
-	return file.Save(stateDir)
+	return file.Save(stateDir, userID, fileID)
 }
 
 // Save the current File meta state to disk
-func (file *File) Save(stateDir string) error {
+func (file *File) Save(stateDir string, userID string, fileID string) error {
 	JSONData, err := json.Marshal(file)
 	if err != nil {
 		slog.Error("Failed marshalling data", "error", err)
 		return err
 	}
 
-	metaPath := filepath.Join(stateDir, file.UserID, file.ID+".meta")
+	metaPath := filepath.Join(stateDir, userID, fileID+".meta")
 	f, err := os.OpenFile(metaPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o600)
 	if err != nil {
 		slog.Error("Failed opening file", "error", err, "path", metaPath)

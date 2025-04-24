@@ -64,18 +64,16 @@ func TestFileUpload_Success(t *testing.T) {
 	defer cleanup()
 
 	fileMeta := models.File{
-		ID:         "test123",
-		UserID:     "user456",
 		ByteSize:   int64(len(fileContent)),
 		ExpiryDate: time.Now().Add(24 * time.Hour),
 	}
 
-	err = handlers.FileUpload(tempDir, fileMeta, testFile, "test.txt")
+	err = handlers.FileUpload(tempDir, "user456", "test123", fileMeta, testFile)
 	if err != nil {
 		t.Fatalf("Expected success, got error: %v", err)
 	}
 
-	expectedPath := filepath.Join(tempDir, fileMeta.UserID, fileMeta.ID+".txt")
+	expectedPath := filepath.Join(tempDir, "user456", "test123.bin")
 	if _, err := os.Stat(expectedPath); os.IsNotExist(err) {
 		t.Errorf("Expected file to exist at %s", expectedPath)
 	}
@@ -89,13 +87,11 @@ func TestFileUpload_InvalidDirectory(t *testing.T) {
 	defer cleanup()
 
 	fileMeta := models.File{
-		ID:         "doesn't matter",
-		UserID:     "----------",
 		ByteSize:   -10,
 		ExpiryDate: time.Now().Add(24 * time.Hour),
 	}
 
-	err = handlers.FileUpload("/invalid/directory/should/fail", fileMeta, testFile, "test.txt")
+	err = handlers.FileUpload("/invalid/directory/should/fail", "----------", "doesn't matter", fileMeta, testFile)
 	if err == nil {
 		t.Fatal("Expected error due to invalid directory, got nil")
 	}
@@ -124,13 +120,11 @@ func TestFileUpload_CopyFailure(t *testing.T) {
 	}
 
 	fileMeta := models.File{
-		ID:         "testfail",
-		UserID:     "user123",
 		ByteSize:   4,
 		ExpiryDate: time.Now().Add(24 * time.Hour),
 	}
 
-	err = handlers.FileUpload(tempDir, fileMeta, fakeFile, "test.txt")
+	err = handlers.FileUpload(tempDir, "user123", "testfail", fileMeta, fakeFile)
 	if err == nil {
 		t.Fatal("Expected error due to file copy failure, got nil")
 	}

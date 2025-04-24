@@ -75,8 +75,6 @@ func UploadAPI(authModule auth.Auth, stateDir string, maxUploadSize int64) http.
 		}
 
 		fileMeta := models.File{
-			ID:         fileID,
-			UserID:     userID,
 			ByteSize:   fileHeader.Size,
 			ExpiryDate: expiryDate,
 			Chunked:    !uploadComplete,
@@ -88,7 +86,7 @@ func UploadAPI(authModule auth.Auth, stateDir string, maxUploadSize int64) http.
 			fileMeta.EncryptedFileName = fileNames[0]
 		}
 
-		err = FileUpload(stateDir, fileMeta, file, fileHeader.Filename)
+		err = FileUpload(stateDir, userID, fileID, fileMeta, file)
 		if err != nil {
 			slog.Error("Failed handling file upload", "error", err)
 			sendJSON(w, http.StatusInternalServerError, false, "Failed handling new file upload", nil)
@@ -100,7 +98,7 @@ func UploadAPI(authModule auth.Auth, stateDir string, maxUploadSize int64) http.
 			return
 		}
 
-		err = sendRedirect(w, http.StatusSeeOther, "../../download/"+userID+"/"+fileMeta.ID, "") // Redirect to `/download/<user_id>/<file_id>`
+		err = sendRedirect(w, http.StatusSeeOther, "../../download/"+userID+"/"+fileID, "") // Redirect to `/download/<user_id>/<file_id>`
 		if err != nil {
 			sendError(w, http.StatusInternalServerError, "Failed sending redirect")
 		}
@@ -177,7 +175,7 @@ func ChunkedUploadAPI(authModule auth.Auth, stateDir string, maxUploadSize int64
 			}
 		}()
 
-		err = PartialFileUpload(stateDir, &fileMeta, file, uploadOffset)
+		err = PartialFileUpload(stateDir, userID, fileID, &fileMeta, file, uploadOffset)
 		if err != nil {
 			slog.Error("Failed handling file upload", "error", err)
 			sendJSON(w, http.StatusInternalServerError, false, "Failed handling new file upload", nil)
@@ -188,7 +186,7 @@ func ChunkedUploadAPI(authModule auth.Auth, stateDir string, maxUploadSize int64
 		if uploadComplete {
 			fileMeta.Partial = false
 		}
-		err = fileMeta.Save(stateDir)
+		err = fileMeta.Save(stateDir, userID, fileID)
 		if err != nil {
 			slog.Error("Failed saving meta file contents", "userID", userID, "fileID", fileID, "error", err)
 			sendJSON(w, http.StatusInternalServerError, false, "Failed saving new data", nil)
@@ -196,7 +194,7 @@ func ChunkedUploadAPI(authModule auth.Auth, stateDir string, maxUploadSize int64
 		}
 
 		if uploadComplete {
-			err = sendRedirect(w, http.StatusSeeOther, "../../../download/"+userID+"/"+fileMeta.ID, "")
+			err = sendRedirect(w, http.StatusSeeOther, "../../../download/"+userID+"/"+fileID, "")
 			if err != nil {
 				sendError(w, http.StatusInternalServerError, "Failed sending redirect")
 			}

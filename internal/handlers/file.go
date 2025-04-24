@@ -9,23 +9,14 @@ import (
 	"path/filepath"
 	"sort"
 	"strconv"
-	"strings"
 
 	"codeberg.org/filesender/filesender-next/internal/models"
 )
 
-func getFullExtension(filename string) string {
-	parts := strings.Split(filename, ".")
-	if len(parts) <= 1 {
-		return "" // no extension
-	}
-	return strings.Join(parts[1:], ".")
-}
-
 // FileUpload handles a new file uploaded
-func FileUpload(stateDir string, fileMeta models.File, file multipart.File, fileName string) error {
+func FileUpload(stateDir string, userID string, fileID string, fileMeta models.File, file multipart.File) error {
 	// Create transfer folder for user if not exists
-	uploadDest := filepath.Join(stateDir, fileMeta.UserID)
+	uploadDest := filepath.Join(stateDir, userID)
 	if _, err := os.Stat(uploadDest); os.IsNotExist(err) {
 		err = os.Mkdir(uploadDest, 0o700)
 		if err != nil {
@@ -34,8 +25,7 @@ func FileUpload(stateDir string, fileMeta models.File, file multipart.File, file
 		}
 	}
 
-	fileExtension := getFullExtension(fileName)
-	fileName = fileMeta.ID + "." + fileExtension
+	fileName := fileID + ".bin"
 	dst, err := os.OpenFile(path.Join(uploadDest, fileName), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o600)
 	if err != nil {
 		return err
@@ -52,8 +42,7 @@ func FileUpload(stateDir string, fileMeta models.File, file multipart.File, file
 		return err
 	}
 
-	fileMeta.FileName = fileName
-	err = fileMeta.Create(stateDir)
+	err = fileMeta.Create(stateDir, userID, fileID)
 	if err != nil {
 		slog.Error("Failed creating upload meta file", "error", err)
 		return err
@@ -63,12 +52,12 @@ func FileUpload(stateDir string, fileMeta models.File, file multipart.File, file
 }
 
 // PartialFileUpload handles a chunk being uploaded
-func PartialFileUpload(stateDir string, fileMeta *models.File, file multipart.File, offset int64) error {
+func PartialFileUpload(stateDir string, userID string, fileID string, fileMeta *models.File, file multipart.File, offset int64) error {
 	// This should already exist
-	uploadDest := filepath.Join(stateDir, fileMeta.UserID)
+	uploadDest := filepath.Join(stateDir, userID)
 
 	// But more specifically, this could maybe not exist already...
-	uploadDest = filepath.Join(uploadDest, fileMeta.ID)
+	uploadDest = filepath.Join(uploadDest, fileID)
 	if _, err := os.Stat(uploadDest); os.IsNotExist(err) {
 		err = os.Mkdir(uploadDest, 0o700)
 		if err != nil {

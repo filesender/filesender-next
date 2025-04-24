@@ -53,15 +53,14 @@ func ChunkedDownloadAPI(stateDir string) http.HandlerFunc {
 
 		var filePath string
 		if chunk == 0 {
-			filePath = filepath.Join(stateDir, file.UserID, file.ID+".bin")
+			filePath = filepath.Join(stateDir, userID, fileID+".bin")
 		} else {
 			chunkOffset := file.Chunks[chunk-1]
-			filePath = filepath.Join(stateDir, file.UserID, file.ID, chunkOffset+".bin")
+			filePath = filepath.Join(stateDir, userID, fileID, chunkOffset+".bin")
 		}
 
 		if int(chunk) == len(file.Chunks)-1 {
-			file.DownloadCount++
-			err = file.Save(stateDir)
+			err = file.Save(stateDir, userID, fileID)
 			if err != nil {
 				slog.Error("Failed increasing download count on file", "error", err, "userID", userID, "fileID", fileID)
 				sendError(w, http.StatusInternalServerError, "Failed setting new file meta data")
@@ -69,7 +68,7 @@ func ChunkedDownloadAPI(stateDir string) http.HandlerFunc {
 			}
 		}
 
-		sendFile(w, filePath, file.FileName)
+		sendFile(w, filePath, fileID+".bin")
 	}
 }
 
@@ -122,8 +121,8 @@ func GetDownloadTemplate(stateDir string) http.HandlerFunc {
 
 		data := downloadTemplate{
 			ByteSize: file.ByteSize,
-			UserID:   file.UserID,
-			FileID:   file.ID,
+			UserID:   userID,
+			FileID:   fileID,
 		}
 
 		sendTemplate(w, "download", data)
