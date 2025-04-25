@@ -19,7 +19,6 @@ type File struct {
 	EncryptedFileName string    `json:"encrypted_file_name"`
 	Chunked           bool      `json:"chunked"`
 	Partial           bool      `json:"partial"`
-	Chunks            []string  `json:"chunks"`
 	ChunkSize         int64     `json:"chunk_size"`
 	ExpiryDate        time.Time `json:"expiry_date"`
 	CreationDate      time.Time `json:"creation_date"`

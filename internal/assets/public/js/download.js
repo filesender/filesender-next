@@ -38,7 +38,6 @@ const getFileInfo = async (userId, fileId) => {
     return {
         available: response.headers.get("available") === "true",
         chunked: response.headers.get("chunked") === "true",
-        chunkCount: parseInt(response.headers.get("chunk-count")),
         fileName: response.headers.get("file-name"),
         chunkSize: parseInt(response.headers.get("Chunk-Size")),
         byteSize: parseInt(response.headers.get("Byte-Size"))

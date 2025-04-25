@@ -4,10 +4,8 @@ import (
 	"embed"
 	"encoding/json"
 	"html/template"
-	"io"
 	"log/slog"
 	"net/http"
-	"os"
 	"path"
 	"path/filepath"
 	"strconv"
@@ -87,37 +85,6 @@ func sendRedirect(w http.ResponseWriter, status int, location string, body strin
 	}
 
 	return nil
-}
-
-// Sends file starting from a specific offset
-func sendFileFromOffset(w http.ResponseWriter, filePath string, fileName string, fileSize int64, offset int64) {
-	f, err := os.Open(filePath)
-	if err != nil {
-		sendError(w, http.StatusNotFound, "File not found")
-		return
-	}
-	defer func() {
-		if err := f.Close(); err != nil {
-			slog.Error("Failed closing file", "error", err)
-		}
-	}()
-
-	_, err = f.Seek(offset, io.SeekStart)
-	if err != nil {
-		slog.Error("Failed seeking to offset", "offset", offset, "error", err)
-		sendError(w, http.StatusInternalServerError, "Seek failed")
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/octet-stream")
-	w.Header().Set("Content-Disposition", `attachment; filename="`+fileName+`"`)
-	w.Header().Set("Content-Length", strconv.FormatInt(fileSize-offset, 10))
-
-	_, err = io.Copy(w, f)
-	if err != nil {
-		slog.Error("Failed streaming file", "error", err)
-		sendError(w, http.StatusInternalServerError, "Streaming failed")
-	}
 }
 
 // Send incomplete upload response

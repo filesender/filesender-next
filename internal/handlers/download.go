@@ -26,33 +26,8 @@ func DownloadAPI(stateDir string) http.HandlerFunc {
 			return
 		}
 
-		file, err := models.GetFileFromIDs(stateDir, userID, fileID)
-		if err != nil {
-			slog.Error("Failed getting file from id", "user_id", userID, "file_id", fileID, "error", err)
-			sendError(w, http.StatusInternalServerError, "Failed getting specified file")
-			return
-		}
-
-		var offset int64
-		offsetStr := r.Header.Get("Offset")
-		if offsetStr != "" {
-			offset, err = strconv.ParseInt(offsetStr, 10, 0)
-
-			if err != nil {
-				slog.Error("Failed parsing offset header to int", "offset", offsetStr, "error", err)
-				sendJSON(w, http.StatusBadRequest, false, "Invalid Offset", nil)
-				return
-			}
-		}
-
-		if offset > file.ByteSize {
-			slog.Error("Offset out of bounds!", "offset", offset, "file size", file.ByteSize)
-			sendJSON(w, http.StatusBadRequest, false, "Offset is out of bounds", nil)
-			return
-		}
-
 		filePath := filepath.Join(stateDir, userID, fileID+".bin")
-		sendFileFromOffset(w, filePath, fileID+".bin", file.ByteSize, offset)
+		http.ServeFile(w, r, filePath)
 	}
 }
 
@@ -79,7 +54,6 @@ func DownloadInfo(stateDir string) http.HandlerFunc {
 		w.Header().Add("File-Name", file.EncryptedFileName)
 
 		w.Header().Add("Chunked", strconv.FormatBool(file.Chunked))
-		w.Header().Add("Chunk-Count", strconv.FormatInt(int64(len(file.Chunks)), 10))
 		w.Header().Add("Chunk-Size", strconv.FormatInt(file.ChunkSize, 10))
 		w.Header().Add("Byte-Size", strconv.FormatInt(file.ByteSize, 10))
 
