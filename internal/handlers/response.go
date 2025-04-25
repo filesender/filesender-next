@@ -89,34 +89,34 @@ func sendRedirect(w http.ResponseWriter, status int, location string, body strin
 	return nil
 }
 
-// Sends file
-func sendFile(w http.ResponseWriter, filePath string, fileName string) {
+// Sends file starting from a specific offset
+func sendFileFromOffset(w http.ResponseWriter, filePath string, fileName string, fileSize int64, offset int64) {
 	f, err := os.Open(filePath)
 	if err != nil {
-		sendError(w, http.StatusNotFound, "File not found") // This should never happen, this is already checked before...
+		sendError(w, http.StatusNotFound, "File not found")
 		return
 	}
 	defer func() {
-		err := f.Close()
-		if err != nil {
+		if err := f.Close(); err != nil {
 			slog.Error("Failed closing file", "error", err)
 		}
 	}()
 
-	fi, err := f.Stat()
+	_, err = f.Seek(offset, io.SeekStart)
 	if err != nil {
-		sendError(w, http.StatusInternalServerError, "Could not retrieve file info")
+		slog.Error("Failed seeking to offset", "offset", offset, "error", err)
+		sendError(w, http.StatusInternalServerError, "Seek failed")
 		return
 	}
-	fileSize := fi.Size()
 
 	w.Header().Set("Content-Type", "application/octet-stream")
 	w.Header().Set("Content-Disposition", `attachment; filename="`+fileName+`"`)
-	w.Header().Set("Content-Length", strconv.FormatInt(fileSize, 10))
+	w.Header().Set("Content-Length", strconv.FormatInt(fileSize-offset, 10))
 
 	_, err = io.Copy(w, f)
 	if err != nil {
-		sendError(w, http.StatusInternalServerError, "Error while downloading the file")
+		slog.Error("Failed streaming file", "error", err)
+		sendError(w, http.StatusInternalServerError, "Streaming failed")
 	}
 }
 

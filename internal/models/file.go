@@ -20,6 +20,7 @@ type File struct {
 	Chunked           bool      `json:"chunked"`
 	Partial           bool      `json:"partial"`
 	Chunks            []string  `json:"chunks"`
+	ChunkSize         int64     `json:"chunk_size"`
 	ExpiryDate        time.Time `json:"expiry_date"`
 	CreationDate      time.Time `json:"creation_date"`
 }

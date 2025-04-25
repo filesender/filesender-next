@@ -55,6 +55,18 @@ func UploadAPI(authModule auth.Auth, stateDir string, maxUploadSize int64) http.
 			uploadComplete = false
 		}
 
+		var chunkSize int64
+		if !uploadComplete {
+			chunkSizeStr := r.Header.Get("Chunk-Size")
+			chunkSize, err = strconv.ParseInt(chunkSizeStr, 10, 0)
+
+			if err != nil {
+				slog.Error("Expected chunk-size header, failed parsing to int", "chunk-size", chunkSizeStr, "error", err)
+				sendJSON(w, http.StatusBadRequest, false, "Invalid Chunk-Size", nil)
+				return
+			}
+		}
+
 		file, fileHeader, err := r.FormFile("file")
 		if err != nil {
 			slog.Error("Failed opening file", "error", err)
@@ -79,6 +91,7 @@ func UploadAPI(authModule auth.Auth, stateDir string, maxUploadSize int64) http.
 			ExpiryDate: expiryDate,
 			Chunked:    !uploadComplete,
 			Partial:    !uploadComplete,
+			ChunkSize:  chunkSize,
 		}
 
 		fileNames := r.MultipartForm.Value["file-name"]
@@ -175,7 +188,13 @@ func ChunkedUploadAPI(authModule auth.Auth, stateDir string, maxUploadSize int64
 			}
 		}()
 
-		err = PartialFileUpload(stateDir, userID, fileID, &fileMeta, file, uploadOffset)
+		if fileMeta.ChunkSize != fileHeader.Size && !uploadComplete {
+			slog.Info("Meta chunk size is different from file size", "expected", fileMeta.ChunkSize, "got", fileHeader.Size)
+			sendJSON(w, http.StatusBadRequest, false, "Invalid chunk size", nil)
+			return
+		}
+
+		err = PartialFileUpload(stateDir, userID, fileID, file, uploadOffset)
 		if err != nil {
 			slog.Error("Failed handling file upload", "error", err)
 			sendJSON(w, http.StatusInternalServerError, false, "Failed handling new file upload", nil)

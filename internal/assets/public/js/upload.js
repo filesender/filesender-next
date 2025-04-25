@@ -68,7 +68,8 @@ const uploadFile = async (expiryDate, file, partial, fileName) => {
         method: "POST",
         body: formData,
         headers: {
-            "Upload-Complete": uploadComplete
+            "Upload-Complete": uploadComplete,
+            "Chunk-Size": file.size
         }
     });
 

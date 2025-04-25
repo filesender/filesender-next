@@ -14,10 +14,10 @@ import (
 	"codeberg.org/filesender/filesender-next/internal/models"
 )
 
-// ChunkedDownloadAPI handles `GET /api/v1/download/{userID}/{fileID}/{chunk}`
-func ChunkedDownloadAPI(stateDir string) http.HandlerFunc {
+// DownloadAPI handles `/api/v1/download/{userID}/{fileID}`
+func DownloadAPI(stateDir string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userID, fileID, chunkStr := r.PathValue("userID"), r.PathValue("fileID"), r.PathValue("chunk")
+		userID, fileID := r.PathValue("userID"), r.PathValue("fileID")
 
 		err := models.ValidateFile(stateDir, userID, fileID)
 		if err != nil {
@@ -33,42 +33,26 @@ func ChunkedDownloadAPI(stateDir string) http.HandlerFunc {
 			return
 		}
 
-		if !file.Chunked {
-			sendError(w, http.StatusNotAcceptable, "This file is not chunked")
-			return
-		}
+		var offset int64
+		offsetStr := r.Header.Get("Offset")
+		if offsetStr != "" {
+			offset, err = strconv.ParseInt(offsetStr, 10, 0)
 
-		chunk, err := strconv.ParseInt(chunkStr, 10, 0)
-		if err != nil {
-			slog.Error("Failed converting chunk index to number", "index", chunkStr, "error", err)
-			sendError(w, http.StatusBadRequest, "Invalid chunk index")
-			return
-		}
-
-		if chunk < 0 || int(chunk) > len(file.Chunks) {
-			slog.Error("Chunk index is out of bounds", "index", chunkStr)
-			sendError(w, http.StatusBadRequest, "Chunk index is out of bounds")
-			return
-		}
-
-		var filePath string
-		if chunk == 0 {
-			filePath = filepath.Join(stateDir, userID, fileID+".bin")
-		} else {
-			chunkOffset := file.Chunks[chunk-1]
-			filePath = filepath.Join(stateDir, userID, fileID, chunkOffset+".bin")
-		}
-
-		if int(chunk) == len(file.Chunks)-1 {
-			err = file.Save(stateDir, userID, fileID)
 			if err != nil {
-				slog.Error("Failed increasing download count on file", "error", err, "userID", userID, "fileID", fileID)
-				sendError(w, http.StatusInternalServerError, "Failed setting new file meta data")
+				slog.Error("Failed parsing offset header to int", "offset", offsetStr, "error", err)
+				sendJSON(w, http.StatusBadRequest, false, "Invalid Offset", nil)
 				return
 			}
 		}
 
-		sendFile(w, filePath, fileID+".bin")
+		if offset > file.ByteSize {
+			slog.Error("Offset out of bounds!", "offset", offset, "file size", file.ByteSize)
+			sendJSON(w, http.StatusBadRequest, false, "Offset is out of bounds", nil)
+			return
+		}
+
+		filePath := filepath.Join(stateDir, userID, fileID+".bin")
+		sendFileFromOffset(w, filePath, fileID+".bin", file.ByteSize, offset)
 	}
 }
 
@@ -91,10 +75,13 @@ func DownloadInfo(stateDir string) http.HandlerFunc {
 			return
 		}
 
-		w.Header().Add("Chunked", strconv.FormatBool(file.Chunked))
 		w.Header().Add("Available", strconv.FormatBool(!file.Partial))
-		w.Header().Add("Chunk-Count", strconv.FormatInt(int64(len(file.Chunks)), 10))
 		w.Header().Add("File-Name", file.EncryptedFileName)
+
+		w.Header().Add("Chunked", strconv.FormatBool(file.Chunked))
+		w.Header().Add("Chunk-Count", strconv.FormatInt(int64(len(file.Chunks)), 10))
+		w.Header().Add("Chunk-Size", strconv.FormatInt(file.ChunkSize, 10))
+		w.Header().Add("Byte-Size", strconv.FormatInt(file.ByteSize, 10))
 
 		sendEmptyResponse(w, http.StatusOK)
 	}

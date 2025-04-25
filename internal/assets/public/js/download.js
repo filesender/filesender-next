@@ -39,7 +39,9 @@ const getFileInfo = async (userId, fileId) => {
         available: response.headers.get("available") === "true",
         chunked: response.headers.get("chunked") === "true",
         chunkCount: parseInt(response.headers.get("chunk-count")),
-        fileName: response.headers.get("file-name")
+        fileName: response.headers.get("file-name"),
+        chunkSize: parseInt(response.headers.get("Chunk-Size")),
+        byteSize: parseInt(response.headers.get("Byte-Size"))
     }
 }
 
@@ -73,7 +75,7 @@ form.addEventListener("submit", async e => {
     manager.start();
 
     while (true) {
-        const progress = manager.progress / manager.total;
+        const progress = manager.progress / fileInfo.byteSize;
         setLoader(progress);
         await new Promise(resolve => setTimeout(resolve, 100));
 

@@ -140,14 +140,34 @@ class ChunkedDownloadManager {
                     channel.port1.postMessage({ done: true });
                     break;
                 }
-                console.log(value);
 
                 channel.port1.postMessage({ chunk: value }, [value.buffer]);
             }
         })();
 
-        for (const chunk of this.chunks) {
-            addResponse(await this.downloadChunk(chunk));
+        let buffer = new Uint8Array(0);
+        const response = await fetch(`../../api/v1/download/${this.fileInfo.userId}/${this.fileInfo.fileId}`);
+        const responseReader = response.body.getReader();
+        while (true) {
+            const { done, value } = await responseReader.read();
+            if (done) break;
+            this.progress += value.length;
+
+            const newBuffer = new Uint8Array(buffer.length + value.length);
+            newBuffer.set(buffer, 0);
+            newBuffer.set(value, buffer.length);
+            buffer = newBuffer;
+
+            while (buffer.length >= this.fileInfo.chunkSize) {
+                const chunk = buffer.slice(0, this.fileInfo.chunkSize);
+                addResponse(chunk);
+
+                buffer = buffer.slice(this.fileInfo.chunkSize);
+            }
+        }
+
+        if (buffer.length > 0) {
+            addResponse(buffer);
         }
     }
 }
