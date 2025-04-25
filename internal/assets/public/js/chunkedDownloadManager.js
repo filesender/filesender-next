@@ -37,17 +37,6 @@ class ChunkedDownloadManager {
         this.total = this.chunks.length;
     }
 
-    /**
-     * 
-     * @param {string} url 
-     * @returns Body reader
-     */
-    async downloadChunk(url) {
-        const response = await fetch(url);
-        this.progress += 1;
-        return await response.bytes()
-    }
-
     handleBroadcastMessage(data) {
         console.log(data);
 
