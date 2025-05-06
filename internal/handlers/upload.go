@@ -88,7 +88,6 @@ func UploadAPI(authModule auth.Auth, stateDir string, maxUploadSize int64) http.
 
 		fileMeta := models.File{
 			ByteSize:   fileHeader.Size,
-			ChunkSize:  fileHeader.Size,
 			ExpiryDate: expiryDate,
 			Chunked:    !uploadComplete,
 			Partial:    !uploadComplete,

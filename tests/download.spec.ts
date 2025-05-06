@@ -9,7 +9,7 @@ test('should download', async ({ page }) => {
         let downloadTriggered = false;
 
         page.on('request', request => {
-            if (request.url().includes('/download') && !request.url().includes('/api/v1')) {
+            if (request.url().includes('/download') && !request.url().includes('/api')) {
                 downloadTriggered = true;
             }
         });
