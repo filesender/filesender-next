@@ -34,13 +34,16 @@ const getFileInfo = async (userId, fileId) => {
     const response = await fetch(`../../api/v1/download/${userId}/${fileId}`, {
         method: "HEAD"
     });
+
+    const chunked = response.headers.get("chunked") === "true";
+    const byteSize = parseInt(response.headers.get("Byte-Size"));
     
     return {
         available: response.headers.get("available") === "true",
-        chunked: response.headers.get("chunked") === "true",
+        chunked,
         fileName: response.headers.get("file-name"),
-        chunkSize: parseInt(response.headers.get("Chunk-Size")),
-        byteSize: parseInt(response.headers.get("Byte-Size"))
+        chunkSize: chunked ? parseInt(response.headers.get("Chunk-Size")) : byteSize,
+        byteSize
     }
 }
 

@@ -27,14 +27,6 @@ class ChunkedDownloadManager {
         this.broadcast.addEventListener("message", e => this.handleBroadcastMessage(e.data));
         this.done = false;
         this.progress = 0;
-
-        if (!this.fileInfo.chunked) {
-            this.chunks = [`../../api/v1/download/${fileInfo.userId}/${fileInfo.fileId}/0`]
-        } else {
-            this.chunks = Array.from({ length: this.fileInfo.chunkCount+1 }, (_, i) => `../../api/v1/download/${fileInfo.userId}/${fileInfo.fileId}/${i}`)
-        }
-
-        this.total = this.chunks.length;
     }
 
     handleBroadcastMessage(data) {
@@ -75,7 +67,6 @@ class ChunkedDownloadManager {
                 while (true) {
                     if (bytesQueue.length > 0) {
                         const bytes = bytesQueue.shift();
-
                         let r1 = window.sodium.crypto_secretstream_xchacha20poly1305_pull(state_in, bytes);
                         controller.enqueue(r1.message);
 
