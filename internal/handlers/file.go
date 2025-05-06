@@ -40,7 +40,7 @@ func FileUpload(stateDir string, userID string, fileID string, fileMeta models.F
 		return err
 	}
 
-	err = fileMeta.Create(stateDir, userID, fileID)
+	err = fileMeta.Save(stateDir, userID, fileID)
 	if err != nil {
 		slog.Error("Failed creating upload meta file", "error", err)
 		return err

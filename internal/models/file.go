@@ -8,25 +8,17 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
-	"time"
 
 	"codeberg.org/filesender/filesender-next/internal/id"
 )
 
 // File model representing metadata
 type File struct {
-	ByteSize          int64     `json:"byte_size"`
-	ChunkSize         int64     `json:"chunk_size"`
-	EncryptedFileName string    `json:"encrypted_file_name"`
-	Chunked           bool      `json:"chunked"`
-	Partial           bool      `json:"partial"`
-	CreationDate      time.Time `json:"creation_date"`
-}
-
-// Create function creates a new meta file & sets the creation date
-func (file *File) Create(stateDir string, userID string, fileID string) error {
-	file.CreationDate = time.Now().UTC().Round(time.Second)
-	return file.Save(stateDir, userID, fileID)
+	ByteSize          int64  `json:"byte_size"`
+	ChunkSize         int64  `json:"chunk_size"`
+	EncryptedFileName string `json:"encrypted_file_name"`
+	Chunked           bool   `json:"chunked"`
+	Partial           bool   `json:"partial"`
 }
 
 // Save the current File meta state to disk
