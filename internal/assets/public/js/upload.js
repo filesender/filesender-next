@@ -65,7 +65,7 @@ const uploadFile = async (expiryDate, file, partial, fileName) => {
         uploadComplete = "?0"
     }
     
-    const response = await fetch("api/v1/upload", {
+    const response = await fetch("api/upload", {
         method: "POST",
         body: formData,
         headers: {

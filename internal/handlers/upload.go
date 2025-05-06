@@ -12,7 +12,7 @@ import (
 	"codeberg.org/filesender/filesender-next/internal/models"
 )
 
-// UploadAPI handles POST /api/v1/upload
+// UploadAPI handles POST /api/upload
 // Expects `expiry_date` in form data
 func UploadAPI(authModule auth.Auth, stateDir string, maxUploadSize int64) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -88,6 +88,7 @@ func UploadAPI(authModule auth.Auth, stateDir string, maxUploadSize int64) http.
 
 		fileMeta := models.File{
 			ByteSize:   fileHeader.Size,
+			ChunkSize:  fileHeader.Size,
 			ExpiryDate: expiryDate,
 			Chunked:    !uploadComplete,
 			Partial:    !uploadComplete,
@@ -118,7 +119,7 @@ func UploadAPI(authModule auth.Auth, stateDir string, maxUploadSize int64) http.
 	}
 }
 
-// ChunkedUploadAPI handles PATCH /api/v1/upload/{userID}/{fileID}
+// ChunkedUploadAPI handles PATCH /api/upload/{userID}/{fileID}
 func ChunkedUploadAPI(authModule auth.Auth, stateDir string, maxUploadSize int64) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		fileID := r.PathValue("fileID")

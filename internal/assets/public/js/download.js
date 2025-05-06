@@ -31,7 +31,7 @@ const fromBase64Url = (base64url) => {
 }
 
 const getFileInfo = async (userId, fileId) => {
-    const response = await fetch(`../../api/v1/download/${userId}/${fileId}`, {
+    const response = await fetch(`../../api/download/${userId}/${fileId}`, {
         method: "HEAD"
     });
 

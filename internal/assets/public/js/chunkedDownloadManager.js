@@ -127,7 +127,7 @@ class ChunkedDownloadManager {
         })();
 
         let buffer = new Uint8Array(0);
-        const response = await fetch(`../../api/v1/download/${this.fileInfo.userId}/${this.fileInfo.fileId}`);
+        const response = await fetch(`../../api/download/${this.fileInfo.userId}/${this.fileInfo.fileId}`);
         const responseReader = response.body.getReader();
         while (true) {
             const { done, value } = await responseReader.read();

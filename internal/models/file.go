@@ -16,10 +16,11 @@ import (
 // File model representing metadata
 type File struct {
 	ByteSize          int64     `json:"byte_size"`
+	ChunkSize         int64     `json:"chunk_size"`
+	FileName          string    `json:"file_name"`
 	EncryptedFileName string    `json:"encrypted_file_name"`
 	Chunked           bool      `json:"chunked"`
 	Partial           bool      `json:"partial"`
-	ChunkSize         int64     `json:"chunk_size"`
 	ExpiryDate        time.Time `json:"expiry_date"`
 	CreationDate      time.Time `json:"creation_date"`
 }
