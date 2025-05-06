@@ -14,7 +14,7 @@ import (
 	"codeberg.org/filesender/filesender-next/internal/models"
 )
 
-// DownloadAPI handles `GET /api/v1/download/{userID}/{fileID}`
+// DownloadAPI handles `GET /api/download/{userID}/{fileID}`
 func DownloadAPI(stateDir string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, fileID := r.PathValue("userID"), r.PathValue("fileID")
@@ -48,7 +48,7 @@ func DownloadAPI(stateDir string) http.HandlerFunc {
 	}
 }
 
-// ChunkedDownloadAPI handles `GET /api/v1/download/{userID}/{fileID}/{chunk}`
+// ChunkedDownloadAPI handles `GET /api/download/{userID}/{fileID}/{chunk}`
 func ChunkedDownloadAPI(stateDir string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, fileID, chunkStr := r.PathValue("userID"), r.PathValue("fileID"), r.PathValue("chunk")
@@ -102,7 +102,7 @@ func ChunkedDownloadAPI(stateDir string) http.HandlerFunc {
 	}
 }
 
-// DownloadInfo handles `HEAD /api/v1/download/{userID}/{fileID}`
+// DownloadInfo handles `HEAD /api/download/{userID}/{fileID}`
 func DownloadInfo(stateDir string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, fileID := r.PathValue("userID"), r.PathValue("fileID")

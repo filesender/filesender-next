@@ -29,13 +29,13 @@ class ChunkedDownloadManager {
         this.progress = 0;
 
         this.chunks = [
-            `../../api/v1/download/${fileInfo.userId}/${fileInfo.fileId}`
+            `../../api/download/${fileInfo.userId}/${fileInfo.fileId}`
         ];
 
         if (this.fileInfo.chunked) {
             this.chunks = [
                 ...this.chunks,
-                ...Array.from({ length: this.fileInfo.chunkCount }, (_, i) => `../../api/v1/download/${fileInfo.userId}/${fileInfo.fileId}/${i}`)
+                ...Array.from({ length: this.fileInfo.chunkCount }, (_, i) => `../../api/download/${fileInfo.userId}/${fileInfo.fileId}/${i}`)
             ]
         }
 
