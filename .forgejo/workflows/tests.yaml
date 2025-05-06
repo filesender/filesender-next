@@ -16,6 +16,21 @@ jobs:
       - name: Run linter
         run: make lint
 
+  eslinter:
+    runs-on: codeberg-tiny
+    container:
+      image: node:22
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: npm install
+      
+      - name: Run ESLint
+        run: npx eslint
+
   tests:
     name: End to end tests and unit tests
     runs-on: codeberg-tiny
