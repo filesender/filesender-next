@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-	"time"
 
 	"codeberg.org/filesender/filesender-next/internal/handlers"
 	"codeberg.org/filesender/filesender-next/internal/models"
@@ -64,8 +63,7 @@ func TestFileUpload_Success(t *testing.T) {
 	defer cleanup()
 
 	fileMeta := models.File{
-		ByteSize:   int64(len(fileContent)),
-		ExpiryDate: time.Now().Add(24 * time.Hour),
+		ByteSize: int64(len(fileContent)),
 	}
 
 	err = handlers.FileUpload(tempDir, "user456", "test123", fileMeta, testFile)
@@ -87,8 +85,7 @@ func TestFileUpload_InvalidDirectory(t *testing.T) {
 	defer cleanup()
 
 	fileMeta := models.File{
-		ByteSize:   -10,
-		ExpiryDate: time.Now().Add(24 * time.Hour),
+		ByteSize: -10,
 	}
 
 	err = handlers.FileUpload("/invalid/directory/should/fail", "----------", "doesn't matter", fileMeta, testFile)
@@ -120,8 +117,7 @@ func TestFileUpload_CopyFailure(t *testing.T) {
 	}
 
 	fileMeta := models.File{
-		ByteSize:   4,
-		ExpiryDate: time.Now().Add(24 * time.Hour),
+		ByteSize: 4,
 	}
 
 	err = handlers.FileUpload(tempDir, "user123", "testfail", fileMeta, fakeFile)

@@ -4,7 +4,6 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
-	"time"
 
 	"codeberg.org/filesender/filesender-next/internal/auth"
 	"codeberg.org/filesender/filesender-next/internal/crypto"
@@ -40,13 +39,6 @@ func UploadAPI(authModule auth.Auth, stateDir string, maxUploadSize int64) http.
 		expiryDates := r.MultipartForm.Value["expiry-date"]
 		if len(expiryDates) != 1 {
 			sendJSON(w, http.StatusBadRequest, false, "Expected an expiry date", nil)
-			return
-		}
-
-		expiryDate, err := time.Parse("2006-01-02", expiryDates[0])
-		if err != nil {
-			slog.Error("Failed parsing date", "error", err, "input", expiryDates[0])
-			sendJSON(w, http.StatusBadRequest, false, "Invalid date format, expected YYYY-MM-DD", nil)
 			return
 		}
 
@@ -87,11 +79,10 @@ func UploadAPI(authModule auth.Auth, stateDir string, maxUploadSize int64) http.
 		}
 
 		fileMeta := models.File{
-			ByteSize:   fileHeader.Size,
-			ExpiryDate: expiryDate,
-			Chunked:    !uploadComplete,
-			Partial:    !uploadComplete,
-			ChunkSize:  chunkSize,
+			ByteSize:  fileHeader.Size,
+			Chunked:   !uploadComplete,
+			Partial:   !uploadComplete,
+			ChunkSize: chunkSize,
 		}
 
 		fileNames := r.MultipartForm.Value["file-name"]
@@ -241,15 +232,8 @@ func UploadTemplate(authModule auth.Auth) http.HandlerFunc {
 			return
 		}
 
-		minDate := time.Now().UTC().Add(time.Hour * 24)
-		defaultDate := time.Now().UTC().Add(time.Hour * 24 * 7)
-		maxDate := time.Now().UTC().Add(time.Hour * 24 * 30)
-
 		sendTemplate(w, "upload", uploadTemplate{
-			MinDate:     minDate.Format(time.DateOnly),
-			DefaultDate: defaultDate.Format(time.DateOnly),
-			MaxDate:     maxDate.Format(time.DateOnly),
-			UserID:      userID,
+			UserID: userID,
 		})
 	}
 }
