@@ -19,6 +19,7 @@ type File struct {
 	UserID            string    `json:"user_id"`
 	DownloadCount     int       `json:"download_count"`
 	ByteSize          int64     `json:"byte_size"`
+	ChunkSize         int64     `json:"chunk_size"`
 	FileName          string    `json:"file_name"`
 	EncryptedFileName string    `json:"encrypted_file_name"`
 	Chunked           bool      `json:"chunked"`

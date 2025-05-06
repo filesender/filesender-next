@@ -78,6 +78,7 @@ func UploadAPI(authModule auth.Auth, stateDir string, maxUploadSize int64) http.
 			ID:         fileID,
 			UserID:     userID,
 			ByteSize:   fileHeader.Size,
+			ChunkSize:  fileHeader.Size,
 			ExpiryDate: expiryDate,
 			Chunked:    !uploadComplete,
 			Partial:    !uploadComplete,
