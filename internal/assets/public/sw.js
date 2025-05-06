@@ -5,6 +5,7 @@ self.addEventListener("install", () => {
     self.skipWaiting();
 });
 self.addEventListener("activate", event => {
+    // eslint-disable-next-line no-undef
     event.waitUntil(clients.claim());
 });
 

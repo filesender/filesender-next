@@ -2,7 +2,7 @@
 const form = document.querySelector("form");
 
 // Register service worker
-navigator.serviceWorker.register("../../sw.js").then(async e => {
+navigator.serviceWorker.register("../../sw.js").then(async () => {
     console.log('Service Worker registered!');
 });
 
@@ -69,6 +69,7 @@ form.addEventListener("submit", async e => {
         fileInfo.fileName = sodium.to_string(sodium.crypto_secretbox_open_easy(fromBase64Url(fileInfo.fileName), nonce, key));
     }
 
+    // eslint-disable-next-line no-undef
     const manager = new ChunkedDownloadManager(sw.active, key, header, {
         userId,
         fileId,

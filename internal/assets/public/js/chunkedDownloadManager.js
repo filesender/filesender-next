@@ -9,6 +9,7 @@
  * @property {string} fileName
  */
 
+// eslint-disable-next-line no-unused-vars
 class ChunkedDownloadManager {
     /**
      * 
@@ -59,7 +60,7 @@ class ChunkedDownloadManager {
             new Promise((resolve) => (pendingResolve = resolve));
 
         const decryptionStream = new ReadableStream({
-            start(_controller) {
+            start() {
                 state_in = window.sodium.crypto_secretstream_xchacha20poly1305_init_pull(header, key);
             },
 

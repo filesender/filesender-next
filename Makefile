@@ -1,6 +1,6 @@
 PREFIX=/usr/local
 
-.PHONY: test update vendor fmt lint vet sloc clean install run run-dev hotreload act
+.PHONY: test update vendor fmt lint vet sloc clean install run run-dev hotreload act eslint
 
 filesender: cmd/filesender/main.go
 	go build $(GOBUILDFLAGS) -o $@ codeberg.org/filesender/filesender-next/cmd/filesender
@@ -48,3 +48,6 @@ hotreload:
 
 act:
 	act --container-architecture linux/amd64 --workflows .forgejo/workflows/tests.yaml
+
+eslint:
+	npx eslint

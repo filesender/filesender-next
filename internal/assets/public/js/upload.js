@@ -1,3 +1,4 @@
+/* global sodium */
 const ENC_CHUNK_SIZE = 1024 * 1024 * 10;
 
 const form = document.querySelector("form");
