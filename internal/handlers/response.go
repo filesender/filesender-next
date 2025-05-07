@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"embed"
-	"encoding/json"
 	"html/template"
 	"log/slog"
 	"net/http"
@@ -23,29 +22,6 @@ type Response struct {
 // Init to receive the embedded templates
 func Init(fs embed.FS) {
 	templatesFS = fs
-}
-
-// Send a JSON response with the given data
-func sendJSON(w http.ResponseWriter, status int, success bool, message string, data any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-
-	response := Response{
-		Success: success,
-	}
-
-	if success {
-		if data != nil {
-			response.Data = data
-		}
-	} else {
-		response.Message = message
-	}
-
-	err := json.NewEncoder(w).Encode(response)
-	if err != nil {
-		slog.Error("Error sending JSON", "error", err)
-	}
 }
 
 // Send a template response with the given data

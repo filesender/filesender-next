@@ -45,6 +45,10 @@ class ChunkedDownloadManager {
         }
     }
 
+    error(msg) {
+        // TODO: impl
+    }
+
     /**
      * 
      * @param {ReadableStream} stream 
@@ -101,6 +105,31 @@ class ChunkedDownloadManager {
                 }
             }
         }
+    }
+
+    /**
+     * Fetches first chunk based on `this.fileInfo.chunkSize`
+     * @param {number} tries how many tries left until errors
+     * @returns {Promise<ArrayBuffer | undefined>}
+     */
+    async fetchFirstChunk(tries = 3) {
+        const response = await fetch(`../../api/download/${this.fileInfo.userId}/${this.fileInfo.fileId}`, {
+            headers: {
+              Range: `bytes=0-${this.fileInfo.chunkSize - 1}`
+            }
+        });
+
+        if (response.status === 206) {
+            const data = await response.arrayBuffer();
+            return data;
+        }
+
+        if (tries > 0) {
+            return await fetchFirstChunk(tries - 1)
+        }
+
+        error("Failed to fetch first chunk");
+        return undefined;
     }
 
     async start() {

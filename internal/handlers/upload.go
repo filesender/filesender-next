@@ -18,7 +18,7 @@ func UploadAPI(authModule auth.Auth, stateDir string, maxUploadSize int64) http.
 		userID, err := authModule.UserAuth(r)
 		if err != nil {
 			slog.Info("unable to authenticate user", "error", err)
-			sendJSON(w, http.StatusUnauthorized, false, "You're not authenticated", nil)
+			sendError(w, http.StatusUnauthorized, "You're not authenticated")
 			return
 		}
 		slog.Info("user authenticated", "user_id", userID)
@@ -26,19 +26,13 @@ func UploadAPI(authModule auth.Auth, stateDir string, maxUploadSize int64) http.
 		userID, err = crypto.HashToBase64(userID)
 		if err != nil {
 			slog.Info("failed hashing user ID", "error", err)
-			sendJSON(w, http.StatusInternalServerError, false, "Failed creating user ID", nil)
+			sendError(w, http.StatusInternalServerError, "Failed creating user ID")
 			return
 		}
 
 		r.Body = http.MaxBytesReader(w, r.Body, maxUploadSize)
 		if err := r.ParseMultipartForm(maxUploadSize); err != nil {
-			sendJSON(w, http.StatusRequestEntityTooLarge, false, "Upload file size too large", nil)
-			return
-		}
-
-		expiryDates := r.MultipartForm.Value["expiry-date"]
-		if len(expiryDates) != 1 {
-			sendJSON(w, http.StatusBadRequest, false, "Expected an expiry date", nil)
+			sendError(w, http.StatusRequestEntityTooLarge, "Upload file size too large")
 			return
 		}
 
@@ -54,7 +48,7 @@ func UploadAPI(authModule auth.Auth, stateDir string, maxUploadSize int64) http.
 
 			if err != nil {
 				slog.Error("Expected chunk-size header, failed parsing to int", "chunk-size", chunkSizeStr, "error", err)
-				sendJSON(w, http.StatusBadRequest, false, "Invalid Chunk-Size", nil)
+				sendError(w, http.StatusBadRequest, "Invalid Chunk-Size")
 				return
 			}
 		}
@@ -62,7 +56,7 @@ func UploadAPI(authModule auth.Auth, stateDir string, maxUploadSize int64) http.
 		file, fileHeader, err := r.FormFile("file")
 		if err != nil {
 			slog.Error("Failed opening file", "error", err)
-			sendJSON(w, http.StatusInternalServerError, false, "Lost the file", nil)
+			sendError(w, http.StatusInternalServerError, "Lost the file")
 			return
 		}
 		defer func() {
@@ -74,7 +68,7 @@ func UploadAPI(authModule auth.Auth, stateDir string, maxUploadSize int64) http.
 		fileID, err := id.New()
 		if err != nil {
 			slog.Error("Failed creating file ID", "error", err)
-			sendJSON(w, http.StatusInternalServerError, false, "Failed to create a random file ID!", nil)
+			sendError(w, http.StatusInternalServerError, "Failed to create a random file ID!")
 			return
 		}
 
@@ -93,7 +87,7 @@ func UploadAPI(authModule auth.Auth, stateDir string, maxUploadSize int64) http.
 		err = FileUpload(stateDir, userID, fileID, fileMeta, file)
 		if err != nil {
 			slog.Error("Failed handling file upload", "error", err)
-			sendJSON(w, http.StatusInternalServerError, false, "Failed handling new file upload", nil)
+			sendError(w, http.StatusInternalServerError, "Failed handling new file upload")
 			return
 		}
 
@@ -117,7 +111,7 @@ func ChunkedUploadAPI(authModule auth.Auth, stateDir string, maxUploadSize int64
 		userID, err := authModule.UserAuth(r)
 		if err != nil {
 			slog.Info("unable to authenticate user", "error", err)
-			sendJSON(w, http.StatusUnauthorized, false, "You're not authenticated", nil)
+			sendError(w, http.StatusUnauthorized, "You're not authenticated")
 			return
 		}
 		slog.Info("user authenticated", "user_id", userID)
@@ -125,13 +119,13 @@ func ChunkedUploadAPI(authModule auth.Auth, stateDir string, maxUploadSize int64
 		userID, err = crypto.HashToBase64(userID)
 		if err != nil {
 			slog.Info("failed hashing user ID", "error", err)
-			sendJSON(w, http.StatusInternalServerError, false, "Failed creating user ID", nil)
+			sendError(w, http.StatusInternalServerError, "Failed creating user ID")
 			return
 		}
 
 		r.Body = http.MaxBytesReader(w, r.Body, maxUploadSize)
 		if err := r.ParseMultipartForm(maxUploadSize); err != nil {
-			sendJSON(w, http.StatusRequestEntityTooLarge, false, "Upload file size too large", nil)
+			sendError(w, http.StatusRequestEntityTooLarge, "Upload file size too large")
 			return
 		}
 
@@ -143,34 +137,34 @@ func ChunkedUploadAPI(authModule auth.Auth, stateDir string, maxUploadSize int64
 		fileMeta, err := models.GetFileFromIDs(stateDir, userID, fileID)
 		if err != nil {
 			slog.Info("Could not get file info", "error", err)
-			sendJSON(w, http.StatusNotFound, false, "Could not find file info", nil)
+			sendError(w, http.StatusNotFound, "Could not find file info")
 			return
 		}
 
 		if !fileMeta.Chunked || !fileMeta.Partial {
 			slog.Info("File is not chunked or is already fully uploaded", "chunked", fileMeta.Chunked, "partial", fileMeta.Partial)
-			sendJSON(w, http.StatusConflict, false, "File is not chunked or already fully uploaded", nil)
+			sendError(w, http.StatusConflict, "File is not chunked or already fully uploaded")
 			return
 		}
 
 		offsetStr := r.Header.Get("Upload-Offset")
 		if offsetStr == "" {
 			slog.Info("Missing upload offset")
-			sendJSON(w, http.StatusBadRequest, false, "Missing offset", nil)
+			sendError(w, http.StatusBadRequest, "Missing offset")
 			return
 		}
 
 		uploadOffset, err := strconv.ParseInt(offsetStr, 10, 64)
 		if err != nil || uploadOffset == 0 {
 			slog.Info("Invalid upload offset", "offset", offsetStr)
-			sendJSON(w, http.StatusBadRequest, false, "Invalid offset", nil)
+			sendError(w, http.StatusBadRequest, "Invalid offset")
 			return
 		}
 
 		file, fileHeader, err := r.FormFile("file")
 		if err != nil {
 			slog.Error("Failed opening file", "error", err)
-			sendJSON(w, http.StatusInternalServerError, false, "Lost the file", nil)
+			sendError(w, http.StatusInternalServerError, "Lost the file")
 			return
 		}
 		defer func() {
@@ -181,14 +175,14 @@ func ChunkedUploadAPI(authModule auth.Auth, stateDir string, maxUploadSize int64
 
 		if fileMeta.ChunkSize != fileHeader.Size && !uploadComplete {
 			slog.Info("Meta chunk size is different from file size", "expected", fileMeta.ChunkSize, "got", fileHeader.Size)
-			sendJSON(w, http.StatusBadRequest, false, "Invalid chunk size", nil)
+			sendError(w, http.StatusBadRequest, "Invalid chunk size")
 			return
 		}
 
 		err = PartialFileUpload(stateDir, userID, fileID, file, uploadOffset)
 		if err != nil {
 			slog.Error("Failed handling file upload", "error", err)
-			sendJSON(w, http.StatusInternalServerError, false, "Failed handling new file upload", nil)
+			sendError(w, http.StatusInternalServerError, "Failed handling new file upload")
 			return
 		}
 
@@ -199,7 +193,7 @@ func ChunkedUploadAPI(authModule auth.Auth, stateDir string, maxUploadSize int64
 		err = fileMeta.Save(stateDir, userID, fileID)
 		if err != nil {
 			slog.Error("Failed saving meta file contents", "userID", userID, "fileID", fileID, "error", err)
-			sendJSON(w, http.StatusInternalServerError, false, "Failed saving new data", nil)
+			sendError(w, http.StatusInternalServerError, "Failed saving new data")
 
 		}
 
@@ -228,7 +222,7 @@ func UploadTemplate(authModule auth.Auth) http.HandlerFunc {
 		userID, err = crypto.HashToBase64(userID)
 		if err != nil {
 			slog.Info("failed hashing user ID", "error", err)
-			sendJSON(w, http.StatusInternalServerError, false, "Failed creating user ID", nil)
+			sendError(w, http.StatusInternalServerError, "Failed creating user ID")
 			return
 		}
 
