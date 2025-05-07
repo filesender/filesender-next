@@ -1,3 +1,4 @@
+const ENC_CHUNK_SIZE = 1024 * 1024 * 10;
 
 /**
  * @typedef {Object} FileInfo
@@ -108,14 +109,14 @@ class ChunkedDownloadManager {
     }
 
     /**
-     * Fetches first chunk based on `this.fileInfo.chunkSize`
+     * Fetches first chunk based on `ENC_CHUNK_SIZE`
      * @param {number} tries how many tries left until errors
      * @returns {Promise<ArrayBuffer | undefined>}
      */
     async fetchFirstChunk(tries = 3) {
         const response = await fetch(`../../api/download/${this.fileInfo.userId}/${this.fileInfo.fileId}`, {
             headers: {
-              Range: `bytes=0-${this.fileInfo.chunkSize - 1}`
+              Range: `bytes=0-${ENC_CHUNK_SIZE - 1}`
             }
         });
 
@@ -168,11 +169,11 @@ class ChunkedDownloadManager {
             newBuffer.set(value, buffer.length);
             buffer = newBuffer;
 
-            while (buffer.length >= this.fileInfo.chunkSize) {
-                const chunk = buffer.slice(0, this.fileInfo.chunkSize);
+            while (buffer.length >= ENC_CHUNK_SIZE) {
+                const chunk = buffer.slice(0, ENC_CHUNK_SIZE);
                 addResponse(chunk);
 
-                buffer = buffer.slice(this.fileInfo.chunkSize);
+                buffer = buffer.slice(ENC_CHUNK_SIZE);
             }
         }
 

@@ -9,7 +9,6 @@ import (
 	"log/slog"
 	"net/http"
 	"path/filepath"
-	"strconv"
 
 	"codeberg.org/filesender/filesender-next/internal/models"
 )
@@ -50,13 +49,7 @@ func DownloadInfo(stateDir string) http.HandlerFunc {
 			return
 		}
 
-		w.Header().Add("Available", strconv.FormatBool(!file.Partial))
 		w.Header().Add("File-Name", file.EncryptedFileName)
-
-		w.Header().Add("Chunked", strconv.FormatBool(file.Chunked))
-		w.Header().Add("Chunk-Size", strconv.FormatInt(file.ChunkSize, 10))
-		w.Header().Add("Byte-Size", strconv.FormatInt(file.ByteSize, 10))
-
 		sendEmptyResponse(w, http.StatusOK)
 	}
 }
@@ -73,15 +66,16 @@ func GetDownloadTemplate(stateDir string) http.HandlerFunc {
 			return
 		}
 
-		file, err := models.GetFileFromIDs(stateDir, userID, fileID)
+		filePath := filepath.Join(stateDir, userID, fileID+".bin")
+		byteSize, err := getFileSize(filePath)
 		if err != nil {
-			slog.Error("Failed getting file from id", "error", err)
+			slog.Error("Failed getting file size", "error", err)
 			sendError(w, http.StatusInternalServerError, "Failed getting specified file")
 			return
 		}
 
 		data := downloadTemplate{
-			ByteSize: file.ByteSize,
+			ByteSize: byteSize,
 			UserID:   userID,
 			FileID:   fileID,
 		}

@@ -14,11 +14,7 @@ import (
 
 // File model representing metadata
 type File struct {
-	ByteSize          int64  `json:"byte_size"`
-	ChunkSize         int64  `json:"chunk_size"`
 	EncryptedFileName string `json:"encrypted_file_name"`
-	Chunked           bool   `json:"chunked"`
-	Partial           bool   `json:"partial"`
 }
 
 // Save the current File meta state to disk

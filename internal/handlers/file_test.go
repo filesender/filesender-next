@@ -62,9 +62,7 @@ func TestFileUpload_Success(t *testing.T) {
 	}
 	defer cleanup()
 
-	fileMeta := models.File{
-		ByteSize: int64(len(fileContent)),
-	}
+	fileMeta := models.File{}
 
 	err = handlers.FileUpload(tempDir, "user456", "test123", fileMeta, testFile)
 	if err != nil {
@@ -84,9 +82,7 @@ func TestFileUpload_InvalidDirectory(t *testing.T) {
 	}
 	defer cleanup()
 
-	fileMeta := models.File{
-		ByteSize: -10,
-	}
+	fileMeta := models.File{}
 
 	err = handlers.FileUpload("/invalid/directory/should/fail", "----------", "doesn't matter", fileMeta, testFile)
 	if err == nil {
@@ -116,9 +112,7 @@ func TestFileUpload_CopyFailure(t *testing.T) {
 		t.Fatalf("Couldn't close file: %v", err)
 	}
 
-	fileMeta := models.File{
-		ByteSize: 4,
-	}
+	fileMeta := models.File{}
 
 	err = handlers.FileUpload(tempDir, "user123", "testfail", fileMeta, fakeFile)
 	if err == nil {

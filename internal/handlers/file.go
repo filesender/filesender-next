@@ -50,18 +50,18 @@ func FileUpload(stateDir string, userID string, fileID string, fileMeta models.F
 }
 
 // PartialFileUpload handles a chunk being uploaded
-func PartialFileUpload(stateDir string, userID string, fileID string, file multipart.File, offset int64) error {
+func PartialFileUpload(stateDir string, userID string, fileID string, file multipart.File, offset int64) (int64, error) {
 	uploadDir := filepath.Join(stateDir, userID)
 	if _, err := os.Stat(uploadDir); os.IsNotExist(err) {
 		slog.Error("User upload directory does not exist", "path", uploadDir)
-		return err
+		return 0, err
 	}
 
 	filePath := filepath.Join(uploadDir, fileID+".bin")
 	dst, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE, 0o600)
 	if err != nil {
 		slog.Error("Failed opening destination file", "error", err)
-		return err
+		return 0, err
 	}
 	defer func() {
 		if err := dst.Close(); err != nil {
@@ -72,14 +72,24 @@ func PartialFileUpload(stateDir string, userID string, fileID string, file multi
 	_, err = dst.Seek(offset, io.SeekStart)
 	if err != nil {
 		slog.Error("Failed seeking to offset", "offset", offset, "error", err)
-		return err
+		return 0, err
 	}
 
 	_, err = io.Copy(dst, file)
 	if err != nil {
 		slog.Error("Failed copying chunk data", "error", err)
-		return err
+		return 0, err
 	}
 
-	return nil
+	return getFileSize(filePath)
+}
+
+func getFileSize(path string) (int64, error) {
+	fileInfo, err := os.Stat(path)
+	if err != nil {
+		slog.Error("Failed to get file info", "error", err)
+		return 0, err
+	}
+
+	return fileInfo.Size(), nil
 }
