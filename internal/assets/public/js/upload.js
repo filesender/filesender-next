@@ -48,17 +48,19 @@ const toBase64Url = (uint8Array) => {
 
 /**
  * Uploads a file
- * @param {string} expiryDate `YYYY-MM-DD` formatted expiry date of the file
- * @param {File} file 
+ * @param {Uint8Array} data 
  * @param {boolean} partial If the file being uploaded is chunked or not
- * @param {string} fileName Encrypted file name
+ * @param {Uint8Array} fileName Encrypted file name
  * @returns `false` if errored, `string` if last chunk & successful, `true` if successful
  */
-const uploadFile = async (expiryDate, file, partial, fileName) => {
+const uploadFile = async (data, partial, fileName) => {
+    const combined = new Uint8Array(512 + data.length);
+    combined.set(fileName.subarray(0, 512));
+    combined.set(data, 512);
+    console.log(data);
+
     const formData = new FormData();
-    formData.append("file", file);
-    formData.append("expiry-date", expiryDate);
-    formData.append("file-name", fileName);
+    formData.append("file", new Blob([combined]), "data.bin");
 
     var uploadComplete = "?1";
     if (partial) {
@@ -69,8 +71,7 @@ const uploadFile = async (expiryDate, file, partial, fileName) => {
         method: "POST",
         body: formData,
         headers: {
-            "Upload-Complete": uploadComplete,
-            "Chunk-Size": file.size
+            "Upload-Complete": uploadComplete
         }
     });
 
@@ -91,14 +92,15 @@ const uploadFile = async (expiryDate, file, partial, fileName) => {
 
 /**
  * Uploads a file chunk
- * @param {File} file The chunk as a `File` object
+ * @param {Uint8Array} file The chunk as a `File` object
  * @param {number} offset Byte offset of the chunk
  * @param {boolean} done If this is the last chunk
  * @returns `false` if errored, `string` if last chunk & successful, `true` if successful
  */
 const uploadPartialFile = async (file, offset, done) => {
     const formData = new FormData();
-    formData.append("file", file);
+    console.log(file);
+    formData.append("file", new Blob([file]), "data.bin");
 
     var uploadComplete = "?0";
     if (done) {
@@ -197,7 +199,6 @@ form.addEventListener("submit", async e => {
 
     const formData = new FormData(form);
     const file = formData.get("file");
-    const expiryDate = formData.get("expiry-date");
 
     if (file.name === "") {
         return showError("You have to select a file");
@@ -209,8 +210,7 @@ form.addEventListener("submit", async e => {
     let [stream, header] = createEncryptedStream(file, key);
 
     let nonce = sodium.randombytes_buf(sodium.crypto_secretbox_NONCEBYTES);
-    let ciphertext = sodium.crypto_secretbox_easy(sodium.from_string(file.name), nonce, key);
-    const fileName = toBase64Url(ciphertext);
+    const fileName = sodium.crypto_secretbox_easy(sodium.from_string(file.name), nonce, key);
 
     console.log("Key", key);
     console.log("Header", header);
@@ -220,35 +220,27 @@ form.addEventListener("submit", async e => {
     let i = 0;
     
     const reader = stream.getReader();
-    
-    // Read the first chunk up front
     let { value, done } = await reader.read();
     
     while (!done) {
-        const blob = new Blob([value]);
-        const file = new File([blob], `${i}.bin`);
-    
-        // Peek ahead to check if there's more after this
         const nextChunk = await reader.read();
         const moreComing = !nextChunk.done;
-    
+
         if (total === 0) {
-            // First chunk — use uploadFile
-            const res = await uploadFile(expiryDate, file, moreComing, fileName);
+            const res = await uploadFile(value, moreComing, fileName);
             if (res === false) return;
     
-            total += file.size;
+            total += value.length;
     
             if (res !== true) {
                 fileId = res;
                 break;
             }
         } else {
-            // Subsequent chunks — use uploadPartialFile
-            const res = await uploadPartialFile(file, total, !moreComing);
+            const res = await uploadPartialFile(value, total, !moreComing);
             if (res === false) return;
     
-            total += file.size;
+            total += value.length;
     
             if (res !== true) {
                 fileId = res;

@@ -63,7 +63,7 @@ form.addEventListener("submit", async e => {
     }
 
     // eslint-disable-next-line no-undef
-    const manager = new ChunkedDownloadManager(sw.active, key, header, {
+    const manager = new ChunkedDownloadManager(sw.active, key, header, nonce, {
         userId,
         fileId,
         ...fileInfo
