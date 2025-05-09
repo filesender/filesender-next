@@ -28,19 +28,14 @@ class DownloadManager {
      */
     createDecryptionStream() {
         const bytesQueue = [];
-        let state_in;
-        let _done = false;
         const { header, key } = this;
+        const state_in = window.sodium.crypto_secretstream_xchacha20poly1305_init_pull(header, key);
 
         let pendingResolve;
         const waitForStream = () =>
             new Promise((resolve) => (pendingResolve = resolve));
 
         const decryptionStream = new ReadableStream({
-            start() {
-                state_in = window.sodium.crypto_secretstream_xchacha20poly1305_init_pull(header, key);
-            },
-
             async pull(controller) {
                 while (true) {
                     if (bytesQueue.length > 0) {
@@ -53,9 +48,6 @@ class DownloadManager {
                             break;
                         }
 
-                    } else if (_done) {
-                        controller.close();
-                        break;
                     } else {
                         await waitForStream();
                     }
