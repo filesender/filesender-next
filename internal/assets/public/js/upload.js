@@ -51,6 +51,7 @@ const toBase64Url = (uint8Array) => {
 
 const formData = new FormData(form);
 const userId = formData.get("user-id").toString();
+// eslint-disable-next-line no-undef
 const manager = new UploadManager(userId);
 
 form.addEventListener("submit", async e => {

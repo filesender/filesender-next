@@ -1,12 +1,13 @@
 /* global sodium */
 var ENC_CHUNK_SIZE = 1024 * 1024 * 10;
 
+// eslint-disable-next-line no-unused-vars
 class UploadManager {
     /**
      * 
      * @param {string} userId 
      */
-    constructor(userId, key) {
+    constructor(userId) {
         this.userId = userId;
         this.fileId;
 
