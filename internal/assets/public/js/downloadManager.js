@@ -2,7 +2,7 @@
 var ENC_CHUNK_SIZE = 1024 * 1024 * 10;
 
 // eslint-disable-next-line no-unused-vars
-class ChunkedDownloadManager {
+class DownloadManager {
     /**
      * 
      * @param {Uint8Array} key 

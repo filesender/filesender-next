@@ -120,7 +120,7 @@ if (!key || !header || !nonce) {
     console.log("Nonce", nonce);
 
     // eslint-disable-next-line no-undef
-    const manager = new ChunkedDownloadManager(key, header, nonce, userId, fileId);
+    const manager = new DownloadManager(key, header, nonce, userId, fileId);
 
     form.addEventListener("submit", async e => {
         e.preventDefault();
