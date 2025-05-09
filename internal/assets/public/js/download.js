@@ -10,6 +10,33 @@ const setLoader = (progress) => {
 }
 
 /**
+ * Dummy error handling function
+ * @param {string} msg Message to show to use
+ */
+const showError = msg => {
+    console.log(`ERROR: ${msg}`);
+}
+
+/**
+ * Hides whatever current error message is being shown
+ */
+const hideError = () => {
+
+}
+
+/**
+ * 
+ * @param {string | undefined} msg 
+ */
+const errorMessageHandler = (msg) => {
+    if (msg) {
+        showError(msg);
+    } else {
+        hideError();
+    }
+}
+
+/**
  * Decodes base64 string to bytes
  * @param {string} base64url 
  * @returns bytes
@@ -80,38 +107,80 @@ const createServiceWorkerHandler = async (sw, fileId) => {
     return handler;
 }
 
-form.addEventListener("submit", async e => {
-    e.preventDefault();
-    const sw = await navigator.serviceWorker.ready;
+const formData = new FormData(form);
+const userId = formData.get("user-id").toString();
+const fileId = formData.get("file-id").toString();
 
-    await window.sodium.ready;
-
-    const formData = new FormData(form);
-    const userId = formData.get("user-id").toString();
-    const fileId = formData.get("file-id").toString();
-
-    const [key, header, nonce] = window.location.hash.substring(1).split(".").map(v => fromBase64Url(v));
-
+const [key, header, nonce] = window.location.hash.substring(1).split(".").map(v => fromBase64Url(v));
+if (!key || !header || !nonce) {
+    showError("No key, header, or nonce present in url!");
+} else {
     console.log("Key", key)
     console.log("Header", header);
     console.log("Nonce", nonce);
 
     // eslint-disable-next-line no-undef
     const manager = new ChunkedDownloadManager(key, header, nonce, userId, fileId);
-    const totalFileSize = await manager.getTotalSize();
 
-    let worker;
-    worker = await createServiceWorkerHandler(sw.active, fileId);
+    form.addEventListener("submit", async e => {
+        e.preventDefault();
     
-    manager.start(worker);
+        await window.sodium.ready;
+        const totalFileSize = await manager.getTotalSize();
+    
+        let handler;
+        const sw = await navigator.serviceWorker.ready;
+        handler = await createServiceWorkerHandler(sw.active, fileId);
 
-    while (true) {
-        const progress = manager.progress / totalFileSize;
-        setLoader(progress);
-        await new Promise(resolve => setTimeout(resolve, 100));
+        /**
+         * 
+         * @param {(fileName: string, stream: ReadableStream) => void} handler 
+         * @param {(msg: string | undefined) => void} errorMessageHandler
+         * @returns 
+         */
+        const startOrResumeDownload = async (handler, errorMessageHandler) => {
+            if (manager.bytesDownloaded === 0) {
+                try {
+                    await manager.start(handler, errorMessageHandler);
+                } catch (err) {
+                    if (manager.bytesDownloaded > 0) {
+                        form.querySelector("button").innerText = "Resume";
+                    }
 
-        if (progress >= 1) {
-            break;
+                    throw err;
+                }
+                return;
+            }
+
+            await manager.resume(errorMessageHandler);
         }
-    }
-});
+    
+        (async () => {
+            while (true) {
+                const progress = manager.bytesDownloaded / totalFileSize;
+                setLoader(progress);
+                await new Promise(resolve => setTimeout(resolve, 100));
+        
+                if (progress >= 1) {
+                    break;
+                }
+            }
+        })();
+        
+        let tries = 0;
+        let err;
+        while (tries < 3) {
+            try {
+                await startOrResumeDownload(handler, errorMessageHandler);
+                break;
+            } catch (e) {
+                err = e;
+            }
+            tries++;
+        }
+        
+        if (err) {
+            showError(`Failed downloading: ${err.message}`);
+        }
+    });
+}

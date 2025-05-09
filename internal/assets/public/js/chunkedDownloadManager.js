@@ -18,6 +18,8 @@ class ChunkedDownloadManager {
         this.userId = userId;
         this.fileId = fileId;
         this.done = false;
+        this.bytesDownloaded = 0;
+        this.decryptionStream;
     }
 
     /**
@@ -61,7 +63,7 @@ class ChunkedDownloadManager {
             }
         });
 
-        return {
+        this.decryptionStream = {
             stream: decryptionStream,
 
             /**
@@ -76,6 +78,16 @@ class ChunkedDownloadManager {
                 }
             }
         }
+
+        return this.decryptionStream;
+    }
+
+    getDecryptionStream() {
+        if (!this.decryptionStream) {
+            return this.createDecryptionStream();
+        }
+
+        return this.decryptionStream;
     }
 
     /**
@@ -161,21 +173,57 @@ class ChunkedDownloadManager {
     /**
      * 
      * @param {(fileName: string, stream: ReadableStream) => void} handler 
+     * @param {(msg: string | undefined) => void} errorMessageHandler
      * @returns 
      */
-    async start(handler) {
+    async start(handler, errorMessageHandler) {
+        errorMessageHandler(undefined);
         await window.sodium.ready;
 
         const firstChunk = await this.fetchFirstChunk();
         if (!firstChunk) return;
+
+        this.bytesDownloaded = ENC_CHUNK_SIZE + 512;
         const { encryptedFileName, fileContent } = firstChunk;
         const fileName = sodium.to_string(sodium.crypto_secretbox_open_easy(encryptedFileName, this.nonce, this.key));
 
-        const { stream, addResponse } = this.createDecryptionStream();
+        const { stream, addResponse } = this.getDecryptionStream();
         handler(fileName, stream);
 
         addResponse(fileContent);
-        await this.fetchChunks(ENC_CHUNK_SIZE + 512, addResponse);
+        await this.resume(errorMessageHandler);
+    }
+
+    /**
+     * 
+     * @param {(fileName: string, stream: ReadableStream) => void} handler 
+     * @param {(msg: string | undefined) => void} errorMessageHandler
+     * @returns 
+     */
+    async resume(errorMessageHandler) {
+        if (this.bytesDownloaded === 0) throw new Error("Can't resume a download that has never started");
+
+        const { addResponse } = this.getDecryptionStream();
+
+        let tries = 0;
+        while (tries < 3) {
+            try {
+                await this.fetchChunks(this.bytesDownloaded, (bytes) => {
+                    this.bytesDownloaded += bytes.length;
+                    addResponse(bytes);
+                });
+                break;
+            } catch(err) {
+                console.error(err);
+                tries++;
+
+                let message = `Failed downloading contents: ${err.message}.`;
+                if (tries < 3) message += " Retrying in 5 seconds."
+
+                errorMessageHandler(message)
+                if (tries < 3) await new Promise(resolve => setTimeout(resolve, 5000));
+            }
+        }
     }
 }
 

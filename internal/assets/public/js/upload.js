@@ -6,6 +6,10 @@ var userId = "";
 var partialUploadLocation = "";
 
 const setLoader = (progress) => {
+    if (progress > 1) {
+        progress = 1;
+    }
+
     const loader = document.querySelector("div.loader");
     loader.style.width = `${progress * 100}%`;
 
@@ -245,8 +249,6 @@ form.addEventListener("submit", async e => {
                 break;
             }
         }
-
-        await new Promise(resolve => setTimeout(resolve, 5000));
 
         setLoader(total/expectedFileSize);
     
