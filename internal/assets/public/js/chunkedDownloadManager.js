@@ -1,4 +1,4 @@
-var ENC_CHUNK_SIZE = 1024 * 1024 * 10; // Add overhead
+var ENC_CHUNK_SIZE = 1024 * 1024;
 
 /**
  * @typedef {Object} FileInfo
@@ -216,7 +216,7 @@ class ChunkedDownloadManager {
         })();
 
         addResponse(fileContent);
-        await this.fetchChunks(ENC_CHUNK_SIZE, addResponse);
+        await this.fetchChunks(ENC_CHUNK_SIZE + 512, addResponse);
     }
 }
 
