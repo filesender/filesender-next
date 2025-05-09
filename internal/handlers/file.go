@@ -1,18 +1,17 @@
 package handlers
 
 import (
+	"errors"
 	"io"
 	"log/slog"
 	"mime/multipart"
 	"os"
 	"path"
 	"path/filepath"
-
-	"codeberg.org/filesender/filesender-next/internal/models"
 )
 
 // FileUpload handles a new file uploaded
-func FileUpload(stateDir string, userID string, fileID string, fileMeta models.File, file multipart.File) error {
+func FileUpload(stateDir string, userID string, fileID string, file multipart.File) error {
 	// Create transfer folder for user if not exists
 	uploadDest := filepath.Join(stateDir, userID)
 	if _, err := os.Stat(uploadDest); os.IsNotExist(err) {
@@ -37,12 +36,6 @@ func FileUpload(stateDir string, userID string, fileID string, fileMeta models.F
 	_, err = io.Copy(dst, file)
 	if err != nil {
 		slog.Error("Failed copying file contents", "error", err)
-		return err
-	}
-
-	err = fileMeta.Save(stateDir, userID, fileID)
-	if err != nil {
-		slog.Error("Failed creating upload meta file", "error", err)
 		return err
 	}
 
@@ -92,4 +85,19 @@ func getFileSize(path string) (int64, error) {
 	}
 
 	return fileInfo.Size(), nil
+}
+
+func fileExists(stateDir string, userID string, fileID string) (bool, error) {
+	filePath := filepath.Join(stateDir, userID, fileID)
+	_, err := os.Stat(filePath)
+
+	if err != nil {
+		return true, nil
+	}
+
+	if errors.Is(err, os.ErrNotExist) {
+		return false, nil
+	}
+
+	return false, err
 }

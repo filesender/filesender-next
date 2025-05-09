@@ -8,7 +8,6 @@ import (
 	"codeberg.org/filesender/filesender-next/internal/auth"
 	"codeberg.org/filesender/filesender-next/internal/crypto"
 	"codeberg.org/filesender/filesender-next/internal/id"
-	"codeberg.org/filesender/filesender-next/internal/models"
 )
 
 // UploadAPI handles POST /api/upload
@@ -55,14 +54,7 @@ func UploadAPI(authModule auth.Auth, stateDir string, maxUploadSize int64) http.
 			return
 		}
 
-		fileMeta := models.File{}
-
-		fileNames := r.MultipartForm.Value["file-name"]
-		if len(fileNames) == 1 {
-			fileMeta.EncryptedFileName = fileNames[0]
-		}
-
-		err = FileUpload(stateDir, userID, fileID, fileMeta, file)
+		err = FileUpload(stateDir, userID, fileID, file)
 		if err != nil {
 			slog.Error("Failed handling file upload", "error", err)
 			sendError(w, http.StatusInternalServerError, "Failed handling new file upload")
@@ -112,13 +104,6 @@ func ChunkedUploadAPI(authModule auth.Auth, stateDir string, maxUploadSize int64
 			uploadComplete = false
 		}
 
-		fileMeta, err := models.GetFileFromIDs(stateDir, userID, fileID)
-		if err != nil {
-			slog.Info("Could not get file info", "error", err)
-			sendError(w, http.StatusNotFound, "Could not find file info")
-			return
-		}
-
 		offsetStr := r.Header.Get("Upload-Offset")
 		if offsetStr == "" {
 			slog.Info("Missing upload offset")
@@ -150,13 +135,6 @@ func ChunkedUploadAPI(authModule auth.Auth, stateDir string, maxUploadSize int64
 			slog.Error("Failed handling file upload", "error", err)
 			sendError(w, http.StatusInternalServerError, "Failed handling new file upload")
 			return
-		}
-
-		err = fileMeta.Save(stateDir, userID, fileID)
-		if err != nil {
-			slog.Error("Failed saving meta file contents", "userID", userID, "fileID", fileID, "error", err)
-			sendError(w, http.StatusInternalServerError, "Failed saving new data")
-
 		}
 
 		if uploadComplete {

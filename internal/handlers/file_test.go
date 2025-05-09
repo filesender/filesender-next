@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"codeberg.org/filesender/filesender-next/internal/handlers"
-	"codeberg.org/filesender/filesender-next/internal/models"
 )
 
 func createMultipartFile(content string) (multipart.File, func(), error) {
@@ -62,9 +61,7 @@ func TestFileUpload_Success(t *testing.T) {
 	}
 	defer cleanup()
 
-	fileMeta := models.File{}
-
-	err = handlers.FileUpload(tempDir, "user456", "test123", fileMeta, testFile)
+	err = handlers.FileUpload(tempDir, "user456", "test123", testFile)
 	if err != nil {
 		t.Fatalf("Expected success, got error: %v", err)
 	}
@@ -82,9 +79,7 @@ func TestFileUpload_InvalidDirectory(t *testing.T) {
 	}
 	defer cleanup()
 
-	fileMeta := models.File{}
-
-	err = handlers.FileUpload("/invalid/directory/should/fail", "----------", "doesn't matter", fileMeta, testFile)
+	err = handlers.FileUpload("/invalid/directory/should/fail", "----------", "doesn't matter", testFile)
 	if err == nil {
 		t.Fatal("Expected error due to invalid directory, got nil")
 	}
@@ -112,9 +107,7 @@ func TestFileUpload_CopyFailure(t *testing.T) {
 		t.Fatalf("Couldn't close file: %v", err)
 	}
 
-	fileMeta := models.File{}
-
-	err = handlers.FileUpload(tempDir, "user123", "testfail", fileMeta, fakeFile)
+	err = handlers.FileUpload(tempDir, "user123", "testfail", fakeFile)
 	if err == nil {
 		t.Fatal("Expected error due to file copy failure, got nil")
 	}

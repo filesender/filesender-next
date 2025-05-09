@@ -45,10 +45,6 @@ func sendError(w http.ResponseWriter, status int, message string) {
 	http.Error(w, message, status)
 }
 
-func sendEmptyResponse(w http.ResponseWriter, status int) {
-	w.WriteHeader(status)
-}
-
 // Sends a redirect
 func sendRedirect(w http.ResponseWriter, status int, location string, body string) error {
 	w.Header().Add("Location", location)
