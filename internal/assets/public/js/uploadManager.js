@@ -5,12 +5,9 @@ class UploadManager {
     /**
      * 
      * @param {string} userId 
-     * @param {Uint8Array} key
      */
-    constructor(userId, key, encryptedFileName) {
+    constructor(userId, key) {
         this.userId = userId;
-        this.key = key;
-        this.encryptedFileName = encryptedFileName;
         this.fileId;
 
         this.file;
@@ -25,9 +22,16 @@ class UploadManager {
     /**
      * 
      * @param {File} file 
+     * @param {Uint8Array} key
+     * @param {Uint8Array} nonce
+     * @param {Uint8Array} encryptedFileName
      */
-    setFile(file) {
+    setFile(file, key, nonce, encryptedFileName) {
         this.file = file;
+        this.key = key;
+        this.nonce = nonce;
+        this.encryptedFileName = encryptedFileName;
+
         this.processedBytes = 0;
         this.uploadedBytes = 0;
 

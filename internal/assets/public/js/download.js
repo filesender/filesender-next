@@ -1,4 +1,4 @@
-
+const errorBox = document.querySelector("div.error");
 const form = document.querySelector("form");
 
 const setLoader = (progress) => {
@@ -15,13 +15,15 @@ const setLoader = (progress) => {
  */
 const showError = msg => {
     console.log(`ERROR: ${msg}`);
+    errorBox.innerText = msg;
+    errorBox.classList.remove("hidden");
 }
 
 /**
  * Hides whatever current error message is being shown
  */
 const hideError = () => {
-
+    errorBox.classList.add("hidden");
 }
 
 /**
@@ -124,6 +126,7 @@ if (!key || !header || !nonce) {
 
     form.addEventListener("submit", async e => {
         e.preventDefault();
+        hideError();
     
         await window.sodium.ready;
         const totalFileSize = await manager.getTotalSize();

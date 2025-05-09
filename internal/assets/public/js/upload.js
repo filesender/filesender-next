@@ -1,11 +1,16 @@
 /* global sodium */
-//const ENC_CHUNK_SIZE = 1024 * 1024 * 10;
-
+const errorBox = document.querySelector("div.error");
 const form = document.querySelector("form");
-var userId = "";
-var partialUploadLocation = "";
 
 const setLoader = (progress) => {
+    if (!progress) {
+        const loader = document.querySelector("div.loader");
+        loader.style.width = "0%";
+
+        const loaderText = document.querySelector("p#progress");
+        loaderText.innerText = "";
+    }
+
     if (progress > 1) {
         progress = 1;
     }
@@ -18,11 +23,20 @@ const setLoader = (progress) => {
 }
 
 /**
- * Dummy error handling function
+ * Error showing
  * @param {string} msg Message to show to use
  */
 const showError = msg => {
     console.log(`ERROR: ${msg}`);
+    errorBox.innerText = msg;
+    errorBox.classList.remove("hidden");
+}
+
+/**
+ * Hides whatever current error message is being shown
+ */
+const hideError = () => {
+    errorBox.classList.add("hidden");
 }
 
 /**
@@ -35,27 +49,30 @@ const toBase64Url = (uint8Array) => {
     return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
+const formData = new FormData(form);
+const userId = formData.get("user-id").toString();
+const manager = new UploadManager(userId);
+
 form.addEventListener("submit", async e => {
     e.preventDefault();
-    setLoader(0);
+    hideError();
 
     const formData = new FormData(form);
-    const userId = formData.get("user-id").toString();
     const file = formData.get("file");
 
     if (file.name === "") {
         return showError("You have to select a file");
     }
 
-    const fileSize = file.size;
-
     await window.sodium.ready;
-    const key = sodium.crypto_secretstream_xchacha20poly1305_keygen();
+    const fileSize = file.size;
+    if (file !== manager.file) {
+        const key = sodium.crypto_secretstream_xchacha20poly1305_keygen();
+        let nonce = sodium.randombytes_buf(sodium.crypto_secretbox_NONCEBYTES);
+        const fileName = sodium.crypto_secretbox_easy(sodium.from_string(file.name), nonce, key);
+        manager.setFile(file, key, nonce, fileName);
+    }
 
-    let nonce = sodium.randombytes_buf(sodium.crypto_secretbox_NONCEBYTES);
-    const fileName = sodium.crypto_secretbox_easy(sodium.from_string(file.name), nonce, key);
-
-    const manager = new UploadManager(userId, key, fileName);
     (async () => {
         while (true) {
             setLoader(fileSize / manager.processedBytes)
@@ -63,14 +80,38 @@ form.addEventListener("submit", async e => {
         }
     })();
 
-    manager.setFile(file);
-    await manager.process();
+    let done = false;
+    let tries = 0;
+    let err;
+    while (tries < 3) {
+        try {
+            hideError();
+            await manager.process();
+            done = true;
+            break;
+        } catch(e) {
+            console.error(e);
+            err = e;
 
-    const keyEncoded = toBase64Url(key);
-    const headerEncoded = toBase64Url(manager.header);
-    const nonceEncoded = toBase64Url(nonce);
-    
-    if (manager.fileId) {
-        window.location.href = `download/${userId}/${manager.fileId}#${keyEncoded}.${headerEncoded}.${nonceEncoded}`;
+            let message = `Failed uploading file: ${e.message}.`;
+            if (tries < 3) message += " Retrying in 5 seconds."
+            showError(message);
+
+            if (tries < 3) await new Promise(resolve => setTimeout(resolve, 5000));
+            else break;
+        }
+    }
+
+    if (done) {
+        const keyEncoded = toBase64Url(manager.key);
+        const headerEncoded = toBase64Url(manager.header);
+        const nonceEncoded = toBase64Url(manager.nonce);
+        
+        if (manager.fileId) {
+            window.location.href = `download/${userId}/${manager.fileId}#${keyEncoded}.${headerEncoded}.${nonceEncoded}`;
+        }
+    } else {
+        form.querySelector('input[type="submit"]').innerText = "Continue";
+        showError(`Failed uploading file: ${err.message}`)
     }
 });

@@ -71,3 +71,17 @@ th, td {
 p#progress {
     margin-top: 2px;
 }
+
+div.error {
+    background: #e64747;
+    width: 100%;
+    min-height: 10px;
+}
+
+div.hidden {
+    display: none;
+}
+
+div.p-2 {
+    padding: 0.5rem;
+}
