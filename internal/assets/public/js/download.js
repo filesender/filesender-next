@@ -1,11 +1,6 @@
 
 const form = document.querySelector("form");
 
-// Register service worker
-navigator.serviceWorker.register("../../sw.js").then(async () => {
-    console.log('Service Worker registered!');
-});
-
 const setLoader = (progress) => {
     const loader = document.querySelector("div.loader");
     loader.style.width = `${progress * 100}%`;
@@ -30,6 +25,61 @@ const fromBase64Url = (base64url) => {
     return bytes;
 }
 
+/**
+ * 
+ * @param {ServiceWorker} sw
+ * @param {string} fileId
+ */
+const createServiceWorkerHandler = async (sw, fileId) => {
+    // Register service worker
+    await navigator.serviceWorker.register("../../sw.js");
+
+    /**
+     * 
+     * @param {string} fileName 
+     * @param {ReadableStream} stream 
+     */
+    const handler = (fileName, stream) => {
+        const broadcast = new BroadcastChannel(fileId);
+        broadcast.addEventListener("message", e => {
+            console.log(e.data);
+
+            if (e.data.type === "downloadAvailable") {
+                if (e.data.id === fileId) {
+
+                    const iframe = document.createElement('iframe');
+                    iframe.style.display = 'none';
+                    iframe.src = `../../download/${fileId}`;
+                    document.body.appendChild(iframe);
+                }
+            }
+        });
+
+        const channel = new MessageChannel();
+        sw.postMessage({
+            type: "download",
+            id: fileId,
+            fileName,
+            port: channel.port2
+        }, [channel.port2]);
+
+        const reader = stream.getReader();
+        (async() => {
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) {
+                    channel.port1.postMessage({ done: true });
+                    break;
+                }
+
+                channel.port1.postMessage({ chunk: value }, [value.buffer]);
+            }
+        })();
+    }
+    
+    return handler;
+}
+
 form.addEventListener("submit", async e => {
     e.preventDefault();
     const sw = await navigator.serviceWorker.ready;
@@ -47,14 +97,16 @@ form.addEventListener("submit", async e => {
     console.log("Nonce", nonce);
 
     // eslint-disable-next-line no-undef
-    const manager = new ChunkedDownloadManager(sw.active, key, header, nonce, {
-        userId,
-        fileId,
-    });
-    manager.start();
+    const manager = new ChunkedDownloadManager(key, header, nonce, userId, fileId);
+    const totalFileSize = await manager.getTotalSize();
+
+    let worker;
+    worker = await createServiceWorkerHandler(sw.active, fileId);
+    
+    manager.start(worker);
 
     while (true) {
-        const progress = manager.progress / fileInfo.byteSize;
+        const progress = manager.progress / totalFileSize;
         setLoader(progress);
         await new Promise(resolve => setTimeout(resolve, 100));
 

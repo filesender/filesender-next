@@ -12,13 +12,6 @@ import (
 
 var templatesFS embed.FS
 
-// Response struct standardizes the JSON response data
-type Response struct {
-	Success bool   `json:"success"`
-	Message string `json:"message,omitempty"`
-	Data    any    `json:"data,omitempty"`
-}
-
 // Init to receive the embedded templates
 func Init(fs embed.FS) {
 	templatesFS = fs

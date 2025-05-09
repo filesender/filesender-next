@@ -49,7 +49,7 @@ self.addEventListener("fetch", e => {
     const url = new URL(e.request.url);
     console.log('Intercepting fetch:', url.pathname);
 
-    if (url.pathname.includes('/download/') && !url.pathname.includes('/api/v')) {
+    if (url.pathname.includes('/download/') && !url.pathname.includes('/api')) {
         const id = url.pathname.split('/').pop();
         const download = downloads.get(id);
 

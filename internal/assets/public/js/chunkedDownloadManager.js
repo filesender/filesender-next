@@ -1,55 +1,23 @@
+/* global sodium */
 var ENC_CHUNK_SIZE = 1024 * 1024 * 10;
-
-/**
- * @typedef {Object} FileInfo
- * @property {boolean} available
- * @property {boolean} chunked
- * @property {number} chunkCount
- * @property {string} userId
- * @property {string} fileId
- * @property {string} fileName
- */
 
 // eslint-disable-next-line no-unused-vars
 class ChunkedDownloadManager {
     /**
      * 
-     * @param {ServiceWorker} sw 
      * @param {Uint8Array} key 
      * @param {Uint8Array} header 
      * @param {Uint8Array} nonce
-     * @param {FileInfo} fileInfo
+     * @param {string} userId
+     * @param {string} fileId
      */
-    constructor(sw, key, header, nonce, fileInfo) {
-        this.sw = sw;
+    constructor(key, header, nonce, userId, fileId) {
         this.key = key;
         this.header = header;
         this.nonce = nonce;
-        this.fileInfo = fileInfo;
-        this.id = Math.random().toString(36).substring(2);
-        this.broadcast = new BroadcastChannel(this.id);
-        this.broadcast.addEventListener("message", e => this.handleBroadcastMessage(e.data));
+        this.userId = userId;
+        this.fileId = fileId;
         this.done = false;
-        this.progress = 0;
-    }
-
-    handleBroadcastMessage(data) {
-        console.log(data);
-
-        // Handle messages sent by service worker
-        if (data.type === "downloadAvailable") {
-            if (data.id === this.id) {
-
-                const iframe = document.createElement('iframe');
-                iframe.style.display = 'none';
-                iframe.src = `../../download/${this.id}`;
-                document.body.appendChild(iframe);
-            }
-        }
-    }
-
-    error(msg) {
-        // TODO: impl
     }
 
     /**
@@ -116,7 +84,7 @@ class ChunkedDownloadManager {
      * @returns {Promise<{encryptedFileName: Uint8Array, fileContent: Uint8Array} | undefined>}
      */
     async fetchFirstChunk(tries = 3) {
-        const response = await fetch(`../../api/download/${this.fileInfo.userId}/${this.fileInfo.fileId}`, {
+        const response = await fetch(`../../api/download/${this.userId}/${this.fileId}`, {
             headers: {
               Range: `bytes=0-${ENC_CHUNK_SIZE - 1 + 512}` // 512 for padded file name
             }
@@ -124,6 +92,7 @@ class ChunkedDownloadManager {
 
         if (response.status === 206) {
             const data = await response.arrayBuffer();
+            console.log(data.byteLength);
             const uint8 = new Uint8Array(data);
 
             const fileNameBytes = uint8.subarray(0, 512);
@@ -131,7 +100,6 @@ class ChunkedDownloadManager {
                 ? fileNameBytes.length
                 : fileNameBytes.findIndex((b, i, arr) => arr.slice(i).every(v => v === 0)));
 
-            this.progress += uint8.length;
             return {
                 encryptedFileName: unpaddedFileNameBytes,
                 fileContent: uint8.subarray(512)
@@ -142,7 +110,6 @@ class ChunkedDownloadManager {
             return await this.fetchFirstChunk(tries - 1)
         }
 
-        error("Failed to fetch first chunk");
         return undefined;
     }
 
@@ -152,7 +119,7 @@ class ChunkedDownloadManager {
      * @param {(chunk: Uint8Array) => void} handler 
      */
     async fetchChunks(offset, handler) {
-        const response = await fetch(`../../api/download/${this.fileInfo.userId}/${this.fileInfo.fileId}`, {
+        const response = await fetch(`../../api/download/${this.userId}/${this.fileId}`, {
             headers: {
               Range: `bytes=${offset}-`
             }
@@ -169,8 +136,6 @@ class ChunkedDownloadManager {
             newBuffer.set(value, buffer.length);
             buffer = newBuffer;
 
-            this.progress += value.length;
-
             while (buffer.length >= ENC_CHUNK_SIZE) {
                 const chunk = buffer.slice(0, ENC_CHUNK_SIZE);
                 handler(chunk);
@@ -185,35 +150,29 @@ class ChunkedDownloadManager {
         }
     }
 
-    async start() {
+    async getTotalSize() {
+        const response = await fetch(`../../api/download/${this.userId}/${this.fileId}`, {
+            method: "HEAD"
+        });
+
+        return parseInt(response.headers.get("content-length"))
+    }
+
+    /**
+     * 
+     * @param {(fileName: string, stream: ReadableStream) => void} handler 
+     * @returns 
+     */
+    async start(handler) {
         await window.sodium.ready;
-        
+
         const firstChunk = await this.fetchFirstChunk();
         if (!firstChunk) return;
         const { encryptedFileName, fileContent } = firstChunk;
         const fileName = sodium.to_string(sodium.crypto_secretbox_open_easy(encryptedFileName, this.nonce, this.key));
 
-        const channel = new MessageChannel();
-        this.sw.postMessage({
-            type: "download",
-            id: this.id,
-            fileName,
-            port: channel.port2
-        }, [channel.port2]);
-
         const { stream, addResponse } = this.createDecryptionStream();
-        const reader = stream.getReader();
-        (async() => {
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) {
-                    channel.port1.postMessage({ done: true });
-                    break;
-                }
-
-                channel.port1.postMessage({ chunk: value }, [value.buffer]);
-            }
-        })();
+        handler(fileName, stream);
 
         addResponse(fileContent);
         await this.fetchChunks(ENC_CHUNK_SIZE + 512, addResponse);
