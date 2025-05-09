@@ -1,4 +1,4 @@
-var ENC_CHUNK_SIZE = 1024 * 1024;
+var ENC_CHUNK_SIZE = 1024 * 1024 * 10;
 
 /**
  * @typedef {Object} FileInfo
@@ -75,9 +75,7 @@ class ChunkedDownloadManager {
                 while (true) {
                     if (bytesQueue.length > 0) {
                         const bytes = bytesQueue.shift();
-                        console.log(bytes);
                         let r1 = window.sodium.crypto_secretstream_xchacha20poly1305_pull(state_in, bytes);
-                        console.log(r1);
                         controller.enqueue(r1.message);
 
                         if (r1.tag === 3) {
@@ -123,7 +121,6 @@ class ChunkedDownloadManager {
               Range: `bytes=0-${ENC_CHUNK_SIZE - 1 + 512}` // 512 for padded file name
             }
         });
-        console.log("first", ENC_CHUNK_SIZE - 1 + 512);
 
         if (response.status === 206) {
             const data = await response.arrayBuffer();
@@ -160,7 +157,6 @@ class ChunkedDownloadManager {
               Range: `bytes=${offset}-`
             }
         });
-        console.log("after", offset)
 
         let buffer = new Uint8Array(0);
         const reader = response.body.getReader();
@@ -172,6 +168,8 @@ class ChunkedDownloadManager {
             newBuffer.set(buffer, 0);
             newBuffer.set(value, buffer.length);
             buffer = newBuffer;
+
+            this.progress += value.length;
 
             while (buffer.length >= ENC_CHUNK_SIZE) {
                 const chunk = buffer.slice(0, ENC_CHUNK_SIZE);
@@ -188,6 +186,8 @@ class ChunkedDownloadManager {
     }
 
     async start() {
+        await window.sodium.ready;
+        
         const firstChunk = await this.fetchFirstChunk();
         if (!firstChunk) return;
         const { encryptedFileName, fileContent } = firstChunk;

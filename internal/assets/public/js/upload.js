@@ -1,5 +1,5 @@
 /* global sodium */
-const ENC_CHUNK_SIZE = 1024 * 1024;
+const ENC_CHUNK_SIZE = 1024 * 1024 * 10;
 
 const form = document.querySelector("form");
 var userId = "";
@@ -57,7 +57,6 @@ const uploadFile = async (data, partial, fileName) => {
     const combined = new Uint8Array(512 + data.length);
     combined.set(fileName.subarray(0, 512));
     combined.set(data, 512);
-    console.log(combined.length);
 
     const formData = new FormData();
     formData.append("file", new Blob([combined]), "data.bin");
@@ -99,7 +98,6 @@ const uploadFile = async (data, partial, fileName) => {
  */
 const uploadPartialFile = async (file, offset, done) => {
     const formData = new FormData();
-    console.log(file);
     formData.append("file", new Blob([file]), "data.bin");
 
     var uploadComplete = "?0";
@@ -231,9 +229,6 @@ form.addEventListener("submit", async e => {
             if (res === false) return;
     
             total += value.length + 512; // 512 bytes filename prefix
-            console.log("t", total);
-            console.log("v", value.length);
-            console.log("fn", 512);
 
             if (res !== true) {
                 fileId = res;
@@ -266,8 +261,7 @@ form.addEventListener("submit", async e => {
     const headerEncoded = toBase64Url(header);
     const nonceEncoded = toBase64Url(nonce);
     
-    console.log(`download/${userId}/${fileId}#${keyEncoded}.${headerEncoded}.${nonceEncoded}`);
     if (fileId !== false) {
-        //window.location.href = `download/${userId}/${fileId}#${keyEncoded}.${headerEncoded}.${nonceEncoded}`;
+        window.location.href = `download/${userId}/${fileId}#${keyEncoded}.${headerEncoded}.${nonceEncoded}`;
     }
 });

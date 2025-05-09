@@ -30,43 +30,26 @@ const fromBase64Url = (base64url) => {
     return bytes;
 }
 
-const getFileInfo = async (userId, fileId) => {
-    const response = await fetch(`../../api/download/${userId}/${fileId}`, {
-        method: "HEAD"
-    });
-    
-    return {
-        fileName: response.headers.get("file-name"),
-    }
-}
-
 form.addEventListener("submit", async e => {
     e.preventDefault();
     const sw = await navigator.serviceWorker.ready;
 
     await window.sodium.ready;
-    const sodium = window.sodium;
 
     const formData = new FormData(form);
     const userId = formData.get("user-id").toString();
     const fileId = formData.get("file-id").toString();
 
-    const fileInfo = await getFileInfo(userId, fileId);
     const [key, header, nonce] = window.location.hash.substring(1).split(".").map(v => fromBase64Url(v));
 
     console.log("Key", key)
     console.log("Header", header);
     console.log("Nonce", nonce);
 
-    if (fileInfo.fileName && fileInfo.fileName !== "") {
-        fileInfo.fileName = sodium.to_string(sodium.crypto_secretbox_open_easy(fromBase64Url(fileInfo.fileName), nonce, key));
-    }
-
     // eslint-disable-next-line no-undef
     const manager = new ChunkedDownloadManager(sw.active, key, header, nonce, {
         userId,
         fileId,
-        ...fileInfo
     });
     manager.start();
 
