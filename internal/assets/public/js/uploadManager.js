@@ -208,11 +208,11 @@ class UploadManager {
         if (!this.file) return;
 
         let { reader, buffer } = await this.createReader();
-        let doneReading = false;
         let chunkSize = 0;
+        let doneReading = false;
 
         while (true) {
-            while (buffer.length < ENC_CHUNK_SIZE && !doneReading) {
+            while (buffer.length <= ENC_CHUNK_SIZE && !doneReading) {
                 const { value, done } = await reader.read();
                 if (done) {
                     doneReading = true;
