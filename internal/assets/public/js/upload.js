@@ -1,6 +1,7 @@
 /* global sodium */
 const errorBox = document.querySelector("div.error");
 const form = document.querySelector("form");
+const fileSelector = document.querySelector("#files-selector");
 
 const setLoader = (progress) => {
     if (!progress) {
@@ -54,6 +55,15 @@ const userId = formData.get("user-id").toString();
 // eslint-disable-next-line no-undef
 const manager = new UploadManager(userId);
 
+fileSelector.addEventListener("change", () => {
+    const formData = new FormData(form);
+    const file = formData.get("file");
+
+    if (file !== manager.file) {
+        form.querySelector('input[type="submit"]').value = "Upload";
+    }
+});
+
 form.addEventListener("submit", async e => {
     e.preventDefault();
     hideError();
@@ -64,6 +74,8 @@ form.addEventListener("submit", async e => {
     if (file.name === "") {
         return showError("You have to select a file");
     }
+
+    form.querySelector('input[type="submit"]').disabled = true;
 
     await window.sodium.ready;
     const fileSize = file.size;
@@ -76,7 +88,12 @@ form.addEventListener("submit", async e => {
 
     (async () => {
         while (true) {
-            setLoader(fileSize / manager.processedBytes)
+            let progress = 0;
+            if (manager.processedBytes > 0) {
+                progress = manager.processedBytes / fileSize
+            }
+
+            setLoader(progress);
             await new Promise(resolve => setTimeout(resolve, 100));
         }
     })();
@@ -100,6 +117,8 @@ form.addEventListener("submit", async e => {
 
             if (tries < 3) await new Promise(resolve => setTimeout(resolve, 5000));
             else break;
+
+            tries++;
         }
     }
 
@@ -112,7 +131,9 @@ form.addEventListener("submit", async e => {
             window.location.href = `download/${userId}/${manager.fileId}#${keyEncoded}.${headerEncoded}.${nonceEncoded}`;
         }
     } else {
-        form.querySelector('input[type="submit"]').innerText = "Continue";
+        form.querySelector('input[type="submit"]').value = "Resume Upload";
         showError(`Failed uploading file: ${err.message}`)
     }
+
+    form.querySelector('input[type="submit"]').disabled = false;
 });

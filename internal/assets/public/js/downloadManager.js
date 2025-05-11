@@ -181,19 +181,17 @@ class DownloadManager {
 
         const { stream, addResponse } = this.getDecryptionStream();
         handler(fileName, stream);
-
         addResponse(fileContent);
-        await this.resume(errorMessageHandler);
     }
 
     /**
      * 
-     * @param {(fileName: string, stream: ReadableStream) => void} handler 
      * @param {(msg: string | undefined) => void} errorMessageHandler
      * @returns 
      */
     async resume(errorMessageHandler) {
         if (this.bytesDownloaded === 0) throw new Error("Can't resume a download that has never started");
+        errorMessageHandler(undefined);
 
         const { addResponse } = this.getDecryptionStream();
 

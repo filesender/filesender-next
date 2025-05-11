@@ -19,6 +19,13 @@ const showError = msg => {
     errorBox.classList.remove("hidden");
 }
 
+(async () => {
+    await navigator.serviceWorker.register("../../sw.js").catch(err => {
+        console.error(err);
+        showError(`Failed registering service worker: ${err.message}`);
+    });
+})();
+
 /**
  * Hides whatever current error message is being shown
  */
@@ -60,9 +67,6 @@ const fromBase64Url = (base64url) => {
  * @param {string} fileId
  */
 const createServiceWorkerHandler = async (sw, fileId) => {
-    // Register service worker
-    await navigator.serviceWorker.register("../../sw.js");
-
     /**
      * 
      * @param {string} fileName 
@@ -99,6 +103,10 @@ const createServiceWorkerHandler = async (sw, fileId) => {
                 if (done) {
                     channel.port1.postMessage({ done: true });
                     break;
+                }
+
+                if (!value) {
+                    continue;
                 }
 
                 channel.port1.postMessage({ chunk: value }, [value.buffer]);
@@ -142,12 +150,14 @@ if (!key || !header || !nonce) {
          * @returns 
          */
         const startOrResumeDownload = async (handler, errorMessageHandler) => {
+            console.log("Downloaded:", manager.bytesDownloaded);
             if (manager.bytesDownloaded === 0) {
                 try {
                     await manager.start(handler, errorMessageHandler);
+                    await manager.resume(errorMessageHandler);
                 } catch (err) {
                     if (manager.bytesDownloaded > 0) {
-                        form.querySelector("button").innerText = "Resume";
+                        form.querySelector("button").innerText = "Resume Download";
                     }
 
                     throw err;
@@ -169,6 +179,8 @@ if (!key || !header || !nonce) {
                 }
             }
         })();
+
+        form.querySelector("button").disabled = true;
         
         let tries = 0;
         let err;
@@ -185,5 +197,7 @@ if (!key || !header || !nonce) {
         if (err) {
             showError(`Failed downloading: ${err.message}`);
         }
+
+        form.querySelector("button").disabled = false;
     });
 }
