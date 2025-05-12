@@ -69,11 +69,12 @@ func main() {
 	router.HandleFunc("POST /api/upload", handlers.UploadAPI(authModule, stateDir, maxUploadSize))
 	router.HandleFunc("PATCH /api/upload/{fileID}", handlers.ChunkedUploadAPI(authModule, stateDir, maxUploadSize))
 
-	router.HandleFunc("GET /api/download/{userID}/{fileID}", handlers.DownloadAPI(stateDir))
+	stateDirFS := http.FileServer(http.Dir(stateDir))
+	router.Handle("/download/", http.StripPrefix("/download/", stateDirFS))
 
 	// Page handlers
 	router.HandleFunc("GET /{$}", handlers.UploadTemplate(authModule))
-	router.HandleFunc("GET /download/{userID}/{fileID}", handlers.GetDownloadTemplate(stateDir))
+	router.HandleFunc("GET /view/{userID}/{fileID}", handlers.GetDownloadTemplate(stateDir))
 
 	// Serve static files
 	subFS, err := fs.Sub(assets.EmbeddedPublicFiles, "public")
@@ -82,7 +83,7 @@ func main() {
 		os.Exit(1)
 	}
 	fs := http.FileServer(http.FS(subFS))
-	router.Handle("GET /", http.StripPrefix("/", fs))
+	router.Handle("/", http.StripPrefix("/", fs))
 
 	// Setup server
 	s := &http.Server{

@@ -1,5 +1,5 @@
 /* global sodium */
-var ENC_CHUNK_SIZE = 1024 * 1024 * 10;
+var ENC_CHUNK_SIZE = 1024 * 1024;
 
 // eslint-disable-next-line no-unused-vars
 class UploadManager {
@@ -93,7 +93,7 @@ class UploadManager {
         }
 
         if (response.status === 200) {
-            const partials = response.url.split('download/')[1];
+            const partials = response.url.split('view/')[1];
             this.fileId = partials.split("/")[1];
             return;
         }
@@ -133,7 +133,7 @@ class UploadManager {
         }
 
         if (response.status === 200) {
-            const partials = response.url.split('download/')[1];
+            const partials = response.url.split('view/')[1];
             this.fileId = partials.split("/")[1];
             return;
         }

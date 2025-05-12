@@ -49,7 +49,7 @@ self.addEventListener("fetch", e => {
     const url = new URL(e.request.url);
     console.log('Intercepting fetch:', url.pathname);
 
-    if (url.pathname.includes('/download/') && !url.pathname.includes('/api')) {
+    if (url.pathname.includes('/dl/') && !url.pathname.includes('/api')) {
         const id = url.pathname.split('/').pop();
         const download = downloads.get(id);
 
@@ -60,7 +60,7 @@ self.addEventListener("fetch", e => {
                     'Content-Disposition': `attachment; filename="${download.fileName}"`
                 }
             }));
-            download.delete(id);
+            downloads.delete(id);
         }
     }
 });

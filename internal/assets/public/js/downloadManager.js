@@ -1,5 +1,5 @@
 /* global sodium */
-var ENC_CHUNK_SIZE = 1024 * 1024 * 10;
+var ENC_CHUNK_SIZE = 1024 * 1024;
 
 // eslint-disable-next-line no-unused-vars
 class DownloadManager {
@@ -88,7 +88,7 @@ class DownloadManager {
      * @returns {Promise<{encryptedFileName: Uint8Array, fileContent: Uint8Array} | undefined>}
      */
     async fetchFirstChunk(tries = 3) {
-        const response = await fetch(`../../api/download/${this.userId}/${this.fileId}`, {
+        const response = await fetch(`../../download/${this.userId}/${this.fileId}`, {
             headers: {
               Range: `bytes=0-${ENC_CHUNK_SIZE - 1 + 512}` // 512 for padded file name
             }
@@ -123,7 +123,7 @@ class DownloadManager {
      * @param {(chunk: Uint8Array) => void} handler 
      */
     async fetchChunks(offset, handler) {
-        const response = await fetch(`../../api/download/${this.userId}/${this.fileId}`, {
+        const response = await fetch(`../../download/${this.userId}/${this.fileId}`, {
             headers: {
               Range: `bytes=${offset}-`
             }
@@ -155,7 +155,7 @@ class DownloadManager {
     }
 
     async getTotalSize() {
-        const response = await fetch(`../../api/download/${this.userId}/${this.fileId}`, {
+        const response = await fetch(`../../download/${this.userId}/${this.fileId}`, {
             method: "HEAD"
         });
 

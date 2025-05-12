@@ -10,7 +10,7 @@
     <div class="wrapper">
         <p>1 file ({{ .ByteSize }} bytes)</p>
 
-        <form action="../../api/download/{{ .UserID }}/{{ .FileID }}" method="get" target="_blank">
+        <form action="../../download/{{ .UserID }}/{{ .FileID }}" method="get" target="_blank">
             <input type="hidden" name="user-id" value="{{ .UserID }}">
             <input type="hidden" name="file-id" value="{{ .FileID }}">
 
@@ -31,6 +31,7 @@
 
     <script src="../../js/sodium.js"></script>
     <script src="../../js/downloadManager.js"></script>
+    <script src="../../js/downloadHandlers/serviceWorkerHandler.js"></script>
     <script src="../../js/download.js"></script>
 </body>
 </html>

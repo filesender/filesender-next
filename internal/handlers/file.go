@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"errors"
 	"io"
 	"log/slog"
 	"mime/multipart"
@@ -22,7 +21,7 @@ func FileUpload(stateDir string, userID string, fileID string, file multipart.Fi
 		}
 	}
 
-	fileName := fileID + ".bin"
+	fileName := fileID
 	dst, err := os.OpenFile(path.Join(uploadDest, fileName), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o600)
 	if err != nil {
 		return err
@@ -50,7 +49,7 @@ func PartialFileUpload(stateDir string, userID string, fileID string, file multi
 		return 0, err
 	}
 
-	filePath := filepath.Join(uploadDir, fileID+".bin")
+	filePath := filepath.Join(uploadDir, fileID)
 	dst, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE, 0o600)
 	if err != nil {
 		slog.Error("Failed opening destination file", "error", err)
@@ -85,19 +84,4 @@ func getFileSize(path string) (int64, error) {
 	}
 
 	return fileInfo.Size(), nil
-}
-
-func fileExists(stateDir string, userID string, fileID string) (bool, error) {
-	filePath := filepath.Join(stateDir, userID, fileID)
-	_, err := os.Stat(filePath)
-
-	if err != nil {
-		return true, nil
-	}
-
-	if errors.Is(err, os.ErrNotExist) {
-		return false, nil
-	}
-
-	return false, err
 }

@@ -11,48 +11,12 @@ import (
 	"path/filepath"
 )
 
-// DownloadAPI handles `GET /api/download/{userID}/{fileID}`
-func DownloadAPI(stateDir string) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		userID, fileID := r.PathValue("userID"), r.PathValue("fileID")
-
-		exists, err := fileExists(stateDir, userID, fileID)
-		if err != nil {
-			slog.Error("Failed checking if file exists", "user_id", userID, "file_id", fileID, "error", err)
-			sendError(w, http.StatusInternalServerError, "Failed checking if file exists")
-			return
-		}
-
-		if !exists {
-			slog.Error("User passed invalid file ID", "user_id", userID, "file_id", fileID, "error", err)
-			sendError(w, http.StatusBadRequest, "File ID is invalid")
-			return
-		}
-
-		filePath := filepath.Join(stateDir, userID, fileID+".bin")
-		http.ServeFile(w, r, filePath)
-	}
-}
-
-// GetDownloadTemplate handles GET /download/{userID}/{fileID}
+// GetDownloadTemplate handles GET /view/{userID}/{fileID}
 func GetDownloadTemplate(stateDir string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, fileID := r.PathValue("userID"), r.PathValue("fileID")
 
-		exists, err := fileExists(stateDir, userID, fileID)
-		if err != nil {
-			slog.Error("Failed checking if file exists", "user_id", userID, "file_id", fileID, "error", err)
-			sendError(w, http.StatusInternalServerError, "Failed checking if file exists")
-			return
-		}
-
-		if !exists {
-			slog.Error("User passed invalid file ID", "user_id", userID, "file_id", fileID, "error", err)
-			sendError(w, http.StatusBadRequest, "File ID is invalid")
-			return
-		}
-
-		filePath := filepath.Join(stateDir, userID, fileID+".bin")
+		filePath := filepath.Join(stateDir, userID, fileID)
 		byteSize, err := getFileSize(filePath)
 		if err != nil {
 			slog.Error("Failed getting file size", "error", err)
