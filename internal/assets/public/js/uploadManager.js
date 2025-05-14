@@ -72,9 +72,9 @@ class UploadManager {
         const formData = new FormData();
         formData.append("file", new Blob([data]), "data.bin");
 
-        var uploadComplete = "?1";
+        var uploadComplete = "1";
         if (!done) {
-            uploadComplete = "?0";
+            uploadComplete = "0";
         }
 
         const response = await fetch("api/upload", {
@@ -110,9 +110,9 @@ class UploadManager {
         const formData = new FormData();
         formData.append("file", new Blob([data]), "data.bin");
 
-        var uploadComplete = "?0";
+        var uploadComplete = "0";
         if (done) {
-            uploadComplete = "?1";
+            uploadComplete = "1";
         }
 
         const response = await fetch(this.partialUploadLocation, {

@@ -2,6 +2,8 @@
 const errorBox = document.querySelector("div.error");
 const form = document.querySelector("form");
 
+const isSaveFilePickerSupported = "showSaveFilePicker" in window;
+
 const setLoader = (progress) => {
     const loader = document.querySelector("div.loader");
     loader.style.width = `${progress * 100}%`;
@@ -42,8 +44,6 @@ const fromBase64Url = (base64url) => {
     }
     return bytes;
 }
-
-const isSaveFilePickerSupported = "showSaveFilePicker" in window;
 
 const formData = new FormData(form);
 const userId = formData.get("user-id").toString();

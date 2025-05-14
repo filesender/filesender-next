@@ -61,7 +61,7 @@ func UploadAPI(authModule auth.Auth, stateDir string, maxUploadSize int64) http.
 			return
 		}
 
-		if completed := r.Header.Get("Upload-Complete"); completed == "?0" {
+		if completed := r.Header.Get("Upload-Complete"); completed == "0" {
 			sendIncompleteResponse(w, fileID, maxUploadSize, fileHeader.Size)
 			return
 		}
@@ -100,7 +100,7 @@ func ChunkedUploadAPI(authModule auth.Auth, stateDir string, maxUploadSize int64
 		}
 
 		uploadComplete := true
-		if completes := r.Header.Get("Upload-Complete"); completes == "?0" {
+		if completes := r.Header.Get("Upload-Complete"); completes == "0" {
 			uploadComplete = false
 		}
 
