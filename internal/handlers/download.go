@@ -12,7 +12,7 @@ import (
 )
 
 // GetDownloadTemplate handles GET /view/{userID}/{fileID}
-func GetDownloadTemplate(stateDir string) http.HandlerFunc {
+func GetDownloadTemplate(appRoot string, stateDir string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, fileID := r.PathValue("userID"), r.PathValue("fileID")
 
@@ -25,6 +25,7 @@ func GetDownloadTemplate(stateDir string) http.HandlerFunc {
 		}
 
 		data := downloadTemplate{
+			AppRoot:  appRoot,
 			ByteSize: byteSize,
 			UserID:   userID,
 			FileID:   fileID,
