@@ -138,7 +138,7 @@ func ChunkedUploadAPI(authModule auth.Auth, stateDir string, maxUploadSize int64
 		}
 
 		if uploadComplete {
-			err = sendRedirect(w, http.StatusSeeOther, "../../../view/"+userID+"/"+fileID, "")
+			err = sendRedirect(w, http.StatusSeeOther, "../../view/"+userID+"/"+fileID, "")
 			if err != nil {
 				sendError(w, http.StatusInternalServerError, "Failed sending redirect")
 			}
