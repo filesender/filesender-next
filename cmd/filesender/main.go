@@ -13,7 +13,6 @@ import (
 	"codeberg.org/filesender/filesender-next/internal/assets"
 	"codeberg.org/filesender/filesender-next/internal/auth"
 	"codeberg.org/filesender/filesender-next/internal/handlers"
-	"codeberg.org/filesender/filesender-next/internal/logging"
 )
 
 func maxUploadSize() int64 {
@@ -29,14 +28,8 @@ func maxUploadSize() int64 {
 }
 
 func main() {
-	enableDebug := flag.Bool("d", false, "enable DEBUG output")
 	addr := flag.String("listen", "127.0.0.1:8080", "specify the LISTEN address")
 	flag.Parse()
-
-	// Set log level if debug
-	if *enableDebug {
-		logging.SetLogLevel(slog.LevelDebug)
-	}
 
 	var authModule auth.Auth
 	authModule = &auth.ProxyAuth{}
