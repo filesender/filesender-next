@@ -1,19 +1,11 @@
-@font-face {
-    font-family: 'Lexend';
-    src: url('../fonts/Lexend-VariableFont_wght.ttf') format('truetype');
-    font-weight: 100 900;
-}
-
 * {
     box-sizing: border-box;
 }
 
 body {
     margin: 0;
-    font-family: 'Lexend', sans-serif;
-    font-weight: 400;
+    font-family: system-ui;
     background: #0d0d0d;
-    font-size: 14px;
 }
 
 div.wrapper {
