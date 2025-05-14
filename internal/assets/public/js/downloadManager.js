@@ -167,7 +167,6 @@ class DownloadManager {
         await window.sodium.ready;
 
         const encryptedFileName = await this.fetchFirstChunk();
-        console.log(encryptedFileName);
         const fileName = sodium.to_string(sodium.crypto_secretbox_open_easy(encryptedFileName, this.nonce, this.key))
 
         const { stream } = this.getDecryptionStream();

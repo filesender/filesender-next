@@ -23,8 +23,6 @@ self.addEventListener("message", e => {
         const stream = new ReadableStream({
             start(controller) {
                 port.onmessage = ({ data }) => {
-                    console.log(data);
-                    
                     if (data.done) {
                         controller.close();
                     } else if (data.chunk) {
@@ -50,7 +48,7 @@ self.addEventListener("message", e => {
 
 self.addEventListener("fetch", e => {
     const url = new URL(e.request.url);
-    console.log('Intercepting fetch:', url.pathname);
+    console.log("Fetch:", url.pathname);
 
     if (url.pathname.includes('/dl/') && !url.pathname.includes('/api')) {
         const id = url.pathname.split('/').pop();

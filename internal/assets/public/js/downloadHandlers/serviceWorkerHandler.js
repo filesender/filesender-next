@@ -20,8 +20,6 @@ const createServiceWorkerHandler = (ready, fileId, sw) => {
 
         const broadcast = new BroadcastChannel(fileId);
         broadcast.addEventListener("message", e => {
-            console.log(e.data);
-
             if (e.data.type === "downloadAvailable") {
                 if (e.data.id === fileId) {
                     const iframe = document.createElement('iframe');

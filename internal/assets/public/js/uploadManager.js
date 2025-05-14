@@ -71,7 +71,6 @@ class UploadManager {
     async uploadFirstChunk(data, done) {
         const formData = new FormData();
         formData.append("file", new Blob([data]), "data.bin");
-        console.log("Uploading", data.length, "bytes");
 
         var uploadComplete = "?1";
         if (!done) {
@@ -110,7 +109,6 @@ class UploadManager {
     async uploadChunk(data, done) {
         const formData = new FormData();
         formData.append("file", new Blob([data]), "data.bin");
-        console.log("Uploading", data.length, "bytes, with offset", this.uploadedBytes);
 
         var uploadComplete = "?0";
         if (done) {

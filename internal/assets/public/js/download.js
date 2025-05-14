@@ -43,12 +43,14 @@ const fromBase64Url = (base64url) => {
     return bytes;
 }
 
+const isSaveFilePickerSupported = "showSaveFilePicker" in window;
+
 const formData = new FormData(form);
 const userId = formData.get("user-id").toString();
 const fileId = formData.get("file-id").toString();
 const byteSize = formData.get("byte-size").toString();
 
-if ((byteSize <= 1024 * 1024 * 500)) {
+if (byteSize <= 1024 * 1024 * 500 || !isSaveFilePickerSupported) {
     (async () => {
         await navigator.serviceWorker.register("../../sw.js").catch(err => {
             console.error(err);
@@ -61,10 +63,6 @@ const [key, header, nonce] = window.location.hash.substring(1).split(".").map(v 
 if (!key || !header || !nonce) {
     showError("No key, header, or nonce present in url!");
 } else {
-    console.log("Key", key)
-    console.log("Header", header);
-    console.log("Nonce", nonce);
-
     // eslint-disable-next-line no-undef
     const manager = new DownloadManager(key, header, nonce, userId, fileId, byteSize);
 
@@ -98,6 +96,9 @@ if (!key || !header || !nonce) {
                 if (manager.totalFileSize <= 1024 * 1024 * 500) { // 500MB
                     console.log("Using memory handler");
                     handler = createMemoryHandler(ready);
+                } else if (isSaveFilePickerSupported) {
+                    console.log("Using file system API hanlder");
+                    handler = createFileSystemHandler(ready);
                 } else {
                     console.log("Using service worker handler");
                     const sw = await navigator.serviceWorker.ready;
