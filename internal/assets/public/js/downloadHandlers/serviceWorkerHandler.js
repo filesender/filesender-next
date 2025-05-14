@@ -4,6 +4,7 @@
  * @param {ServiceWorker} sw
  * @param {string} fileId
  */
+// eslint-disable-next-line no-unused-vars
 const createServiceWorkerHandler = async (sw, fileId) => {
     /**
      * 

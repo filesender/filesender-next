@@ -17,14 +17,25 @@ class DownloadManager {
         this.nonce = nonce;
         this.userId = userId;
         this.fileId = fileId;
-        this.done = false;
-        this.bytesDownloaded = 0;
+
+        this.fileName;
         this.decryptionStream;
+        this.bytesDownloaded = 0;
+        this.totalFileSize = 0;
     }
 
     /**
      * 
-     * @param {ReadableStream} stream 
+     * @param {string} fileName 
+     */
+    setFileName(fileName) {
+        this.fileName = fileName;
+        this.bytesDownloaded += 512;
+    }
+
+    /**
+     * 
+     * @returns {{ stream: ReadableStream<Uint8Array>, addResponse: (response: Uint8Array) => void }}
      */
     createDecryptionStream() {
         const bytesQueue = [];
@@ -32,22 +43,22 @@ class DownloadManager {
         const state_in = window.sodium.crypto_secretstream_xchacha20poly1305_init_pull(header, key);
 
         let pendingResolve;
-        const waitForStream = () =>
-            new Promise((resolve) => (pendingResolve = resolve));
+        const waitForStream = () => new Promise(resolve => pendingResolve = resolve);
 
         const decryptionStream = new ReadableStream({
-            async pull(controller) {
+            pull: async (controller) => {
                 while (true) {
                     if (bytesQueue.length > 0) {
                         const bytes = bytesQueue.shift();
-                        let r1 = window.sodium.crypto_secretstream_xchacha20poly1305_pull(state_in, bytes);
-                        controller.enqueue(r1.message);
+                        console.log(bytes);
+                        let r = window.sodium.crypto_secretstream_xchacha20poly1305_pull(state_in, bytes);
+                        console.log(r.message);
+                        controller.enqueue(r.message);
 
-                        if (r1.tag === 3) {
+                        if (r.tag === 3) {
                             controller.close();
-                            break;
                         }
-
+                        break;
                     } else {
                         await waitForStream();
                     }
@@ -62,8 +73,10 @@ class DownloadManager {
              * Adds a response to be decrypted by stream
              * @param {Uint8Array} response Response to be decrypted
              */
-            addResponse(response) {
+            addResponse: (response) => {
                 bytesQueue.push(response);
+                this.bytesDownloaded += response.length;
+
                 if (pendingResolve) {
                     pendingResolve();
                     pendingResolve = null;
@@ -82,50 +95,52 @@ class DownloadManager {
         return this.decryptionStream;
     }
 
-    /**
-     * Fetches first chunk based on `ENC_CHUNK_SIZE`
-     * @param {number} tries how many tries left until errors
-     * @returns {Promise<{encryptedFileName: Uint8Array, fileContent: Uint8Array} | undefined>}
-     */
-    async fetchFirstChunk(tries = 3) {
+    async getTotalSize() {
         const response = await fetch(`../../download/${this.userId}/${this.fileId}`, {
-            headers: {
-              Range: `bytes=0-${ENC_CHUNK_SIZE - 1 + 512}` // 512 for padded file name
-            }
+            method: "HEAD"
         });
 
-        if (response.status === 206) {
-            const data = await response.arrayBuffer();
-            console.log(data.byteLength);
-            const uint8 = new Uint8Array(data);
-
-            const fileNameBytes = uint8.subarray(0, 512);
-            const unpaddedFileNameBytes = fileNameBytes.subarray(0, fileNameBytes.lastIndexOf(0) === -1
-                ? fileNameBytes.length
-                : fileNameBytes.findIndex((b, i, arr) => arr.slice(i).every(v => v === 0)));
-
-            return {
-                encryptedFileName: unpaddedFileNameBytes,
-                fileContent: uint8.subarray(512)
-            };
-        }
-
-        if (tries > 0) {
-            return await this.fetchFirstChunk(tries - 1)
-        }
-
-        return undefined;
+        this.totalFileSize = parseInt(response.headers.get("content-length"));
     }
 
     /**
-     * Makes request, reads and feeds to handler
-     * @param {number} offset 
-     * @param {(chunk: Uint8Array) => void} handler 
+     * 
+     * @returns {Promise<Uint8Array>}
      */
-    async fetchChunks(offset, handler) {
+    async fetchFirstChunk() {
         const response = await fetch(`../../download/${this.userId}/${this.fileId}`, {
             headers: {
-              Range: `bytes=${offset}-`
+                "Range": `bytes=0-${ENC_CHUNK_SIZE - 1 + 512}` // 512 for padded file name
+            }
+        });
+
+        if (response.status !== 206) {
+            const body = await response.text();
+            throw new Error(`Failed fetching first chunk: ${body}`);
+        }
+
+        const data = await response.arrayBuffer();
+        const uint8 = new Uint8Array(data);
+
+        var fileNameBytes = uint8.subarray(0, 512);
+
+        const lastIndex = fileNameBytes.lastIndexOf(0) !== -1 
+            ? fileNameBytes.findIndex((b, i, arr) => arr.slice(i).every(v => v === 0))
+            : fileNameBytes.length;
+        fileNameBytes = fileNameBytes.subarray(0, lastIndex !== -1 ? lastIndex : fileNameBytes.length);
+
+        this.getDecryptionStream().addResponse(uint8.subarray(512))
+
+        return fileNameBytes;
+    }
+
+    /**
+     * 
+     */
+    async fetchChunks() {
+        const response = await fetch(`../../download/${this.userId}/${this.fileId}`, {
+            headers: {
+                "Range": `bytes=${this.bytesDownloaded}-`
             }
         });
 
@@ -142,78 +157,40 @@ class DownloadManager {
 
             while (buffer.length >= ENC_CHUNK_SIZE) {
                 const chunk = buffer.slice(0, ENC_CHUNK_SIZE);
-                handler(chunk);
+                this.getDecryptionStream().addResponse(chunk);
 
                 buffer = buffer.slice(ENC_CHUNK_SIZE);
             }
         }
 
         if (buffer.length > 0) {
-            // Should never be called but whatever
-            handler(buffer);
+            this.getDecryptionStream().addResponse(buffer)
         }
-    }
-
-    async getTotalSize() {
-        const response = await fetch(`../../download/${this.userId}/${this.fileId}`, {
-            method: "HEAD"
-        });
-
-        return parseInt(response.headers.get("content-length"))
     }
 
     /**
      * 
      * @param {(fileName: string, stream: ReadableStream) => void} handler 
-     * @param {(msg: string | undefined) => void} errorMessageHandler
-     * @returns 
      */
-    async start(handler, errorMessageHandler) {
-        errorMessageHandler(undefined);
+    async start(handler) {
         await window.sodium.ready;
 
-        const firstChunk = await this.fetchFirstChunk();
-        if (!firstChunk) return;
+        const encryptedFileName = await this.fetchFirstChunk();
+        console.log(encryptedFileName);
+        const fileName = sodium.to_string(sodium.crypto_secretbox_open_easy(encryptedFileName, this.nonce, this.key))
 
-        this.bytesDownloaded = ENC_CHUNK_SIZE + 512;
-        const { encryptedFileName, fileContent } = firstChunk;
-        const fileName = sodium.to_string(sodium.crypto_secretbox_open_easy(encryptedFileName, this.nonce, this.key));
-
-        const { stream, addResponse } = this.getDecryptionStream();
+        const { stream } = this.getDecryptionStream();
+        this.setFileName(fileName);
         handler(fileName, stream);
-        addResponse(fileContent);
     }
 
     /**
      * 
-     * @param {(msg: string | undefined) => void} errorMessageHandler
-     * @returns 
      */
-    async resume(errorMessageHandler) {
+    async resume() {
         if (this.bytesDownloaded === 0) throw new Error("Can't resume a download that has never started");
-        errorMessageHandler(undefined);
-
-        const { addResponse } = this.getDecryptionStream();
-
-        let tries = 0;
-        while (tries < 3) {
-            try {
-                await this.fetchChunks(this.bytesDownloaded, (bytes) => {
-                    this.bytesDownloaded += bytes.length;
-                    addResponse(bytes);
-                });
-                break;
-            } catch(err) {
-                console.error(err);
-                tries++;
-
-                let message = `Failed downloading contents: ${err.message}.`;
-                if (tries < 3) message += " Retrying in 5 seconds."
-
-                errorMessageHandler(message)
-                if (tries < 3) await new Promise(resolve => setTimeout(resolve, 5000));
-            }
-        }
+        
+        await this.fetchChunks();
     }
 }
 

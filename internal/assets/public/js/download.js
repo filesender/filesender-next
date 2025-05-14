@@ -1,3 +1,4 @@
+/* global createServiceWorkerHandler */
 const errorBox = document.querySelector("div.error");
 const form = document.querySelector("form");
 
@@ -34,18 +35,6 @@ const hideError = () => {
 }
 
 /**
- * 
- * @param {string | undefined} msg 
- */
-const errorMessageHandler = (msg) => {
-    if (msg) {
-        showError(msg);
-    } else {
-        hideError();
-    }
-}
-
-/**
  * Decodes base64 string to bytes
  * @param {string} base64url 
  * @returns bytes
@@ -76,70 +65,72 @@ if (!key || !header || !nonce) {
     // eslint-disable-next-line no-undef
     const manager = new DownloadManager(key, header, nonce, userId, fileId);
 
+    (async () => {
+        while (true) {
+            if (manager.totalFileSize !== 0) {
+                const progress = manager.bytesDownloaded / manager.totalFileSize;
+                setLoader(progress);
+                
+                if (progress >= 1) {
+                    break;
+                }
+            }
+
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
+    })();
+
     form.addEventListener("submit", async e => {
         e.preventDefault();
         hideError();
     
         await window.sodium.ready;
-        const totalFileSize = await manager.getTotalSize();
+        try {
+            await manager.getTotalSize();
+        } catch (err) {
+            console.error(err);
+            showError(`Failed retrieving file data: ${err.message}.`)
+        }
     
         let handler;
         const sw = await navigator.serviceWorker.ready;
         handler = await createServiceWorkerHandler(sw.active, fileId);
 
-        /**
-         * 
-         * @param {(fileName: string, stream: ReadableStream) => void} handler 
-         * @param {(msg: string | undefined) => void} errorMessageHandler
-         * @returns 
-         */
-        const startOrResumeDownload = async (handler, errorMessageHandler) => {
-            console.log("Downloaded:", manager.bytesDownloaded);
-            if (manager.bytesDownloaded === 0) {
-                try {
-                    await manager.start(handler, errorMessageHandler);
-                    await manager.resume(errorMessageHandler);
-                } catch (err) {
-                    if (manager.bytesDownloaded > 0) {
-                        form.querySelector("button").innerText = "Resume Download";
-                    }
+        form.querySelector("button").disabled = true;
 
-                    throw err;
-                }
+        if (manager.bytesDownloaded === 0) {
+            try {
+                await manager.start(handler, showError);
+            } catch (err) {
+                console.error(err);
+                showError(`Failed to start download: ${err.message}`);
+                form.querySelector("button").disabled = false;
                 return;
             }
-
-            await manager.resume(errorMessageHandler);
         }
-    
-        (async () => {
-            while (true) {
-                const progress = manager.bytesDownloaded / totalFileSize;
-                setLoader(progress);
-                await new Promise(resolve => setTimeout(resolve, 100));
-        
-                if (progress >= 1) {
-                    break;
-                }
-            }
-        })();
 
-        form.querySelector("button").disabled = true;
-        
         let tries = 0;
         let err;
         while (tries < 3) {
             try {
-                await startOrResumeDownload(handler, errorMessageHandler);
+                await manager.resume();
                 break;
             } catch (e) {
+                console.error(e);
                 err = e;
             }
+
             tries++;
+
+            let message = `Failed uploading file: ${err.message}.`;
+            if (tries < 3) message += " Retrying in 5 seconds.";
+            showError(message);
+
+            if (tries < 3) await new Promise(resolve => setTimeout(resolve, 5000));
         }
-        
-        if (err) {
-            showError(`Failed downloading: ${err.message}`);
+
+        if (manager.bytesDownloaded !== manager.totalFileSize) {
+            form.querySelector("button").innerText = "Resume Download";
         }
 
         form.querySelector("button").disabled = false;
