@@ -1,10 +1,8 @@
-
+/* global createServiceWorkerHandler, createMemoryHandler, createFileSystemHandler */
+const errorBox = document.querySelector("div.error");
 const form = document.querySelector("form");
 
-// Register service worker
-navigator.serviceWorker.register("../../sw.js").then(async e => {
-    console.log('Service Worker registered!');
-});
+const isSaveFilePickerSupported = "showSaveFilePicker" in window;
 
 const setLoader = (progress) => {
     const loader = document.querySelector("div.loader");
@@ -12,6 +10,23 @@ const setLoader = (progress) => {
 
     const loaderText = document.querySelector("p#progress");
     loaderText.innerText = `${Math.round(progress * 10000) / 100}%`;
+}
+
+/**
+ * Dummy error handling function
+ * @param {string} msg Message to show to use
+ */
+const showError = msg => {
+    console.log(`ERROR: ${msg}`);
+    errorBox.innerText = msg;
+    errorBox.classList.remove("hidden");
+}
+
+/**
+ * Hides whatever current error message is being shown
+ */
+const hideError = () => {
+    errorBox.classList.add("hidden");
 }
 
 /**
@@ -30,55 +45,101 @@ const fromBase64Url = (base64url) => {
     return bytes;
 }
 
-const getFileInfo = async (userId, fileId) => {
-    const response = await fetch(`../../api/download/${userId}/${fileId}`, {
-        method: "HEAD"
-    });
-    
-    return {
-        available: response.headers.get("available") === "true",
-        chunked: response.headers.get("chunked") === "true",
-        chunkCount: parseInt(response.headers.get("chunk-count")),
-        fileName: response.headers.get("file-name")
-    }
+const formData = new FormData(form);
+const userId = formData.get("user-id").toString();
+const fileId = formData.get("file-id").toString();
+const byteSize = formData.get("byte-size").toString();
+
+if (byteSize <= 1024 * 1024 * 500 || !isSaveFilePickerSupported) {
+    (async () => {
+        await navigator.serviceWorker.register("../../sw.js").catch(err => {
+            console.error(err);
+            showError(`Failed registering service worker: ${err.message}`);
+        });
+    })();
 }
 
-form.addEventListener("submit", async e => {
-    e.preventDefault();
-    const sw = await navigator.serviceWorker.ready;
+const [key, header, nonce] = window.location.hash.substring(1).split(".").map(v => fromBase64Url(v));
+if (!key || !header || !nonce) {
+    showError("No key, header, or nonce present in url!");
+} else {
+    // eslint-disable-next-line no-undef
+    const manager = new DownloadManager(key, header, nonce, userId, fileId, byteSize);
 
-    await window.sodium.ready;
-    const sodium = window.sodium;
+    (async () => {
+        while (true) {
+            if (manager.bytesDownloaded !== 0) {
+                const progress = manager.bytesDownloaded / manager.totalFileSize;
+                setLoader(progress);
 
-    const formData = new FormData(form);
-    const userId = formData.get("user-id").toString();
-    const fileId = formData.get("file-id").toString();
+                if (progress >= 1) {
+                    break;
+                }
+            }
 
-    const fileInfo = await getFileInfo(userId, fileId);
-    const [key, header, nonce] = window.location.hash.substring(1).split(".").map(v => fromBase64Url(v));
-
-    console.log("Key", key)
-    console.log("Header", header);
-    console.log("Nonce", nonce);
-
-    if (fileInfo.fileName && fileInfo.fileName !== "") {
-        fileInfo.fileName = sodium.to_string(sodium.crypto_secretbox_open_easy(fromBase64Url(fileInfo.fileName), nonce, key));
-    }
-
-    const manager = new ChunkedDownloadManager(sw.active, key, header, {
-        userId,
-        fileId,
-        ...fileInfo
-    });
-    manager.start();
-
-    while (true) {
-        const progress = manager.progress / manager.total;
-        setLoader(progress);
-        await new Promise(resolve => setTimeout(resolve, 100));
-
-        if (progress >= 1) {
-            break;
+            await new Promise(resolve => setTimeout(resolve, 100));
         }
-    }
-});
+    })();
+
+    form.addEventListener("submit", async e => {
+        e.preventDefault();
+        hideError();
+    
+        await window.sodium.ready;
+        form.querySelector("button").disabled = true;
+
+        if (manager.bytesDownloaded === 0) {
+            try {
+                let handler, ready;
+                const waitForHandler = new Promise(resolve => ready = resolve)
+
+                if (manager.totalFileSize <= 1024 * 1024 * 500) { // 500MB
+                    console.log("Using memory handler");
+                    handler = createMemoryHandler(ready);
+                } else if (isSaveFilePickerSupported) {
+                    console.log("Using file system API hanlder");
+                    handler = createFileSystemHandler(ready);
+                } else {
+                    console.log("Using service worker handler");
+                    const sw = await navigator.serviceWorker.ready;
+                    handler = createServiceWorkerHandler(ready, fileId, sw.active);
+                }
+
+                await manager.start(handler, showError);
+                await waitForHandler;
+            } catch (err) {
+                console.error(err);
+                showError(`Failed to start download: ${err.message}`);
+                form.querySelector("button").disabled = false;
+                return;
+            }
+        }
+
+        let tries = 0;
+        let err;
+        while (tries < 3) {
+            try {
+                await manager.resume();
+                err = undefined;
+                break;
+            } catch (e) {
+                console.error(e);
+                err = e;
+            }
+
+            tries++;
+
+            let message = `Failed uploading file: ${err.message}.`;
+            if (tries < 3) message += " Retrying in 5 seconds.";
+            showError(message);
+
+            if (tries < 3) await new Promise(resolve => setTimeout(resolve, 5000));
+        }
+
+        if (manager.bytesDownloaded !== manager.totalFileSize && err) {
+            form.querySelector("button").innerText = "Resume Download";
+        }
+
+        form.querySelector("button").disabled = false;
+    });
+}

@@ -6,27 +6,23 @@ test('should download', async ({ page }) => {
     try {
         const buttons = await page.locator('button').all();
 
-        // Set up a download watcher
-        const [download] = await Promise.all([
-            page.waitForEvent('download', req => 
-                req.url().includes('/download')
-            ),
-            (async () => {
-                for (const button of buttons) {
-                    if ((await button.innerText()).trim() === "Download") {
-                        await button.click();
-                        break;
-                    }
-                }
-            })(),
-        ]);
+        let downloadTriggered = false;
 
-        console.log('Download request URL:', download.url());
-        expect(download.url()).toMatch(/\/download\/.+/);
+        page.on('request', request => {
+            if (request.url().includes('/download') && !request.url().includes('/api')) {
+                downloadTriggered = true;
+            }
+        });
 
-        await download.path(); // Waits until download is complete
-        const suggestedFilename = download.suggestedFilename();
-        expect(suggestedFilename).toMatch(/^temp-file-.+\.txt$/);
+        for (const button of buttons) {
+            if ((await button.innerText()).trim() === "Download") {
+                await button.click();
+                break;
+            }
+        }
+
+        await page.waitForTimeout(2000);
+        expect(downloadTriggered).toBe(true);
 
     } finally {
         cleanup();

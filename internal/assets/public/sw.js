@@ -5,6 +5,7 @@ self.addEventListener("install", () => {
     self.skipWaiting();
 });
 self.addEventListener("activate", event => {
+    // eslint-disable-next-line no-undef
     event.waitUntil(clients.claim());
 });
 
@@ -13,14 +14,15 @@ const downloads = new Map();
 // When receiving a message from the client
 self.addEventListener("message", e => {
 
-    if (e.data.type === "download" && e.data.port) {
+    if (e.data.type === "delete") {
+        downloads.delete(e.data.id);
+    }
+    else if (e.data.type === "download" && e.data.port) {
         const { id, fileName, port } = e.data;
 
         const stream = new ReadableStream({
             start(controller) {
                 port.onmessage = ({ data }) => {
-                    console.log(data);
-                    
                     if (data.done) {
                         controller.close();
                     } else if (data.chunk) {
@@ -46,9 +48,9 @@ self.addEventListener("message", e => {
 
 self.addEventListener("fetch", e => {
     const url = new URL(e.request.url);
-    console.log('Intercepting fetch:', url.pathname);
+    console.log("Fetch:", url.pathname);
 
-    if (url.pathname.includes('/download/') && !url.pathname.includes('/api/v')) {
+    if (url.pathname.includes('/dl/') && !url.pathname.includes('/api')) {
         const id = url.pathname.split('/').pop();
         const download = downloads.get(id);
 
@@ -59,7 +61,6 @@ self.addEventListener("fetch", e => {
                     'Content-Disposition': `attachment; filename="${download.fileName}"`
                 }
             }));
-            download.delete(id);
         }
     }
 });

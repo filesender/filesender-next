@@ -1,6 +1,6 @@
 PREFIX=/usr/local
 
-.PHONY: test update vendor fmt lint vet sloc clean install run run-dev hotreload act
+.PHONY: test update vendor fmt lint vet sloc clean install run run-dev hotreload act eslint
 
 filesender: cmd/filesender/main.go
 	go build $(GOBUILDFLAGS) -o $@ codeberg.org/filesender/filesender-next/cmd/filesender
@@ -41,10 +41,13 @@ run:
 
 run-dev:
 	mkdir -p ./data
-	FILESENDER_AUTH_METHOD=dummy STATE_DIRECTORY=./data go run ./cmd/filesender -d -listen 0.0.0.0:8080
+	FILESENDER_AUTH_METHOD=dummy STATE_DIRECTORY=./data go run ./cmd/filesender -d -listen localhost:8080
 
 hotreload:
 	watchexec --shell=none -r -w ./internal/assets -- make run-dev
 
 act:
 	act --container-architecture linux/amd64 --workflows .forgejo/workflows/tests.yaml
+
+eslint:
+	npx eslint

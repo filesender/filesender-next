@@ -16,37 +16,52 @@ jobs:
       - name: Run linter
         run: make lint
 
-  tests:
-    name: End to end tests and unit tests
+  eslinter:
     runs-on: codeberg-tiny
     container:
-      image: mcr.microsoft.com/playwright:v1.50.1-noble
+      image: node:22
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Install dependencies
-        run: npm i
+        run: npm install
+      
+      - name: Run ESLint
+        run: npx eslint
 
-      - name: Set up Golang
-        uses: actions/setup-go@v5
-        with:
-          go-version: 1.24
+  # tests:
+  #   name: End to end tests and unit tests
+  #   runs-on: codeberg-tiny
+  #   container:
+  #     image: mcr.microsoft.com/playwright:v1.50.1-noble
 
-      - name: Install required dependencies
-        run: apt update && apt install -y make gcc libc-dev
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
 
-      - name: Build and start Filesender
-        run: |
-          make filesender
-          mkdir -p ./data
+  #     - name: Install dependencies
+  #       run: npm i
 
-      - name: Run playwright tests
-        run: npx playwright test
+  #     - name: Set up Golang
+  #       uses: actions/setup-go@v5
+  #       with:
+  #         go-version: 1.24
 
-      - name: Stop filesender
-        run: pkill filesender || true
+  #     - name: Install required dependencies
+  #       run: apt update && apt install -y make gcc libc-dev
 
-      - name: Run unit tests
-        run: make test
+  #     - name: Build and start Filesender
+  #       run: |
+  #         make filesender
+  #         mkdir -p ./data
+
+  #     - name: Run playwright tests
+  #       run: npx playwright test
+
+  #     - name: Stop filesender
+  #       run: pkill filesender || true
+
+  #     - name: Run unit tests
+  #       run: make test

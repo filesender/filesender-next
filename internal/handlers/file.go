@@ -7,25 +7,12 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"sort"
-	"strconv"
-	"strings"
-
-	"codeberg.org/filesender/filesender-next/internal/models"
 )
 
-func getFullExtension(filename string) string {
-	parts := strings.Split(filename, ".")
-	if len(parts) <= 1 {
-		return "" // no extension
-	}
-	return strings.Join(parts[1:], ".")
-}
-
 // FileUpload handles a new file uploaded
-func FileUpload(stateDir string, fileMeta models.File, file multipart.File, fileName string) error {
+func FileUpload(stateDir string, userID string, fileID string, file multipart.File) error {
 	// Create transfer folder for user if not exists
-	uploadDest := filepath.Join(stateDir, fileMeta.UserID)
+	uploadDest := filepath.Join(stateDir, userID)
 	if _, err := os.Stat(uploadDest); os.IsNotExist(err) {
 		err = os.Mkdir(uploadDest, 0o700)
 		if err != nil {
@@ -34,8 +21,7 @@ func FileUpload(stateDir string, fileMeta models.File, file multipart.File, file
 		}
 	}
 
-	fileExtension := getFullExtension(fileName)
-	fileName = fileMeta.ID + "." + fileExtension
+	fileName := fileID
 	dst, err := os.OpenFile(path.Join(uploadDest, fileName), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o600)
 	if err != nil {
 		return err
@@ -52,35 +38,22 @@ func FileUpload(stateDir string, fileMeta models.File, file multipart.File, file
 		return err
 	}
 
-	fileMeta.FileName = fileName
-	err = fileMeta.Create(stateDir)
-	if err != nil {
-		slog.Error("Failed creating upload meta file", "error", err)
-		return err
-	}
-
 	return nil
 }
 
 // PartialFileUpload handles a chunk being uploaded
-func PartialFileUpload(stateDir string, fileMeta *models.File, file multipart.File, offset int64) error {
-	// This should already exist
-	uploadDest := filepath.Join(stateDir, fileMeta.UserID)
-
-	// But more specifically, this could maybe not exist already...
-	uploadDest = filepath.Join(uploadDest, fileMeta.ID)
-	if _, err := os.Stat(uploadDest); os.IsNotExist(err) {
-		err = os.Mkdir(uploadDest, 0o700)
-		if err != nil {
-			slog.Error("Could not create new chunked directory", "error", err)
-			return err
-		}
+func PartialFileUpload(stateDir string, userID string, fileID string, file multipart.File, offset int64) (int64, error) {
+	uploadDir := filepath.Join(stateDir, userID)
+	if _, err := os.Stat(uploadDir); os.IsNotExist(err) {
+		slog.Error("User upload directory does not exist", "path", uploadDir)
+		return 0, err
 	}
 
-	hexOffset := strconv.FormatInt(offset, 16)
-	dst, err := os.OpenFile(path.Join(uploadDest, hexOffset+".bin"), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o600)
+	filePath := filepath.Join(uploadDir, fileID)
+	dst, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE, 0o600)
 	if err != nil {
-		return err
+		slog.Error("Failed opening destination file", "error", err)
+		return 0, err
 	}
 	defer func() {
 		if err := dst.Close(); err != nil {
@@ -88,22 +61,27 @@ func PartialFileUpload(stateDir string, fileMeta *models.File, file multipart.Fi
 		}
 	}()
 
-	_, err = io.Copy(dst, file)
+	_, err = dst.Seek(offset, io.SeekStart)
 	if err != nil {
-		slog.Error("Failed copying file contents", "error", err)
-		return err
+		slog.Error("Failed seeking to offset", "offset", offset, "error", err)
+		return 0, err
 	}
 
-	// TODO: Maybe do something with meta to keep track of which offsets & sizes exist?
-	// We could also just read directory contents of course..
-	fileMeta.Chunks = append(fileMeta.Chunks, hexOffset)
+	_, err = io.Copy(dst, file)
+	if err != nil {
+		slog.Error("Failed copying chunk data", "error", err)
+		return 0, err
+	}
 
-	// Make sure the chunks are sorted in the array
-	sort.Slice(fileMeta.Chunks, func(i int, j int) bool {
-		a, _ := strconv.ParseInt(fileMeta.Chunks[i], 16, 64)
-		b, _ := strconv.ParseInt(fileMeta.Chunks[j], 16, 64)
-		return a < b
-	})
+	return getFileSize(filePath)
+}
 
-	return nil
+func getFileSize(path string) (int64, error) {
+	fileInfo, err := os.Stat(path)
+	if err != nil {
+		slog.Error("Failed to get file info", "error", err)
+		return 0, err
+	}
+
+	return fileInfo.Size(), nil
 }

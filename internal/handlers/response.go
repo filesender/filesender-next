@@ -2,12 +2,9 @@ package handlers
 
 import (
 	"embed"
-	"encoding/json"
 	"html/template"
-	"io"
 	"log/slog"
 	"net/http"
-	"os"
 	"path"
 	"path/filepath"
 	"strconv"
@@ -15,39 +12,9 @@ import (
 
 var templatesFS embed.FS
 
-// Response struct standardizes the JSON response data
-type Response struct {
-	Success bool   `json:"success"`
-	Message string `json:"message,omitempty"`
-	Data    any    `json:"data,omitempty"`
-}
-
 // Init to receive the embedded templates
 func Init(fs embed.FS) {
 	templatesFS = fs
-}
-
-// Send a JSON response with the given data
-func sendJSON(w http.ResponseWriter, status int, success bool, message string, data any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-
-	response := Response{
-		Success: success,
-	}
-
-	if success {
-		if data != nil {
-			response.Data = data
-		}
-	} else {
-		response.Message = message
-	}
-
-	err := json.NewEncoder(w).Encode(response)
-	if err != nil {
-		slog.Error("Error sending JSON", "error", err)
-	}
 }
 
 // Send a template response with the given data
@@ -71,10 +38,6 @@ func sendError(w http.ResponseWriter, status int, message string) {
 	http.Error(w, message, status)
 }
 
-func sendEmptyResponse(w http.ResponseWriter, status int) {
-	w.WriteHeader(status)
-}
-
 // Sends a redirect
 func sendRedirect(w http.ResponseWriter, status int, location string, body string) error {
 	w.Header().Add("Location", location)
@@ -87,38 +50,6 @@ func sendRedirect(w http.ResponseWriter, status int, location string, body strin
 	}
 
 	return nil
-}
-
-// Sends file
-func sendFile(w http.ResponseWriter, filePath string, fileName string) {
-	f, err := os.Open(filePath)
-	if err != nil {
-		sendError(w, http.StatusNotFound, "File not found") // This should never happen, this is already checked before...
-		return
-	}
-	defer func() {
-		err := f.Close()
-		if err != nil {
-			slog.Error("Failed closing file", "error", err)
-		}
-	}()
-
-	fi, err := f.Stat()
-	if err != nil {
-		sendError(w, http.StatusInternalServerError, "Could not retrieve file info")
-		return
-	}
-	fileSize := fi.Size()
-
-	w.Header().Set("Content-Type", "application/octet-stream")
-	w.Header().Set("Content-Disposition", `attachment; filename="`+fileName+`"`)
-	w.Header().Set("Content-Length", strconv.FormatInt(fileSize, 10))
-
-	_, err = io.Copy(w, f)
-	if err != nil {
-		slog.Error("Failed downloading the file", "error", err)
-		sendError(w, http.StatusInternalServerError, "Error while downloading the file")
-	}
 }
 
 // Send incomplete upload response
