@@ -66,7 +66,7 @@ func UploadAPI(authModule auth.Auth, stateDir string, maxUploadSize int64) http.
 			return
 		}
 
-		err = sendRedirect(w, http.StatusSeeOther, "../../view/"+userID+"/"+fileID, "") // Redirect to `/view/<user_id>/<file_id>`
+		err = sendRedirect(w, http.StatusSeeOther, "../view/"+userID+"/"+fileID, "") // Redirect to `/view/<user_id>/<file_id>`
 		if err != nil {
 			sendError(w, http.StatusInternalServerError, "Failed sending redirect")
 		}
