@@ -1,4 +1,4 @@
-/* global createServiceWorkerHandler */
+/* global createServiceWorkerHandler, createMemoryHandler, createFileSystemHandler */
 const errorBox = document.querySelector("div.error");
 const form = document.querySelector("form");
 
