@@ -10,8 +10,9 @@ class DownloadManager {
      * @param {Uint8Array} nonce
      * @param {string} userId
      * @param {string} fileId
+     * @param {number} byteSize
      */
-    constructor(key, header, nonce, userId, fileId) {
+    constructor(key, header, nonce, userId, fileId, byteSize) {
         this.key = key;
         this.header = header;
         this.nonce = nonce;
@@ -21,7 +22,7 @@ class DownloadManager {
         this.fileName;
         this.decryptionStream;
         this.bytesDownloaded = 0;
-        this.totalFileSize = 0;
+        this.totalFileSize = byteSize;
     }
 
     /**
@@ -91,14 +92,6 @@ class DownloadManager {
         }
 
         return this.decryptionStream;
-    }
-
-    async getTotalSize() {
-        const response = await fetch(`../../download/${this.userId}/${this.fileId}`, {
-            method: "HEAD"
-        });
-
-        this.totalFileSize = parseInt(response.headers.get("content-length"));
     }
 
     /**

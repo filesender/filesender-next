@@ -13,6 +13,7 @@
         <form action="../../download/{{ .UserID }}/{{ .FileID }}" method="get" target="_blank">
             <input type="hidden" name="user-id" value="{{ .UserID }}">
             <input type="hidden" name="file-id" value="{{ .FileID }}">
+            <input type="hidden" name="byte-size" value="{{ .ByteSize }}">
 
             <button class="mt-4">
                 Download
@@ -31,6 +32,7 @@
 
     <script src="../../js/sodium.js"></script>
     <script src="../../js/downloadManager.js"></script>
+    <script src="../../js/downloadHandlers/memoryHandler.js"></script>
     <script src="../../js/downloadHandlers/serviceWorkerHandler.js"></script>
     <script src="../../js/download.js"></script>
 </body>

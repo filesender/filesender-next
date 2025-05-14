@@ -20,13 +20,6 @@ const showError = msg => {
     errorBox.classList.remove("hidden");
 }
 
-(async () => {
-    await navigator.serviceWorker.register("../../sw.js").catch(err => {
-        console.error(err);
-        showError(`Failed registering service worker: ${err.message}`);
-    });
-})();
-
 /**
  * Hides whatever current error message is being shown
  */
@@ -53,6 +46,16 @@ const fromBase64Url = (base64url) => {
 const formData = new FormData(form);
 const userId = formData.get("user-id").toString();
 const fileId = formData.get("file-id").toString();
+const byteSize = formData.get("byte-size").toString();
+
+if ((byteSize <= 1024 * 1024 * 500)) {
+    (async () => {
+        await navigator.serviceWorker.register("../../sw.js").catch(err => {
+            console.error(err);
+            showError(`Failed registering service worker: ${err.message}`);
+        });
+    })();
+}
 
 const [key, header, nonce] = window.location.hash.substring(1).split(".").map(v => fromBase64Url(v));
 if (!key || !header || !nonce) {
@@ -63,11 +66,11 @@ if (!key || !header || !nonce) {
     console.log("Nonce", nonce);
 
     // eslint-disable-next-line no-undef
-    const manager = new DownloadManager(key, header, nonce, userId, fileId);
+    const manager = new DownloadManager(key, header, nonce, userId, fileId, byteSize);
 
     (async () => {
         while (true) {
-            if (manager.totalFileSize !== 0) {
+            if (manager.bytesDownloaded !== 0) {
                 const progress = manager.bytesDownloaded / manager.totalFileSize;
                 setLoader(progress);
 
@@ -85,21 +88,21 @@ if (!key || !header || !nonce) {
         hideError();
     
         await window.sodium.ready;
-        try {
-            await manager.getTotalSize();
-        } catch (err) {
-            console.error(err);
-            showError(`Failed retrieving file data: ${err.message}.`)
-        }
-
         form.querySelector("button").disabled = true;
 
         if (manager.bytesDownloaded === 0) {
             try {
                 let handler, ready;
                 const waitForHandler = new Promise(resolve => ready = resolve)
-                const sw = await navigator.serviceWorker.ready;
-                handler = createServiceWorkerHandler(ready, fileId, sw.active);
+
+                if (manager.totalFileSize <= 1024 * 1024 * 500) { // 500MB
+                    console.log("Using memory handler");
+                    handler = createMemoryHandler(ready);
+                } else {
+                    console.log("Using service worker handler");
+                    const sw = await navigator.serviceWorker.ready;
+                    handler = createServiceWorkerHandler(ready, fileId, sw.active);
+                }
 
                 await manager.start(handler, showError);
                 await waitForHandler;
@@ -116,6 +119,7 @@ if (!key || !header || !nonce) {
         while (tries < 3) {
             try {
                 await manager.resume();
+                err = undefined;
                 break;
             } catch (e) {
                 console.error(e);
@@ -131,7 +135,7 @@ if (!key || !header || !nonce) {
             if (tries < 3) await new Promise(resolve => setTimeout(resolve, 5000));
         }
 
-        if (manager.bytesDownloaded !== manager.totalFileSize) {
+        if (manager.bytesDownloaded !== manager.totalFileSize && err) {
             form.querySelector("button").innerText = "Resume Download";
         }
 
