@@ -1,28 +1,35 @@
 
 /**
  * 
- * @param {ServiceWorker} sw
+ * @param {() => void} ready
  * @param {string} fileId
+ * @param {ServiceWorker} sw
  */
 // eslint-disable-next-line no-unused-vars
-const createServiceWorkerHandler = async (sw, fileId) => {
+const createServiceWorkerHandler = (ready, fileId, sw) => {
     /**
      * 
      * @param {string} fileName 
      * @param {ReadableStream} stream 
      */
     const handler = (fileName, stream) => {
+        sw.postMessage({
+            type: "delete",
+            id: fileId
+        });
+
         const broadcast = new BroadcastChannel(fileId);
         broadcast.addEventListener("message", e => {
             console.log(e.data);
 
             if (e.data.type === "downloadAvailable") {
                 if (e.data.id === fileId) {
-
                     const iframe = document.createElement('iframe');
                     iframe.style.display = 'none';
                     iframe.src = `../../dl/${fileId}`;
                     document.body.appendChild(iframe);
+
+                    ready();
                 }
             }
         });

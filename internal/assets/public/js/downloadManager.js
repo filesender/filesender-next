@@ -50,9 +50,7 @@ class DownloadManager {
                 while (true) {
                     if (bytesQueue.length > 0) {
                         const bytes = bytesQueue.shift();
-                        console.log(bytes);
                         let r = window.sodium.crypto_secretstream_xchacha20poly1305_pull(state_in, bytes);
-                        console.log(r.message);
                         controller.enqueue(r.message);
 
                         if (r.tag === 3) {

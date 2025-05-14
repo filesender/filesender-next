@@ -70,7 +70,7 @@ if (!key || !header || !nonce) {
             if (manager.totalFileSize !== 0) {
                 const progress = manager.bytesDownloaded / manager.totalFileSize;
                 setLoader(progress);
-                
+
                 if (progress >= 1) {
                     break;
                 }
@@ -91,16 +91,18 @@ if (!key || !header || !nonce) {
             console.error(err);
             showError(`Failed retrieving file data: ${err.message}.`)
         }
-    
-        let handler;
-        const sw = await navigator.serviceWorker.ready;
-        handler = await createServiceWorkerHandler(sw.active, fileId);
 
         form.querySelector("button").disabled = true;
 
         if (manager.bytesDownloaded === 0) {
             try {
+                let handler, ready;
+                const waitForHandler = new Promise(resolve => ready = resolve)
+                const sw = await navigator.serviceWorker.ready;
+                handler = createServiceWorkerHandler(ready, fileId, sw.active);
+
                 await manager.start(handler, showError);
+                await waitForHandler;
             } catch (err) {
                 console.error(err);
                 showError(`Failed to start download: ${err.message}`);

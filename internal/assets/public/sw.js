@@ -14,7 +14,10 @@ const downloads = new Map();
 // When receiving a message from the client
 self.addEventListener("message", e => {
 
-    if (e.data.type === "download" && e.data.port) {
+    if (e.data.type === "delete") {
+        downloads.delete(e.data.id);
+    }
+    else if (e.data.type === "download" && e.data.port) {
         const { id, fileName, port } = e.data;
 
         const stream = new ReadableStream({
@@ -60,7 +63,6 @@ self.addEventListener("fetch", e => {
                     'Content-Disposition': `attachment; filename="${download.fileName}"`
                 }
             }));
-            downloads.delete(id);
         }
     }
 });
