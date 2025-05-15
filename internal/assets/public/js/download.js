@@ -4,6 +4,10 @@ const form = document.querySelector("form");
 
 const isSaveFilePickerSupported = "showSaveFilePicker" in window;
 
+/**
+ * Sets the progress bar
+ * @param {number} progress A decimal 0 to 1
+ */
 const setLoader = (progress) => {
     const loader = document.querySelector("div.loader");
     loader.style.width = `${progress * 100}%`;

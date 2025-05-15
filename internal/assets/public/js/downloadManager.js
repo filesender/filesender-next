@@ -4,7 +4,7 @@ var ENC_CHUNK_SIZE = 1024 * 1024;
 // eslint-disable-next-line no-unused-vars
 class DownloadManager {
     /**
-     * 
+     * Creates a download manager instance
      * @param {Uint8Array} key 
      * @param {Uint8Array} header 
      * @param {Uint8Array} nonce
@@ -26,7 +26,7 @@ class DownloadManager {
     }
 
     /**
-     * 
+     * Sets current file name
      * @param {string} fileName 
      */
     setFileName(fileName) {
@@ -35,7 +35,7 @@ class DownloadManager {
     }
 
     /**
-     * 
+     * Creates a decryption stream, any chunks added will be decrypted and pushed into the resulting stream
      * @returns {{ stream: ReadableStream<Uint8Array>, addResponse: (response: Uint8Array) => void }}
      */
     createDecryptionStream() {
@@ -86,6 +86,10 @@ class DownloadManager {
         return this.decryptionStream;
     }
 
+    /**
+     * Creates a decryption stream if it doesn't exist already, otherwise returns already existing stream
+     * @returns {{ stream: ReadableStream<Uint8Array>, addResponse: (response: Uint8Array) => void }}
+     */
     getDecryptionStream() {
         if (!this.decryptionStream) {
             return this.createDecryptionStream();
@@ -95,7 +99,7 @@ class DownloadManager {
     }
 
     /**
-     * 
+     * Fetches the first file chunk (including file name)
      * @returns {Promise<Uint8Array>}
      */
     async fetchFirstChunk() {
@@ -126,7 +130,7 @@ class DownloadManager {
     }
 
     /**
-     * 
+     * Fetches all chunks from offset `this.bytesDownloaded`
      */
     async fetchChunks() {
         const response = await fetch(`../../download/${this.userId}/${this.fileId}`, {
@@ -160,7 +164,7 @@ class DownloadManager {
     }
 
     /**
-     * 
+     * Starts the download, fetches first chunk & file name, adds first chunk to the decryption stream
      * @param {(fileName: string, stream: ReadableStream) => void} handler 
      */
     async start(handler) {
@@ -175,7 +179,7 @@ class DownloadManager {
     }
 
     /**
-     * 
+     * Continue the download, fetches all resuming chunks and adds them to the decryption stream
      */
     async resume() {
         if (this.bytesDownloaded === 0) throw new Error("Can't resume a download that has never started");

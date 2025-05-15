@@ -3,6 +3,10 @@ const errorBox = document.querySelector("div.error");
 const form = document.querySelector("form");
 const fileSelector = document.querySelector("#files-selector");
 
+/**
+ * Sets the progress bar
+ * @param {number} progress A decimal 0 to 1
+ */
 const setLoader = (progress) => {
     if (!progress) {
         const loader = document.querySelector("div.loader");

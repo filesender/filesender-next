@@ -73,7 +73,7 @@ func UploadAPI(appRoot string, authModule auth.Auth, stateDir string, maxUploadS
 	}
 }
 
-// ChunkedUploadAPI handles PATCH /api/upload/{userID}/{fileID}
+// ChunkedUploadAPI handles PATCH /api/upload/{fileID}
 func ChunkedUploadAPI(appRoot string, authModule auth.Auth, stateDir string, maxUploadSize int64) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		fileID := r.PathValue("fileID")

@@ -4,7 +4,7 @@ var ENC_CHUNK_SIZE = 1024 * 1024;
 // eslint-disable-next-line no-unused-vars
 class UploadManager {
     /**
-     * 
+     * Creates an upload manager instance
      * @param {string} userId 
      */
     constructor(userId) {
@@ -16,12 +16,11 @@ class UploadManager {
         this.uploadedBytes = 0;
         this.partialUploadLocation;
         this.state;
-        this.prevState;
         this.header;
     }
 
     /**
-     * 
+     * Sets File object, encrypted file name, key & nonce used for upload
      * @param {File} file 
      * @param {Uint8Array} key
      * @param {Uint8Array} nonce
@@ -38,18 +37,15 @@ class UploadManager {
 
         const { state, header } = sodium.crypto_secretstream_xchacha20poly1305_init_push(this.key);
         this.state = state;
-        this.prevState = undefined;
         this.header = header;
     }
 
     /**
-     * 
+     * Encrypts bytes using sodium
      * @param {Uint8Array} bytes 
      * @param {boolean} done
      */
     encrypt(bytes, done) {
-        this.prevState = structuredClone(this.state);
-
         const encrypted = sodium.crypto_secretstream_xchacha20poly1305_push(
             this.state, bytes, null, 
             done ? sodium.crypto_secretstream_xchacha20poly1305_TAG_FINAL
@@ -59,12 +55,8 @@ class UploadManager {
         return encrypted;
     }
 
-    rollbackState() {
-        this.state = this.prevState
-    }
-
     /**
-     * 
+     * Uploads first chunk, initialises file
      * @param {Uint8Array} data 
      * @param {boolean} done 
      */
@@ -102,7 +94,7 @@ class UploadManager {
     }
 
     /**
-     * 
+     * Appends file data to already existing upload
      * @param {Uint8Array} data 
      * @param {boolean} done 
      */
@@ -141,7 +133,7 @@ class UploadManager {
     }
 
     /**
-     * 
+     * Uploads a chunk, either initialises the upload if the upload hans't been initialised yet, or appends data to the already initialised upload
      * @param {Uint8Array} data 
      * @param {boolean} done 
      */
@@ -154,7 +146,7 @@ class UploadManager {
     }
 
     /**
-     * 
+     * If resuming upload from an errored state, we'll need to "skip" bytes from the reader
      * @param {ReadableStreamDefaultReader<Uint8Array>} reader 
      * @param {number} skip 
      */
@@ -185,7 +177,7 @@ class UploadManager {
     }
 
     /**
-     * 
+     * Creates file reader, skips bytes if the upload was already started before
      */
     async createReader() {
         let reader = this.file.stream().getReader();
@@ -200,7 +192,7 @@ class UploadManager {
     }
 
     /**
-     * 
+     * Starts processing file, chunks, encrypts & uploads
      */
     async process() {
         if (!this.file) return;
