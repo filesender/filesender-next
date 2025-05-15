@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Upload</title>
-    <link rel="stylesheet" href="styles/base.css">
+    <link rel="stylesheet" href="{{ .AppRoot }}styles/base.css">
 </head>
 <body>
     <div class="wrapper">
-        <form action="api/upload" method="post" enctype="multipart/form-data">
+        <form action="{{ .AppRoot }}api/upload" method="post" enctype="multipart/form-data">
             <div>
                 <label for="files-selector">Select file</label>
                 <input name="file" id="files-selector" type="file"/>
@@ -30,8 +30,8 @@
         </form>
     </div>
 
-    <script src="js/sodium.js"></script>
-    <script src="js/uploadManager.js"></script>
-    <script src="js/upload.js"></script>
+    <script src="{{ .AppRoot }}js/sodium.js"></script>
+    <script src="{{ .AppRoot }}js/uploadManager.js"></script>
+    <script src="{{ .AppRoot }}js/upload.js"></script>
 </body>
 </html>

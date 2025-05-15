@@ -12,7 +12,7 @@ import (
 
 // UploadAPI handles POST /api/upload
 // Expects `expiry_date` in form data
-func UploadAPI(authModule auth.Auth, stateDir string, maxUploadSize int64) http.HandlerFunc {
+func UploadAPI(appRoot string, authModule auth.Auth, stateDir string, maxUploadSize int64) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, err := authModule.UserAuth(r)
 		if err != nil {
@@ -66,7 +66,7 @@ func UploadAPI(authModule auth.Auth, stateDir string, maxUploadSize int64) http.
 			return
 		}
 
-		err = sendRedirect(w, http.StatusSeeOther, "../view/"+userID+"/"+fileID, "") // Redirect to `/view/<user_id>/<file_id>`
+		err = sendRedirect(w, http.StatusSeeOther, appRoot+"view/"+userID+"/"+fileID, "") // Redirect to `/view/<user_id>/<file_id>`
 		if err != nil {
 			sendError(w, http.StatusInternalServerError, "Failed sending redirect")
 		}
@@ -74,7 +74,7 @@ func UploadAPI(authModule auth.Auth, stateDir string, maxUploadSize int64) http.
 }
 
 // ChunkedUploadAPI handles PATCH /api/upload/{userID}/{fileID}
-func ChunkedUploadAPI(authModule auth.Auth, stateDir string, maxUploadSize int64) http.HandlerFunc {
+func ChunkedUploadAPI(appRoot string, authModule auth.Auth, stateDir string, maxUploadSize int64) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		fileID := r.PathValue("fileID")
 
@@ -138,7 +138,7 @@ func ChunkedUploadAPI(authModule auth.Auth, stateDir string, maxUploadSize int64
 		}
 
 		if uploadComplete {
-			err = sendRedirect(w, http.StatusSeeOther, "../../view/"+userID+"/"+fileID, "")
+			err = sendRedirect(w, http.StatusSeeOther, appRoot+"view/"+userID+"/"+fileID, "")
 			if err != nil {
 				sendError(w, http.StatusInternalServerError, "Failed sending redirect")
 			}
@@ -149,7 +149,7 @@ func ChunkedUploadAPI(authModule auth.Auth, stateDir string, maxUploadSize int64
 }
 
 // UploadTemplate handles GET /{$}
-func UploadTemplate(authModule auth.Auth) http.HandlerFunc {
+func UploadTemplate(appRoot string, authModule auth.Auth) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, err := authModule.UserAuth(r)
 		if err != nil {
@@ -167,7 +167,8 @@ func UploadTemplate(authModule auth.Auth) http.HandlerFunc {
 		}
 
 		sendTemplate(w, "upload", uploadTemplate{
-			UserID: userID,
+			AppRoot: appRoot,
+			UserID:  userID,
 		})
 	}
 }
