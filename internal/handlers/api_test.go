@@ -26,7 +26,7 @@ func TestUploadAPIHandler(t *testing.T) {
 		}
 	}()
 
-	handler := handlers.UploadAPI(&auth.DummyAuth{}, tempDir, 10*1024*1024) // 10 MB limit
+	handler := handlers.UploadAPI("/", &auth.DummyAuth{}, tempDir, 10*1024*1024) // 10 MB limit
 
 	// Hash "dev" for test use
 	hashedID, err := crypto.HashToBase64("dev")
