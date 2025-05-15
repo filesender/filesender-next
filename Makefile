@@ -1,6 +1,6 @@
 PREFIX=/usr/local
 
-.PHONY: test update vendor fmt lint vet sloc clean install run run-dev hotreload act eslint
+.PHONY: test update vendor fmt lint vet sloc clean install run run-dev hotreload act eslint run-cli
 
 filesender: cmd/filesender/main.go
 	go build $(GOBUILDFLAGS) -o $@ codeberg.org/filesender/filesender-next/cmd/filesender
@@ -37,11 +37,11 @@ install: filesender
 
 run:
 	mkdir -p ./data
-	STATE_DIRECTORY=./data go run ./cmd/filesender -d
+	STATE_DIRECTORY=./data go run ./cmd/filesender
 
 run-dev:
 	mkdir -p ./data
-	FILESENDER_AUTH_METHOD=dummy STATE_DIRECTORY=./data go run ./cmd/filesender -d
+	FILESENDER_AUTH_METHOD=dummy STATE_DIRECTORY=./data go run ./cmd/filesender
 
 hotreload:
 	watchexec --shell=none -r -w ./internal/assets -- make run-dev
@@ -51,3 +51,6 @@ act:
 
 eslint:
 	npx eslint
+
+run-cli:
+	go run ./cmd/filesender-cli $(ARGS)

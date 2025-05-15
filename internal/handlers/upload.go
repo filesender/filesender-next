@@ -62,7 +62,7 @@ func UploadAPI(appRoot string, authModule auth.Auth, stateDir string, maxUploadS
 		}
 
 		if completed := r.Header.Get("Upload-Complete"); completed == "0" {
-			sendIncompleteResponse(w, fileID, maxUploadSize, fileHeader.Size)
+			sendIncompleteResponse(w, appRoot, fileID, maxUploadSize, fileHeader.Size)
 			return
 		}
 
@@ -143,7 +143,7 @@ func ChunkedUploadAPI(appRoot string, authModule auth.Auth, stateDir string, max
 				sendError(w, http.StatusInternalServerError, "Failed sending redirect")
 			}
 		} else {
-			sendIncompleteResponse(w, fileID, maxUploadSize, totalFileSize)
+			sendIncompleteResponse(w, appRoot, fileID, maxUploadSize, totalFileSize)
 		}
 	}
 }
