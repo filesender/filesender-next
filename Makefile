@@ -53,4 +53,4 @@ eslint:
 	npx eslint
 
 run-cli:
-	go run ./cmd/cli $(ARGS)
+	go run ./cmd/filesender-cli $(ARGS)

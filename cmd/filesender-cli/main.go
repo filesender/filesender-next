@@ -9,18 +9,20 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 )
 
 const (
 	BASE_URL   = "http://localhost:8080"
-	CHUNK_SIZE = 10 //1024 * 1024
+	CHUNK_SIZE = 1024 * 1024
 )
 
 func uploadFile(data io.Reader) (string, error) {
 	uploadMethod := "POST"
 	uploadDesitionation := BASE_URL + "/api/upload"
 	buf := make([]byte, CHUNK_SIZE)
+	offset := 0
 
 	for {
 		n, err := io.ReadFull(data, buf)
@@ -51,7 +53,7 @@ func uploadFile(data io.Reader) (string, error) {
 			return "", fmt.Errorf("failed to close writer: %w", err)
 		}
 
-		req, err := http.NewRequest("POST", uploadDesitionation, body)
+		req, err := http.NewRequest(uploadMethod, uploadDesitionation, body)
 		if err != nil {
 			return "", fmt.Errorf("failed to prepare request: %w", err)
 		}
@@ -61,6 +63,10 @@ func uploadFile(data io.Reader) (string, error) {
 
 		if isLastChunk {
 			req.Header.Set("Upload-Complete", "1")
+		}
+
+		if offset > 0 {
+			req.Header.Set("Upload-Offset", strconv.FormatInt(int64(offset), 10))
 		}
 
 		client := &http.Client{}
@@ -76,8 +82,8 @@ func uploadFile(data io.Reader) (string, error) {
 
 		if resp.StatusCode == 202 {
 			uploadMethod = "PATCH"
-			print(resp.Header.Get("Location"))
-			os.Exit(0)
+			uploadDesitionation = BASE_URL + resp.Header.Get("Location")
+			offset += n
 			continue
 		}
 
