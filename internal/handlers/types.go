@@ -1,6 +1,7 @@
 package handlers
 
 type uploadTemplate struct {
+	AppRoot     string
 	MinDate     string
 	DefaultDate string
 	MaxDate     string
@@ -8,6 +9,7 @@ type uploadTemplate struct {
 }
 
 type downloadTemplate struct {
+	AppRoot  string
 	ByteSize int64
 	UserID   string
 	FileID   string

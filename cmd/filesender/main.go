@@ -38,6 +38,11 @@ func main() {
 		authModule = &auth.DummyAuth{}
 	}
 
+	appRoot := os.Getenv("FILESENDER_APP_ROOT")
+	if appRoot == "" {
+		appRoot = "/"
+	}
+
 	maxUploadSize := maxUploadSize()
 	slog.Info("MAX_UPLOAD_SIZE", "bytes", maxUploadSize)
 
@@ -59,15 +64,15 @@ func main() {
 
 	router := http.NewServeMux()
 	// API endpoints
-	router.HandleFunc("POST /api/upload", handlers.UploadAPI(authModule, stateDir, maxUploadSize))
-	router.HandleFunc("PATCH /api/upload/{fileID}", handlers.ChunkedUploadAPI(authModule, stateDir, maxUploadSize))
+	router.HandleFunc("POST /api/upload", handlers.UploadAPI(appRoot, authModule, stateDir, maxUploadSize))
+	router.HandleFunc("PATCH /api/upload/{fileID}", handlers.ChunkedUploadAPI(appRoot, authModule, stateDir, maxUploadSize))
 
 	stateDirFS := http.FileServer(http.Dir(stateDir))
 	router.Handle("/download/", http.StripPrefix("/download/", stateDirFS))
 
 	// Page handlers
-	router.HandleFunc("GET /{$}", handlers.UploadTemplate(authModule))
-	router.HandleFunc("GET /view/{userID}/{fileID}", handlers.GetDownloadTemplate(stateDir))
+	router.HandleFunc("GET /{$}", handlers.UploadTemplate(appRoot, authModule))
+	router.HandleFunc("GET /view/{userID}/{fileID}", handlers.GetDownloadTemplate(appRoot, stateDir))
 
 	// Serve static files
 	subFS, err := fs.Sub(assets.EmbeddedPublicFiles, "public")

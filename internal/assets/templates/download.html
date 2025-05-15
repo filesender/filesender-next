@@ -4,13 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Download file</title>
-    <link rel="stylesheet" href="../../styles/base.css">
+    <link rel="stylesheet" href="{{ .AppRoot }}styles/base.css">
 </head>
 <body>
     <div class="wrapper">
         <p>1 file ({{ .ByteSize }} bytes)</p>
 
-        <form action="../../download/{{ .UserID }}/{{ .FileID }}" method="get" target="_blank">
+        <form action="{{ .AppRoot }}download/{{ .UserID }}/{{ .FileID }}" method="get" target="_blank">
             <input type="hidden" name="user-id" value="{{ .UserID }}">
             <input type="hidden" name="file-id" value="{{ .FileID }}">
             <input type="hidden" name="byte-size" value="{{ .ByteSize }}">
@@ -30,11 +30,11 @@
         </form>
     </div>
 
-    <script src="../../js/sodium.js"></script>
-    <script src="../../js/downloadManager.js"></script>
-    <script src="../../js/downloadHandlers/memoryHandler.js"></script>
-    <script src="../../js/downloadHandlers/filesystemHandler.js"></script>
-    <script src="../../js/downloadHandlers/serviceWorkerHandler.js"></script>
-    <script src="../../js/download.js"></script>
+    <script src="{{ .AppRoot }}js/sodium.js"></script>
+    <script src="{{ .AppRoot }}js/downloadManager.js"></script>
+    <script src="{{ .AppRoot }}js/downloadHandlers/memoryHandler.js"></script>
+    <script src="{{ .AppRoot }}js/downloadHandlers/filesystemHandler.js"></script>
+    <script src="{{ .AppRoot }}js/downloadHandlers/serviceWorkerHandler.js"></script>
+    <script src="{{ .AppRoot }}js/download.js"></script>
 </body>
 </html>
