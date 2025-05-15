@@ -11,6 +11,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const (
@@ -22,7 +23,7 @@ func uploadFile(data io.Reader) (string, error) {
 	uploadMethod := "POST"
 	uploadDesitionation := BASE_URL + "/api/upload"
 	buf := make([]byte, CHUNK_SIZE)
-	offset := 0
+	var offset int64 = 0
 
 	for {
 		n, err := io.ReadFull(data, buf)
@@ -66,7 +67,7 @@ func uploadFile(data io.Reader) (string, error) {
 		}
 
 		if offset > 0 {
-			req.Header.Set("Upload-Offset", strconv.FormatInt(int64(offset), 10))
+			req.Header.Set("Upload-Offset", strconv.FormatInt(offset, 10))
 		}
 
 		client := &http.Client{}
@@ -83,7 +84,7 @@ func uploadFile(data io.Reader) (string, error) {
 		if resp.StatusCode == 202 {
 			uploadMethod = "PATCH"
 			uploadDesitionation = BASE_URL + resp.Header.Get("Location")
-			offset += n
+			offset += int64(n)
 			continue
 		}
 
@@ -97,23 +98,65 @@ func uploadFile(data io.Reader) (string, error) {
 }
 
 func downloadFile(link string) (io.ReadCloser, error) {
-	resp, err := http.Get(link)
-	if err != nil {
-		return nil, fmt.Errorf("failed to download file: %w", err)
-	}
+	pr, pw := io.Pipe()
 
-	if resp.StatusCode != http.StatusOK {
-		respBody, err := io.ReadAll(resp.Body)
-		if err != nil {
-			resp.Body.Close()
-			return nil, fmt.Errorf("api error (%s) & failed to read response: %w", resp.Status, err)
+	go func() {
+		var offset int64 = 0
+		tries := 0
+
+		for {
+			req, err := http.NewRequest("GET", link, nil)
+			if err != nil {
+				pw.CloseWithError(err)
+				return
+			}
+			if offset > 0 {
+				req.Header.Set("Range", fmt.Sprintf("bytes=%d-", offset))
+			}
+
+			resp, err := http.DefaultClient.Do(req)
+			if err != nil {
+				if tries >= 3 {
+					pw.CloseWithError(fmt.Errorf("failed downloading after three tries: %w", err))
+					return
+				}
+
+				time.Sleep(3 * time.Second)
+				tries++
+				continue
+			}
+			if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusPartialContent {
+				resp.Body.Close()
+				pw.CloseWithError(fmt.Errorf("unexpected status: %s", resp.Status))
+				return
+			}
+			tries = 0
+
+			buf := make([]byte, 32*1024)
+			for {
+				n, err := resp.Body.Read(buf)
+				if n > 0 {
+					wn, werr := pw.Write(buf[:n])
+					if werr != nil {
+						resp.Body.Close()
+						pw.CloseWithError(err)
+						return
+					}
+					offset += int64(wn)
+				}
+				if err != nil {
+					resp.Body.Close()
+					if err == io.EOF {
+						pw.Close()
+						return
+					}
+					break
+				}
+			}
 		}
+	}()
 
-		resp.Body.Close()
-		return nil, fmt.Errorf("bad status (%d): %s", resp.StatusCode, respBody)
-	}
-
-	return resp.Body, nil
+	return pr, nil
 }
 
 func upload(secure bool, filePath string) error {
