@@ -1,31 +1,8 @@
 /* global sodium */
 const errorBox = document.querySelector("div.error");
+const progress = document.querySelector("progress");
 const form = document.querySelector("form");
 const fileSelector = document.querySelector("#files-selector");
-
-/**
- * Sets the progress bar
- * @param {number} progress A decimal 0 to 1
- */
-const setLoader = (progress) => {
-    if (!progress) {
-        const loader = document.querySelector("div.loader");
-        loader.style.width = "0%";
-
-        const loaderText = document.querySelector("p#progress");
-        loaderText.innerText = "";
-    }
-
-    if (progress > 1) {
-        progress = 1;
-    }
-
-    const loader = document.querySelector("div.loader");
-    loader.style.width = `${progress * 100}%`;
-
-    const loaderText = document.querySelector("p#progress");
-    loaderText.innerText = `${Math.round(progress * 10000) / 100}%`;
-}
 
 /**
  * Error showing
@@ -54,14 +31,14 @@ const toBase64Url = (uint8Array) => {
     return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
-const formData = new FormData(form);
-const userId = formData.get("user-id").toString();
 // eslint-disable-next-line no-undef
-const manager = new UploadManager(userId);
+const manager = new UploadManager();
 
 fileSelector.addEventListener("change", () => {
     const formData = new FormData(form);
     const file = formData.get("file");
+
+    progress.max = file.size;
 
     if (file !== manager.file) {
         form.querySelector('input[type="submit"]').value = "Upload";
@@ -82,7 +59,6 @@ form.addEventListener("submit", async e => {
     form.querySelector('input[type="submit"]').disabled = true;
 
     await window.sodium.ready;
-    const fileSize = file.size;
     if (file !== manager.file) {
         const key = sodium.crypto_secretstream_xchacha20poly1305_keygen();
         let nonce = sodium.randombytes_buf(sodium.crypto_secretbox_NONCEBYTES);
@@ -92,12 +68,13 @@ form.addEventListener("submit", async e => {
 
     (async () => {
         while (true) {
-            let progress = 0;
+            progress.value = manager.processedBytes;
+
             if (manager.processedBytes > 0) {
-                progress = manager.processedBytes / fileSize
+                const loaderText = document.querySelector("p#progress");
+                loaderText.innerText = `${Math.round(progress.value / progress.max * 10000) / 100}%`;
             }
 
-            setLoader(progress);
             await new Promise(resolve => setTimeout(resolve, 100));
         }
     })();
@@ -132,7 +109,7 @@ form.addEventListener("submit", async e => {
         const nonceEncoded = toBase64Url(manager.nonce);
         
         if (manager.fileId) {
-            window.location.href = `view/${userId}/${manager.fileId}#${keyEncoded}.${headerEncoded}.${nonceEncoded}`;
+            window.location.href = `view/${manager.userId}/${manager.fileId}#${keyEncoded}.${headerEncoded}.${nonceEncoded}`;
         }
     } else {
         form.querySelector('input[type="submit"]').value = "Resume Upload";

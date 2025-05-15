@@ -8,21 +8,18 @@ class DownloadManager {
      * @param {Uint8Array} key 
      * @param {Uint8Array} header 
      * @param {Uint8Array} nonce
-     * @param {string} userId
-     * @param {string} fileId
-     * @param {number} byteSize
+     * @param {URL} downloadUrl
      */
-    constructor(key, header, nonce, userId, fileId, byteSize) {
+    constructor(key, header, nonce, downloadUrl) {
         this.key = key;
         this.header = header;
         this.nonce = nonce;
-        this.userId = userId;
-        this.fileId = fileId;
+        this.downloadUrl = downloadUrl;
 
+        this.fileId = downloadUrl.pathname.split("download/")[1].split("/")[1];
         this.fileName;
         this.decryptionStream;
         this.bytesDownloaded = 0;
-        this.totalFileSize = byteSize;
     }
 
     /**
@@ -103,7 +100,7 @@ class DownloadManager {
      * @returns {Promise<Uint8Array>}
      */
     async fetchFirstChunk() {
-        const response = await fetch(`../../download/${this.userId}/${this.fileId}`, {
+        const response = await fetch(this.downloadUrl, {
             headers: {
                 "Range": `bytes=0-${ENC_CHUNK_SIZE - 1 + 512}` // 512 for padded file name
             }
@@ -133,7 +130,7 @@ class DownloadManager {
      * Fetches all chunks from offset `this.bytesDownloaded`
      */
     async fetchChunks() {
-        const response = await fetch(`../../download/${this.userId}/${this.fileId}`, {
+        const response = await fetch(this.downloadUrl, {
             headers: {
                 "Range": `bytes=${this.bytesDownloaded}-`
             }

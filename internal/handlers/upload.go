@@ -159,16 +159,8 @@ func UploadTemplate(appRoot string, authModule auth.Auth) http.HandlerFunc {
 		}
 		slog.Info("user authenticated", "user_id", userID)
 
-		userID, err = crypto.HashToBase64(userID)
-		if err != nil {
-			slog.Info("failed hashing user ID", "error", err)
-			sendError(w, http.StatusInternalServerError, "Failed creating user ID")
-			return
-		}
-
 		sendTemplate(w, "upload", uploadTemplate{
 			AppRoot: appRoot,
-			UserID:  userID,
 		})
 	}
 }

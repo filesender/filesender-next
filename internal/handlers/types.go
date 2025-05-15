@@ -1,11 +1,7 @@
 package handlers
 
 type uploadTemplate struct {
-	AppRoot     string
-	MinDate     string
-	DefaultDate string
-	MaxDate     string
-	UserID      string
+	AppRoot string
 }
 
 type downloadTemplate struct {

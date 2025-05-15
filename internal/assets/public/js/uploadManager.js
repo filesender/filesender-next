@@ -5,10 +5,9 @@ var ENC_CHUNK_SIZE = 1024 * 1024;
 class UploadManager {
     /**
      * Creates an upload manager instance
-     * @param {string} userId 
      */
-    constructor(userId) {
-        this.userId = userId;
+    constructor() {
+        this.userId;
         this.fileId;
 
         this.file;
@@ -124,6 +123,7 @@ class UploadManager {
 
         if (response.status === 200) {
             const partials = response.url.split('view/')[1];
+            this.userId = partials.split("/")[0];
             this.fileId = partials.split("/")[1];
             return;
         }

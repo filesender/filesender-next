@@ -10,24 +10,20 @@
     <div class="wrapper">
         <p>1 file ({{ .ByteSize }} bytes)</p>
 
-        <form action="{{ .AppRoot }}download/{{ .UserID }}/{{ .FileID }}" method="get" target="_blank">
-            <input type="hidden" name="user-id" value="{{ .UserID }}">
-            <input type="hidden" name="file-id" value="{{ .FileID }}">
-            <input type="hidden" name="byte-size" value="{{ .ByteSize }}">
-
-            <button class="mt-4">
+        <a href="{{ .AppRoot }}download/{{ .UserID }}/{{ .FileID }}" class="mt-4">
+            <button>
                 Download
             </button>
+        </a>
 
-            <div>
-                <div class="loader"></div>
-                <p id="progress"></p>
-            </div>
+        <div>
+            <progress max="{{ .ByteSize }}" value="0"></progress>
+            <p id="progress"></p>
+        </div>
 
-            <div class="error p-2 hidden">
-                Dummy error!
-            </div>
-        </form>
+        <div class="error p-2 hidden">
+            Dummy error!
+        </div>
     </div>
 
     <script src="{{ .AppRoot }}js/sodium.js"></script>

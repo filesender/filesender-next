@@ -1,20 +1,11 @@
 /* global createServiceWorkerHandler, createMemoryHandler, createFileSystemHandler */
 const errorBox = document.querySelector("div.error");
-const form = document.querySelector("form");
+const progress = document.querySelector("progress");
+const a = document.querySelector("a");
+const button = a.children[0];
+const downloadUrl = new URL(a.href);
 
 const isSaveFilePickerSupported = "showSaveFilePicker" in window;
-
-/**
- * Sets the progress bar
- * @param {number} progress A decimal 0 to 1
- */
-const setLoader = (progress) => {
-    const loader = document.querySelector("div.loader");
-    loader.style.width = `${progress * 100}%`;
-
-    const loaderText = document.querySelector("p#progress");
-    loaderText.innerText = `${Math.round(progress * 10000) / 100}%`;
-}
 
 /**
  * Dummy error handling function
@@ -49,12 +40,7 @@ const fromBase64Url = (base64url) => {
     return bytes;
 }
 
-const formData = new FormData(form);
-const userId = formData.get("user-id").toString();
-const fileId = formData.get("file-id").toString();
-const byteSize = formData.get("byte-size").toString();
-
-if (byteSize <= 1024 * 1024 * 500 || !isSaveFilePickerSupported) {
+if (parseInt(progress.max) <= 1024 * 1024 * 500 || !isSaveFilePickerSupported) {
     (async () => {
         await navigator.serviceWorker.register("../../sw.js").catch(err => {
             console.error(err);
@@ -68,29 +54,27 @@ if (!key || !header || !nonce) {
     showError("No key, header, or nonce present in url!");
 } else {
     // eslint-disable-next-line no-undef
-    const manager = new DownloadManager(key, header, nonce, userId, fileId, byteSize);
+    const manager = new DownloadManager(key, header, nonce, downloadUrl);
 
     (async () => {
         while (true) {
-            if (manager.bytesDownloaded !== 0) {
-                const progress = manager.bytesDownloaded / manager.totalFileSize;
-                setLoader(progress);
+            progress.value = manager.bytesDownloaded;
 
-                if (progress >= 1) {
-                    break;
-                }
+            if (manager.bytesDownloaded > 0) {
+                const loaderText = document.querySelector("p#progress");
+                loaderText.innerText = `${Math.round(progress.value / progress.max * 10000) / 100}%`;
             }
 
             await new Promise(resolve => setTimeout(resolve, 100));
         }
     })();
 
-    form.addEventListener("submit", async e => {
+    a.addEventListener("click", async e => {
         e.preventDefault();
         hideError();
     
         await window.sodium.ready;
-        form.querySelector("button").disabled = true;
+        button.disabled = true;
 
         if (manager.bytesDownloaded === 0) {
             try {
@@ -106,7 +90,7 @@ if (!key || !header || !nonce) {
                 } else {
                     console.log("Using service worker handler");
                     const sw = await navigator.serviceWorker.ready;
-                    handler = createServiceWorkerHandler(ready, fileId, sw.active);
+                    handler = createServiceWorkerHandler(ready, manager.fileId, sw.active);
                 }
 
                 await manager.start(handler, showError);
@@ -114,7 +98,7 @@ if (!key || !header || !nonce) {
             } catch (err) {
                 console.error(err);
                 showError(`Failed to start download: ${err.message}`);
-                form.querySelector("button").disabled = false;
+                button.disabled = false;
                 return;
             }
         }
@@ -141,9 +125,9 @@ if (!key || !header || !nonce) {
         }
 
         if (manager.bytesDownloaded !== manager.totalFileSize && err) {
-            form.querySelector("button").innerText = "Resume Download";
+            button.innerText = "Resume Download";
         }
 
-        form.querySelector("button").disabled = false;
+        button.disabled = false;
     });
 }
