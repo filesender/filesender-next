@@ -71,33 +71,49 @@ func uploadFile(data io.Reader) (string, error) {
 			req.Header.Set("Upload-Offset", strconv.FormatInt(offset, 10))
 		}
 
-		client := &http.Client{}
-		resp, err := client.Do(req)
-		if err != nil {
-			return "", fmt.Errorf("failed to make request: %w", err)
-		}
-		defer func() {
-			err := resp.Body.Close()
-			fmt.Printf("Error: %s\n", err)
-		}()
+		tries := 0
+		for {
+			client := &http.Client{}
+			resp, err := client.Do(req)
+			if err != nil {
+				if tries >= 3 {
+					return "", fmt.Errorf("failed to make request: %w", err)
+				}
 
-		if resp.StatusCode == 200 {
-			return resp.Request.URL.String(), nil
-		}
+				tries++
+				time.Sleep(3 * time.Second)
+				continue
+			}
+			defer func() {
+				err := resp.Body.Close()
+				if err != nil {
+					fmt.Printf("Error: %s\n", err)
+				}
+			}()
 
-		if resp.StatusCode == 202 {
-			uploadMethod = "PATCH"
-			uploadDesitionation = baseURL + resp.Header.Get("Location")
-			offset += int64(n)
-			continue
-		}
+			if resp.StatusCode == 200 {
+				return resp.Request.URL.String(), nil
+			}
 
-		respBody, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return "", fmt.Errorf("api error (%s) & failed to read response: %w", resp.Status, err)
-		}
+			if resp.StatusCode == 202 {
+				uploadMethod = "PATCH"
+				uploadDesitionation = baseURL + resp.Header.Get("Location")
+				offset += int64(n)
+				break
+			}
 
-		return "", fmt.Errorf("api error (%d): %s", resp.StatusCode, string(respBody))
+			if tries >= 3 {
+				respBody, err := io.ReadAll(resp.Body)
+				if err != nil {
+					return "", fmt.Errorf("api error after 3 tries (%s) & failed to read response: %w", resp.Status, err)
+				}
+
+				return "", fmt.Errorf("api error after 3 tries (%d): %s", resp.StatusCode, string(respBody))
+			}
+
+			tries++
+			time.Sleep(3 * time.Second)
+		}
 	}
 }
 
