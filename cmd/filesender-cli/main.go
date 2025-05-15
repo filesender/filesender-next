@@ -1,3 +1,4 @@
+// Cli for filesender
 package main
 
 import (
@@ -15,15 +16,15 @@ import (
 )
 
 const (
-	BASE_URL   = "http://localhost:8080"
-	CHUNK_SIZE = 1024 * 1024
+	baseURL   = "http://localhost:8080"
+	chunkSize = 1024 * 1024
 )
 
 func uploadFile(data io.Reader) (string, error) {
 	uploadMethod := "POST"
-	uploadDesitionation := BASE_URL + "/api/upload"
-	buf := make([]byte, CHUNK_SIZE)
-	var offset int64 = 0
+	uploadDesitionation := baseURL + "/api/upload"
+	buf := make([]byte, chunkSize)
+	var offset int64
 
 	for {
 		n, err := io.ReadFull(data, buf)
@@ -32,7 +33,7 @@ func uploadFile(data io.Reader) (string, error) {
 		}
 
 		isLastChunk := false
-		if n < CHUNK_SIZE {
+		if n < chunkSize {
 			isLastChunk = true
 		}
 
@@ -75,7 +76,10 @@ func uploadFile(data io.Reader) (string, error) {
 		if err != nil {
 			return "", fmt.Errorf("failed to make request: %w", err)
 		}
-		defer resp.Body.Close()
+		defer func() {
+			err := resp.Body.Close()
+			fmt.Printf("Error: %s\n", err)
+		}()
 
 		if resp.StatusCode == 200 {
 			return resp.Request.URL.String(), nil
@@ -83,7 +87,7 @@ func uploadFile(data io.Reader) (string, error) {
 
 		if resp.StatusCode == 202 {
 			uploadMethod = "PATCH"
-			uploadDesitionation = BASE_URL + resp.Header.Get("Location")
+			uploadDesitionation = baseURL + resp.Header.Get("Location")
 			offset += int64(n)
 			continue
 		}
@@ -101,7 +105,7 @@ func downloadFile(link string) (io.ReadCloser, error) {
 	pr, pw := io.Pipe()
 
 	go func() {
-		var offset int64 = 0
+		var offset int64
 		tries := 0
 
 		for {
@@ -126,7 +130,11 @@ func downloadFile(link string) (io.ReadCloser, error) {
 				continue
 			}
 			if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusPartialContent {
-				resp.Body.Close()
+				err := resp.Body.Close()
+				if err != nil {
+					fmt.Printf("Error: %s\n", err)
+				}
+
 				pw.CloseWithError(fmt.Errorf("unexpected status: %s", resp.Status))
 				return
 			}
@@ -138,16 +146,27 @@ func downloadFile(link string) (io.ReadCloser, error) {
 				if n > 0 {
 					wn, werr := pw.Write(buf[:n])
 					if werr != nil {
-						resp.Body.Close()
-						pw.CloseWithError(err)
+						err = resp.Body.Close()
+						if err != nil {
+							fmt.Printf("Error: %s\n", err)
+						}
+
+						pw.CloseWithError(werr)
 						return
 					}
 					offset += int64(wn)
 				}
 				if err != nil {
-					resp.Body.Close()
+					cerr := resp.Body.Close()
+					if cerr != nil {
+						fmt.Printf("Error: %s\n", cerr)
+					}
+
 					if err == io.EOF {
-						pw.Close()
+						err = pw.Close()
+						if err != nil {
+							fmt.Printf("Error: %s\n", err)
+						}
 						return
 					}
 					break
@@ -159,12 +178,17 @@ func downloadFile(link string) (io.ReadCloser, error) {
 	return pr, nil
 }
 
-func upload(secure bool, filePath string) error {
+func upload(_ bool, filePath string) error {
 	file, err := os.Open(filePath)
 	if err != nil {
 		return fmt.Errorf("failed to open file: %w", err)
 	}
-	defer file.Close()
+	defer func() {
+		err := file.Close()
+		if err != nil {
+			fmt.Printf("Error: %s\n", err)
+		}
+	}()
 
 	uploadLocation, err := uploadFile(file)
 	if err != nil {
@@ -190,7 +214,12 @@ func download(link string, filePath string) error {
 	if err != nil {
 		return fmt.Errorf("failed to download file: %w", err)
 	}
-	defer reader.Close()
+	defer func() {
+		err := reader.Close()
+		if err != nil {
+			fmt.Printf("Error: %s\n", err)
+		}
+	}()
 
 	if filePath == "" {
 		_, err := io.Copy(os.Stdout, reader)
@@ -217,20 +246,34 @@ func main() {
 
 	switch os.Args[1] {
 	case "upload":
-		uploadCmd.Parse(os.Args[2:])
+		err := uploadCmd.Parse(os.Args[2:])
+		if err != nil {
+			fmt.Printf("Error: %s\n", err)
+			os.Exit(1)
+		}
+
 		if len(uploadCmd.Args()) == 0 {
 			log.Fatalf("No file specified for upload")
 		}
-		if err := upload(*uploadSecure, uploadCmd.Arg(0)); err != nil {
+
+		err = upload(*uploadSecure, uploadCmd.Arg(0))
+		if err != nil {
 			fmt.Printf("Error: %s\n", err)
 			os.Exit(1)
 		}
 	case "download":
-		downloadCmd.Parse(os.Args[2:])
+		err := downloadCmd.Parse(os.Args[2:])
+		if err != nil {
+			fmt.Printf("Error: %s\n", err)
+			os.Exit(1)
+		}
+
 		if len(downloadCmd.Args()) == 0 {
 			log.Fatalf("Download command requires a URL")
 		}
-		if err := download(downloadCmd.Arg(0), *downloadOutputFile); err != nil {
+
+		err = download(downloadCmd.Arg(0), *downloadOutputFile)
+		if err != nil {
 			fmt.Printf("Error: %s\n", err)
 			os.Exit(1)
 		}
