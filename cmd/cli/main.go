@@ -13,53 +13,81 @@ import (
 )
 
 const (
-	BASE_URL = "http://localhost:8080"
+	BASE_URL   = "http://localhost:8080"
+	CHUNK_SIZE = 10 //1024 * 1024
 )
 
 func uploadFile(data io.Reader) (string, error) {
-	body := &bytes.Buffer{}
-	writer := multipart.NewWriter(body)
+	uploadMethod := "POST"
+	uploadDesitionation := BASE_URL + "/api/upload"
+	buf := make([]byte, CHUNK_SIZE)
 
-	part, err := writer.CreateFormFile("file", "data.bin")
-	if err != nil {
-		return "", fmt.Errorf("failed to create form file: %w", err)
-	}
+	for {
+		n, err := io.ReadFull(data, buf)
+		if err != nil && err != io.EOF && err != io.ErrUnexpectedEOF {
+			return "", fmt.Errorf("failed to read chunk: %w", err)
+		}
 
-	_, err = io.Copy(part, data)
-	if err != nil {
-		return "", fmt.Errorf("failed to copy file content: %w", err)
-	}
+		isLastChunk := false
+		if n < CHUNK_SIZE {
+			isLastChunk = true
+		}
 
-	err = writer.Close()
-	if err != nil {
-		return "", fmt.Errorf("failed to close writer: %w", err)
-	}
+		body := &bytes.Buffer{}
+		writer := multipart.NewWriter(body)
 
-	req, err := http.NewRequest("POST", BASE_URL+"/api/upload", body)
-	if err != nil {
-		return "", fmt.Errorf("failed to prepare request: %w", err)
-	}
+		part, err := writer.CreateFormFile("file", "data.bin")
+		if err != nil {
+			return "", fmt.Errorf("failed to create form file: %w", err)
+		}
 
-	req.Header.Set("Content-Type", writer.FormDataContentType())
-	req.Header.Set("Upload-Complete", "1")
+		_, err = part.Write(buf[:n])
+		if err != nil {
+			return "", fmt.Errorf("failed to write chunk to part: %w", err)
+		}
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", fmt.Errorf("failed to make request: %w", err)
-	}
-	defer resp.Body.Close()
+		err = writer.Close()
+		if err != nil {
+			return "", fmt.Errorf("failed to close writer: %w", err)
+		}
 
-	if resp.StatusCode != 200 {
+		req, err := http.NewRequest("POST", uploadDesitionation, body)
+		if err != nil {
+			return "", fmt.Errorf("failed to prepare request: %w", err)
+		}
+
+		req.Header.Set("Content-Type", writer.FormDataContentType())
+		req.Header.Set("Upload-Complete", "0")
+
+		if isLastChunk {
+			req.Header.Set("Upload-Complete", "1")
+		}
+
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			return "", fmt.Errorf("failed to make request: %w", err)
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode == 200 {
+			return resp.Request.URL.String(), nil
+		}
+
+		if resp.StatusCode == 202 {
+			uploadMethod = "PATCH"
+			print(resp.Header.Get("Location"))
+			os.Exit(0)
+			continue
+		}
+
 		respBody, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return "", fmt.Errorf("api error (%s) & failed to read response: %w", resp.Status, err)
 		}
 
-		return "", fmt.Errorf("api error: %s", string(respBody))
+		return "", fmt.Errorf("api error (%d): %s", resp.StatusCode, string(respBody))
 	}
-
-	return resp.Request.URL.String(), nil
 }
 
 func downloadFile(link string) (io.ReadCloser, error) {
