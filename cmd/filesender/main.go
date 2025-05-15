@@ -81,7 +81,13 @@ func main() {
 		os.Exit(1)
 	}
 	fs := http.FileServer(http.FS(subFS))
-	router.Handle("/", http.StripPrefix("/", fs))
+	withHeaders := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "js/sw.js" {
+			w.Header().Set("Service-Worker-Allowed", "/")
+		}
+		fs.ServeHTTP(w, r)
+	})
+	router.Handle("/", http.StripPrefix("/", withHeaders))
 
 	// Setup server
 	s := &http.Server{

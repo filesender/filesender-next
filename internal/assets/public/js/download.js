@@ -42,7 +42,7 @@ const fromBase64Url = (base64url) => {
 
 if (parseInt(progress.max) <= 1024 * 1024 * 500 || !isSaveFilePickerSupported) {
     (async () => {
-        await navigator.serviceWorker.register("../../sw.js").catch(err => {
+        await navigator.serviceWorker.register("../../js/sw.js", { scope: "/" }).catch(err => {
             console.error(err);
             showError(`Failed registering service worker: ${err.message}`);
         });
