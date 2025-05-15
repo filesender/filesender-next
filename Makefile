@@ -44,7 +44,7 @@ run-dev:
 	FILESENDER_AUTH_METHOD=dummy STATE_DIRECTORY=./data go run ./cmd/filesender
 
 hotreload:
-	watchexec --shell=none -r -w ./internal/assets -- make run-dev
+	watchexec --shell=none -r -w ./internal -- make run-dev
 
 act:
 	act --container-architecture linux/amd64 --workflows .forgejo/workflows/tests.yaml
