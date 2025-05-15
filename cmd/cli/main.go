@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"crypto/rand"
 	"flag"
 	"fmt"
 	"io"
@@ -10,16 +9,11 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strings"
-
-	"golang.org/x/crypto/chacha20poly1305"
 )
 
 const (
-	BASE_URL    = "http://localhost:8080"
-	TAG_MESSAGE = 0x00
-	TAG_FINAL   = 0x01
+	BASE_URL = "http://localhost:8080"
 )
 
 func uploadFile(data io.Reader) (string, error) {
@@ -88,79 +82,7 @@ func downloadFile(link string) (io.ReadCloser, error) {
 	return resp.Body, nil
 }
 
-func encryptStream(r io.Reader, key []byte) ([]byte, io.Reader, error) {
-	header := make([]byte, 24)
-	_, err := io.ReadFull(rand.Reader, header)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	cipher, err := chacha20poly1305.New(key)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	pr, pw := io.Pipe()
-	go func() {
-		defer pw.Close()
-
-		buf := make([]byte, 1024*1024) // 1MB chunks
-		for {
-			n, err := r.Read(buf)
-
-			tag := TAG_MESSAGE
-			if err == io.EOF {
-				tag = TAG_FINAL
-			}
-
-			if n > 0 {
-				chunk := buf[:n]
-				encrypted := cipher.Seal(nil, header, chunk, []byte{byte(tag)})
-
-				_, err = pw.Write(encrypted)
-				if err != nil {
-					pw.CloseWithError(err)
-					return
-				}
-			}
-
-			if err == io.EOF {
-				break
-			} else if err != nil {
-				pw.CloseWithError(err)
-				return
-			}
-		}
-	}()
-
-	return header, pr, nil
-}
-
 func upload(secure bool, filePath string) error {
-	key := make([]byte, chacha20poly1305.KeySize)
-	nonce := make([]byte, chacha20poly1305.NonceSize)
-	fileName := filepath.Base(filePath)
-	var encryptedFileName []byte
-
-	if secure {
-		_, err := io.ReadFull(rand.Reader, key)
-		if err != nil {
-			return fmt.Errorf("failed getting random key: %w", err)
-		}
-
-		_, err = io.ReadFull(rand.Reader, nonce)
-		if err != nil {
-			return fmt.Errorf("failed getting random nonce: %w", err)
-		}
-
-		cipher, err := chacha20poly1305.New(key)
-		if err != nil {
-			return fmt.Errorf("failed creating cipher: %w", err)
-		}
-
-		encryptedFileName = cipher.Seal(nil, nonce, []byte(fileName), nil)
-	}
-
 	file, err := os.Open(filePath)
 	if err != nil {
 		return fmt.Errorf("failed to open file: %w", err)
@@ -179,13 +101,13 @@ func upload(secure bool, filePath string) error {
 func download(link string, filePath string) error {
 	link = strings.Replace(link, "/view/", "/download/", 1)
 
-	parts := strings.Split(link, "#")
-	encrypted := false
-	keys := ""
-	if len(parts) == 2 {
-		encrypted = true
-		link, keys = parts[0], parts[1]
-	}
+	// parts := strings.Split(link, "#")
+	// encrypted := false
+	// keys := ""
+	// if len(parts) == 2 {
+	// 	encrypted = true
+	// 	link, keys = parts[0], parts[1]
+	// }
 
 	reader, err := downloadFile(link)
 	if err != nil {
