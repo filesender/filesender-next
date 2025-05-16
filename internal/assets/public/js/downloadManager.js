@@ -182,8 +182,21 @@ class DownloadManager {
      */
     async resume() {
         if (this.bytesDownloaded === 0) throw new Error("Can't resume a download that has never started");
-        
-        await this.fetchChunks();
+        let bytesDownloaded = this.bytesDownloaded.valueOf();
+
+        while (true) {
+            try {
+                await this.fetchChunks();
+            } catch(err) {
+                console.error(`Failed downloading: ${err.message}`);
+                if (bytesDownloaded !== this.bytesDownloaded) {
+                    bytesDownloaded = this.bytesDownloaded.valueOf();
+                    continue
+                }
+                throw err;
+            }
+            break;
+        }
     }
 }
 
