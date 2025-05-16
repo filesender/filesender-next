@@ -52,6 +52,7 @@ if (parseInt(progress.max) <= 1024 * 1024 * 500 && !isSaveFilePickerSupported) {
 const [key, header, nonce] = window.location.hash.substring(1).split(".").map(v => fromBase64Url(v));
 if (!key || !header || !nonce) {
     showError("No key, header, or nonce present in url!");
+    a.remove();
 } else {
     // eslint-disable-next-line no-undef
     const manager = new DownloadManager(key, header, nonce, downloadUrl, parseInt(progress.max));
