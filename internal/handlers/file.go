@@ -1,3 +1,8 @@
+// Package handlers contains everything that has anything to do with handling (something)
+// Handlers for API requests, template requests
+// Handlers for file(s)
+// Handlers for response
+// Handlers for request
 package handlers
 
 import (

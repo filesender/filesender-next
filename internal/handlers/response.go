@@ -35,6 +35,7 @@ func sendTemplate(w http.ResponseWriter, tmpl string, data any) {
 
 // Send an error response
 func sendError(w http.ResponseWriter, status int, message string) {
+	slog.Error("Sending error to user", "status", status, "message", message)
 	http.Error(w, message, status)
 }
 
