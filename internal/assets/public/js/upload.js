@@ -108,8 +108,8 @@ form.addEventListener("submit", async e => {
         const headerEncoded = toBase64Url(manager.header);
         const nonceEncoded = toBase64Url(manager.nonce);
         
-        if (manager.fileId) {
-            window.location.href = `view/${manager.userId}/${manager.fileId}#${keyEncoded}.${headerEncoded}.${nonceEncoded}`;
+        if (manager.downloadLink) {
+            window.location.href = `${manager.downloadLink}#${keyEncoded}.${headerEncoded}.${nonceEncoded}`;
         }
     } else {
         form.querySelector('input[type="submit"]').value = "Resume Upload";

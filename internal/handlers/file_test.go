@@ -66,7 +66,7 @@ func TestFileUpload_Success(t *testing.T) {
 		t.Fatalf("Expected success, got error: %v", err)
 	}
 
-	expectedPath := filepath.Join(tempDir, "user456", "test123.bin")
+	expectedPath := filepath.Join(tempDir, "user456", "test123")
 	if _, err := os.Stat(expectedPath); os.IsNotExist(err) {
 		t.Errorf("Expected file to exist at %s", expectedPath)
 	}

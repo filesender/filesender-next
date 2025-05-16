@@ -7,15 +7,13 @@ class UploadManager {
      * Creates an upload manager instance
      */
     constructor() {
-        this.userId;
-        this.fileId;
-
         this.file;
         this.processedBytes = 0;
         this.uploadedBytes = 0;
         this.partialUploadLocation;
         this.state;
         this.header;
+        this.downloadLink;
     }
 
     /**
@@ -83,8 +81,7 @@ class UploadManager {
         }
 
         if (response.status === 200) {
-            const partials = response.url.split('view/')[1];
-            this.fileId = partials.split("/")[1];
+            this.downloadLink = response.url;
             return;
         }
 
@@ -122,9 +119,7 @@ class UploadManager {
         }
 
         if (response.status === 200) {
-            const partials = response.url.split('view/')[1];
-            this.userId = partials.split("/")[0];
-            this.fileId = partials.split("/")[1];
+            this.downloadLink = response.url;
             return;
         }
 
