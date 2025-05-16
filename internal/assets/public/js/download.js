@@ -40,7 +40,7 @@ const fromBase64Url = (base64url) => {
     return bytes;
 }
 
-if (parseInt(progress.max) <= 1024 * 1024 * 500 || !isSaveFilePickerSupported) {
+if (parseInt(progress.max) <= 1024 * 1024 * 500 && !isSaveFilePickerSupported) {
     (async () => {
         await navigator.serviceWorker.register("../../js/sw.js", { scope: "/" }).catch(err => {
             console.error(err);
@@ -54,7 +54,7 @@ if (!key || !header || !nonce) {
     showError("No key, header, or nonce present in url!");
 } else {
     // eslint-disable-next-line no-undef
-    const manager = new DownloadManager(key, header, nonce, downloadUrl);
+    const manager = new DownloadManager(key, header, nonce, downloadUrl, parseInt(progress.max));
 
     (async () => {
         while (true) {

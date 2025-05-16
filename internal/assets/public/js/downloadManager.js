@@ -9,12 +9,14 @@ class DownloadManager {
      * @param {Uint8Array} header 
      * @param {Uint8Array} nonce
      * @param {URL} downloadUrl
+     * @param {number} totalFileSize
      */
-    constructor(key, header, nonce, downloadUrl) {
+    constructor(key, header, nonce, downloadUrl, totalFileSize) {
         this.key = key;
         this.header = header;
         this.nonce = nonce;
         this.downloadUrl = downloadUrl;
+        this.totalFileSize = totalFileSize;
 
         this.fileId = downloadUrl.pathname.split("download/")[1].split("/")[1];
         this.fileName;
@@ -51,7 +53,7 @@ class DownloadManager {
                         let r = window.sodium.crypto_secretstream_xchacha20poly1305_pull(state_in, bytes);
                         controller.enqueue(r.message);
 
-                        if (r.tag === 3) {
+                        if (r.tag === 3 || this.bytesDownloaded === this.totalFileSize) {
                             controller.close();
                         }
                         break;
