@@ -75,8 +75,8 @@ func TestUploadAPIHandler(t *testing.T) {
 			t.Fatalf("Failed to read directory: %v", err)
 		}
 
-		if len(files) != 2 {
-			t.Errorf("Expected 2 files in directory, found %d", len(files))
+		if len(files) != 1 {
+			t.Errorf("Expected 1 file in directory, found %d", len(files))
 		}
 	})
 }

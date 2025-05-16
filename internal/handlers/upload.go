@@ -38,7 +38,12 @@ func UploadAPI(appRoot string, authModule auth.Auth, stateDir string, maxUploadS
 		file, fileHeader, err := r.FormFile("file")
 		if err != nil {
 			slog.Error("Failed opening file", "error", err)
-			sendError(w, http.StatusInternalServerError, "Lost the file")
+
+			if err == http.ErrMissingFile {
+				sendError(w, http.StatusBadRequest, "No file")
+			} else {
+				sendError(w, http.StatusInternalServerError, "Lost the file")
+			}
 			return
 		}
 		defer func() {
