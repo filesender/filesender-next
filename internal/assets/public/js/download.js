@@ -76,6 +76,11 @@ if (!key || !header || !nonce) {
         await window.sodium.ready;
         button.disabled = true;
 
+        if (manager.cancelled) {
+            // In case of service worker handler, we want to reset manager when cancelled (we can't continue after cancel)
+            manager.reset();
+        }
+
         if (manager.bytesDownloaded === 0) {
             try {
                 let handler, ready;
@@ -117,7 +122,7 @@ if (!key || !header || !nonce) {
 
             tries++;
 
-            let message = `Failed uploading file: ${err.message}.`;
+            let message = `Failed downloading file: ${err.message}.`;
             if (tries < 3) message += " Retrying in 5 seconds.";
             showError(message);
 

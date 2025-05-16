@@ -8,11 +8,11 @@
 // eslint-disable-next-line no-unused-vars
 const createServiceWorkerHandler = (ready, fileId, sw) => {
     /**
-     * 
+     * @param {DownloadManager} manager
      * @param {string} fileName 
      * @param {ReadableStream} stream 
      */
-    const handler = (fileName, stream) => {
+    const handler = (manager, fileName, stream) => {
         sw.postMessage({
             type: "delete",
             id: fileId
@@ -28,6 +28,12 @@ const createServiceWorkerHandler = (ready, fileId, sw) => {
                     document.body.appendChild(iframe);
 
                     ready();
+                }
+            }
+
+            if (e.data.type === "downloadCancelled") {
+                if (!manager.cancelled) {
+                    manager.cancel();
                 }
             }
         });
