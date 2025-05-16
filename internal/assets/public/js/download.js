@@ -40,6 +40,19 @@ const fromBase64Url = (base64url) => {
     return bytes;
 }
 
+const getHashVars = () => {
+    const [key, header, nonce] = window.location.hash.substring(1).split(".").map(v => fromBase64Url(v));
+    if (!key || !header || !nonce) {
+        return [false, false, false];
+    }
+
+    if (key.length !== 32 || header.length !== 24 || header.length !== 24) {
+        return [false, false, false];
+    }
+
+    return [key, header, nonce];
+}
+
 if (parseInt(progress.max) <= 1024 * 1024 * 500 && !isSaveFilePickerSupported) {
     (async () => {
         await navigator.serviceWorker.register("../../js/sw.js", { scope: "/" }).catch(err => {
@@ -49,11 +62,12 @@ if (parseInt(progress.max) <= 1024 * 1024 * 500 && !isSaveFilePickerSupported) {
     })();
 }
 
-const [key, header, nonce] = window.location.hash.substring(1).split(".").map(v => fromBase64Url(v));
-if (!key || !header || !nonce) {
+const [key, header, nonce] = getHashVars();
+if (!key) {
     showError("No key, header, or nonce present in url!");
     a.remove();
 } else {
+    console.log(key, header, nonce)
     // eslint-disable-next-line no-undef
     const manager = new DownloadManager(key, header, nonce, downloadUrl, parseInt(progress.max));
 
