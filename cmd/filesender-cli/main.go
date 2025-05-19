@@ -296,5 +296,4 @@ func main() {
 	default:
 		log.Fatalf("Unknown command: %s", os.Args[0])
 	}
-
 }
