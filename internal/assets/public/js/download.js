@@ -53,9 +53,10 @@ const getHashVars = () => {
     return [key, header, nonce];
 }
 
-if (parseInt(progress.max) <= 1024 * 1024 * 500 && !isSaveFilePickerSupported) {
+if (parseInt(progress.max) > 1024 * 1024 * 500 && !isSaveFilePickerSupported) {
     (async () => {
-        await navigator.serviceWorker.register("../../js/sw.js", { scope: "/" }).catch(err => {
+        const parts = window.location.pathname.split("/view/");
+        await navigator.serviceWorker.register("../../js/sw.js", { scope: `${parts[0]}/` }).catch(err => {
             console.error(err);
             showError(`Failed registering service worker: ${err.message}`);
         });
