@@ -80,7 +80,7 @@ if (!key) {
 
             if (manager.bytesDownloaded > 0) {
                 const loaderText = document.querySelector("p#progress");
-                loaderText.innerText = `${Math.round(progress.value / progress.max * 10000) / 100}%`;
+                loaderText.innerText = `${(Math.round(progress.value / progress.max * 10000) / 100).toFixed(2)}%`;
             }
 
             await new Promise(resolve => setTimeout(resolve, 100));
