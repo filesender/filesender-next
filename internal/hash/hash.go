@@ -50,6 +50,11 @@ func Init(stateDir string) error {
 
 // ToBase64 function hashes string input and returns base64 string
 func ToBase64(s string) (string, error) {
+	if len(hmacKey) != 32 {
+		slog.Info("Key is not initialised!")
+		return "", fmt.Errorf("key not here: expected 32 bytes, got %d bytes", len(hmacKey))
+	}
+
 	mac := hmac.New(sha256.New, hmacKey)
 
 	_, err := mac.Write([]byte(s))
