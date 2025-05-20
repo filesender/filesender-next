@@ -5,12 +5,12 @@
  */
 // eslint-disable-next-line no-unused-vars
 const createMemoryHandler = (ready) => {
-        /**
-     * 
+    /**
+     * @param {DownloadManager} manager
      * @param {string} fileName 
      * @param {ReadableStream} stream 
      */
-    const handler = (fileName, stream) => {
+    const handler = (_manager, fileName, stream) => {
         ready();
 
         const reader = stream.getReader();

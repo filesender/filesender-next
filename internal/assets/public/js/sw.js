@@ -19,6 +19,7 @@ self.addEventListener("message", e => {
     }
     else if (e.data.type === "download" && e.data.port) {
         const { id, fileName, port } = e.data;
+        const broadcast = new BroadcastChannel(id);
 
         const stream = new ReadableStream({
             start(controller) {
@@ -26,13 +27,20 @@ self.addEventListener("message", e => {
                     if (data.done) {
                         controller.close();
                     } else if (data.chunk) {
-                        controller.enqueue(new Uint8Array(data.chunk));
+                        try {
+                            controller.enqueue(new Uint8Array(data.chunk));
+                        } catch (err) {
+                            
+                            broadcast.postMessage({
+                                type: "downloadCancelled"
+                            });
+                            throw err;
+                        }
                     }
                 };
             }
         });
 
-        const broadcast = new BroadcastChannel(id);
         downloads.set(id, {
             broadcast,
             fileName,
@@ -48,9 +56,9 @@ self.addEventListener("message", e => {
 
 self.addEventListener("fetch", e => {
     const url = new URL(e.request.url);
-    console.log("Fetch:", url.pathname);
 
     if (url.pathname.includes('/dl/') && !url.pathname.includes('/api')) {
+        console.log("Intercepting:", url.pathname);
         const id = url.pathname.split('/').pop();
         const download = downloads.get(id);
 

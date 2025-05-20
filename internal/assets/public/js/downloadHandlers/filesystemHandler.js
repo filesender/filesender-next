@@ -5,12 +5,12 @@
  */
 // eslint-disable-next-line no-unused-vars
 const createFileSystemHandler = (ready) => {
-        /**
-     * 
+    /**
+     * @param {DownloadManager} manager
      * @param {string} fileName 
      * @param {ReadableStream} stream 
      */
-    const handler = (fileName, stream) => {
+    const handler = (_manager, fileName, stream) => {
         (async () => {
             const handle = await window.showSaveFilePicker({
                 startIn: "downloads",

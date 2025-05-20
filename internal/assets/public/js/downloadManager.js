@@ -22,6 +22,7 @@ class DownloadManager {
         this.fileName;
         this.decryptionStream;
         this.bytesDownloaded = 0;
+        this.cancelled = false;
     }
 
     /**
@@ -31,6 +32,24 @@ class DownloadManager {
     setFileName(fileName) {
         this.fileName = fileName;
         this.bytesDownloaded += 512;
+    }
+
+    /**
+     * Stops the download process
+     */
+    cancel() {
+        this.cancelled = true;
+        console.log("Received cancel signal");
+    }
+
+    /**
+     * Resets the download manager
+     */
+    reset() {
+        this.fileName = undefined;
+        this.decryptionStream = undefined;
+        this.bytesDownloaded = 0;
+        this.cancelled = false;
     }
 
     /**
@@ -140,7 +159,7 @@ class DownloadManager {
 
         let buffer = new Uint8Array(0);
         const reader = response.body.getReader();
-        while (true) {
+        while (!this.cancelled) {
             const { done, value } = await reader.read();
             if (done) break;
 
@@ -155,6 +174,10 @@ class DownloadManager {
 
                 buffer = buffer.slice(ENC_CHUNK_SIZE);
             }
+        }
+
+        if (this.cancelled) {
+            return
         }
 
         if (buffer.length > 0) {
@@ -174,7 +197,7 @@ class DownloadManager {
 
         const { stream } = this.getDecryptionStream();
         this.setFileName(fileName);
-        handler(fileName, stream);
+        handler(this, fileName, stream);
     }
 
     /**
