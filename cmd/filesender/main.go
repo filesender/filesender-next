@@ -13,6 +13,7 @@ import (
 	"codeberg.org/filesender/filesender-next/internal/assets"
 	"codeberg.org/filesender/filesender-next/internal/auth"
 	"codeberg.org/filesender/filesender-next/internal/handlers"
+	"codeberg.org/filesender/filesender-next/internal/hash"
 )
 
 func maxUploadSize() int64 {
@@ -59,6 +60,9 @@ func main() {
 	}
 	slog.Info("State directory set", "dir", stateDir)
 
+	// Initialise hashing function
+	hash.Init(stateDir)
+
 	// Initialise handler, pass embedded template files
 	handlers.Init(assets.EmbeddedTemplateFiles)
 
@@ -68,7 +72,7 @@ func main() {
 	router.HandleFunc("PATCH /upload/{fileID}", handlers.ChunkedUploadAPI(appRoot, authModule, stateDir, maxUploadSize))
 
 	stateDirFS := http.FileServer(http.Dir(stateDir))
-	router.Handle("/download/", http.StripPrefix("/download/", stateDirFS))
+	router.Handle("/download/{a}/{b}", http.StripPrefix("/download/", stateDirFS))
 
 	// Page handlers
 	router.HandleFunc("GET /{$}", handlers.UploadTemplate(appRoot, authModule))

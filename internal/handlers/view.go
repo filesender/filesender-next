@@ -35,13 +35,12 @@ func GetDownloadTemplate(appRoot string, stateDir string) http.HandlerFunc {
 // UploadTemplate handles GET /{$}
 func UploadTemplate(appRoot string, authModule auth.Auth) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userID, err := authModule.UserAuth(r)
+		_, err := authModule.UserAuth(r)
 		if err != nil {
 			slog.Info("unable to authenticate user", "error", err)
 			sendError(w, http.StatusUnauthorized, "You're not authenticated")
 			return
 		}
-		slog.Info("user authenticated", "user_id", userID)
 
 		sendTemplate(w, "upload", uploadTemplate{
 			AppRoot: appRoot,
