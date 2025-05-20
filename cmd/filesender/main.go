@@ -27,6 +27,11 @@ func maxUploadSize() int64 {
 	return int64(muInt)
 }
 
+func wrapHandlerWithTimeout(f func(http.ResponseWriter, *http.Request)) http.Handler {
+	hf := http.HandlerFunc(f)
+	return http.TimeoutHandler(hf, time.Second*10, "")
+}
+
 func main() {
 	addr := flag.String("listen", "127.0.0.1:8080", "specify the LISTEN address")
 	flag.Parse()
@@ -64,15 +69,15 @@ func main() {
 
 	router := http.NewServeMux()
 	// API endpoints
-	router.HandleFunc("POST /upload", handlers.UploadAPI(appRoot, authModule, stateDir, maxUploadSize))
-	router.HandleFunc("PATCH /upload/{fileID}", handlers.ChunkedUploadAPI(appRoot, authModule, stateDir, maxUploadSize))
+	router.Handle("POST /upload", wrapHandlerWithTimeout(handlers.UploadAPI(appRoot, authModule, stateDir, maxUploadSize)))
+	router.Handle("PATCH /upload/{fileID}", wrapHandlerWithTimeout(handlers.ChunkedUploadAPI(appRoot, authModule, stateDir, maxUploadSize)))
 
 	stateDirFS := http.FileServer(http.Dir(stateDir))
 	router.Handle("/download/", http.StripPrefix("/download/", stateDirFS))
 
 	// Page handlers
-	router.HandleFunc("GET /{$}", handlers.UploadTemplate(appRoot, authModule))
-	router.HandleFunc("GET /view/{userID}/{fileID}", handlers.GetDownloadTemplate(appRoot, stateDir))
+	router.Handle("GET /{$}", wrapHandlerWithTimeout(handlers.UploadTemplate(appRoot, authModule)))
+	router.Handle("GET /view/{userID}/{fileID}", wrapHandlerWithTimeout(handlers.GetDownloadTemplate(appRoot, stateDir)))
 
 	// Serve static files
 	subFS, err := fs.Sub(assets.EmbeddedPublicFiles, "public")
@@ -87,14 +92,14 @@ func main() {
 		}
 		fs.ServeHTTP(w, r)
 	})
-	router.Handle("/", http.StripPrefix("/", withHeaders))
+	router.Handle("/", http.StripPrefix("/", wrapHandlerWithTimeout(withHeaders)))
 
 	// Setup server
 	s := &http.Server{
 		Addr:           *addr,
 		Handler:        router,
 		ReadTimeout:    10 * time.Second,
-		WriteTimeout:   10 * time.Second,
+		WriteTimeout:   0,
 		MaxHeaderBytes: 1 << 20,
 	}
 
