@@ -22,7 +22,7 @@ const (
 
 func uploadFile(data io.Reader) (string, error) {
 	uploadMethod := "POST"
-	uploadDesitionation := baseURL + "/api/upload"
+	uploadDesitionation := baseURL + "/upload"
 	buf := make([]byte, chunkSize)
 	var offset int64
 

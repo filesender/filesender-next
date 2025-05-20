@@ -64,8 +64,8 @@ func main() {
 
 	router := http.NewServeMux()
 	// API endpoints
-	router.HandleFunc("POST /api/upload", handlers.UploadAPI(appRoot, authModule, stateDir, maxUploadSize))
-	router.HandleFunc("PATCH /api/upload/{fileID}", handlers.ChunkedUploadAPI(appRoot, authModule, stateDir, maxUploadSize))
+	router.HandleFunc("POST /upload", handlers.UploadAPI(appRoot, authModule, stateDir, maxUploadSize))
+	router.HandleFunc("PATCH /upload/{fileID}", handlers.ChunkedUploadAPI(appRoot, authModule, stateDir, maxUploadSize))
 
 	stateDirFS := http.FileServer(http.Dir(stateDir))
 	router.Handle("/download/", http.StripPrefix("/download/", stateDirFS))

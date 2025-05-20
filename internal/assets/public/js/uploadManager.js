@@ -66,7 +66,7 @@ class UploadManager {
             uploadComplete = "0";
         }
 
-        const response = await fetch("api/upload", {
+        const response = await fetch("upload", {
             method: "POST",
             body: formData,
             headers: {
