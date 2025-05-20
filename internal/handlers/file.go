@@ -24,6 +24,8 @@ func FileUpload(stateDir string, userID string, fileID string, file multipart.Fi
 			slog.Error("Could not create new user directory", "error", err)
 			return err
 		}
+
+		slog.Info("First time upload for user", "user id", userID)
 	}
 
 	fileName := fileID

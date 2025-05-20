@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"codeberg.org/filesender/filesender-next/internal/auth"
-	"codeberg.org/filesender/filesender-next/internal/crypto"
 	"codeberg.org/filesender/filesender-next/internal/handlers"
+	"codeberg.org/filesender/filesender-next/internal/hash"
 )
 
 func TestUploadAPIHandler(t *testing.T) {
@@ -27,9 +27,13 @@ func TestUploadAPIHandler(t *testing.T) {
 	}()
 
 	handler := handlers.UploadAPI("/", &auth.DummyAuth{}, tempDir, 10*1024*1024) // 10 MB limit
+	err = hash.Init(tempDir)
+	if err != nil {
+		t.Fatalf("Could not initialise hashing package: %v", err)
+	}
 
 	// Hash "dev" for test use
-	hashedID, err := crypto.HashToBase64("dev")
+	hashedID, err := hash.ToBase64("dev")
 	if err != nil {
 		t.Fatalf("Failed hashing dummy user ID: %v", err)
 	}

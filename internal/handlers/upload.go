@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	"codeberg.org/filesender/filesender-next/internal/auth"
-	"codeberg.org/filesender/filesender-next/internal/crypto"
+	"codeberg.org/filesender/filesender-next/internal/hash"
 	"codeberg.org/filesender/filesender-next/internal/id"
 )
 
@@ -20,9 +20,8 @@ func UploadAPI(appRoot string, authModule auth.Auth, stateDir string, maxUploadS
 			sendError(w, http.StatusUnauthorized, "You're not authenticated")
 			return
 		}
-		slog.Info("user authenticated", "user_id", userID)
 
-		userID, err = crypto.HashToBase64(userID)
+		userID, err = hash.ToBase64(userID)
 		if err != nil {
 			slog.Info("failed hashing user ID", "error", err)
 			sendError(w, http.StatusInternalServerError, "Failed creating user ID")
@@ -89,9 +88,8 @@ func ChunkedUploadAPI(appRoot string, authModule auth.Auth, stateDir string, max
 			sendError(w, http.StatusUnauthorized, "You're not authenticated")
 			return
 		}
-		slog.Info("user authenticated", "user_id", userID)
 
-		userID, err = crypto.HashToBase64(userID)
+		userID, err = hash.ToBase64(userID)
 		if err != nil {
 			slog.Info("failed hashing user ID", "error", err)
 			sendError(w, http.StatusInternalServerError, "Failed creating user ID")
