@@ -27,7 +27,10 @@ func TestUploadAPIHandler(t *testing.T) {
 	}()
 
 	handler := handlers.UploadAPI("/", &auth.DummyAuth{}, tempDir, 10*1024*1024) // 10 MB limit
-	hash.Init(tempDir)
+	err = hash.Init(tempDir)
+	if err != nil {
+		t.Fatalf("Could not initialise hashing package: %v", err)
+	}
 
 	// Hash "dev" for test use
 	hashedID, err := hash.ToBase64("dev")
