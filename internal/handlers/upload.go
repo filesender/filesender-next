@@ -21,7 +21,7 @@ func UploadAPI(appRoot string, authModule auth.Auth, stateDir string, maxUploadS
 			return
 		}
 
-		userID, err = hash.HashToBase64(userID)
+		userID, err = hash.ToBase64(userID)
 		if err != nil {
 			slog.Info("failed hashing user ID", "error", err)
 			sendError(w, http.StatusInternalServerError, "Failed creating user ID")
@@ -89,7 +89,7 @@ func ChunkedUploadAPI(appRoot string, authModule auth.Auth, stateDir string, max
 			return
 		}
 
-		userID, err = hash.HashToBase64(userID)
+		userID, err = hash.ToBase64(userID)
 		if err != nil {
 			slog.Info("failed hashing user ID", "error", err)
 			sendError(w, http.StatusInternalServerError, "Failed creating user ID")

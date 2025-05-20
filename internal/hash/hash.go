@@ -17,6 +17,7 @@ const keyFileName = "hmac.key"
 
 var hmacKey []byte
 
+// Init function initialises hashing; generates key if not exists, or else reads from state dir
 func Init(stateDir string) error {
 	path := filepath.Join(stateDir, keyFileName)
 
@@ -50,8 +51,8 @@ func Init(stateDir string) error {
 	return nil
 }
 
-// HashToBase64 function hashes string input and returns base64 string
-func HashToBase64(s string) (string, error) {
+// ToBase64 function hashes string input and returns base64 string
+func ToBase64(s string) (string, error) {
 	mac := hmac.New(sha256.New, hmacKey)
 
 	_, err := io.WriteString(mac, s)

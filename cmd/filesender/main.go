@@ -61,7 +61,11 @@ func main() {
 	slog.Info("State directory set", "dir", stateDir)
 
 	// Initialise hashing function
-	hash.Init(stateDir)
+	err = hash.Init(stateDir)
+	if err != nil {
+		slog.Error("Failed initialising hashing", "error", err)
+		os.Exit(1)
+	}
 
 	// Initialise handler, pass embedded template files
 	handlers.Init(assets.EmbeddedTemplateFiles)
