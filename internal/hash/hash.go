@@ -7,7 +7,6 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
-	"io"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -21,30 +20,28 @@ var hmacKey []byte
 func Init(stateDir string) error {
 	path := filepath.Join(stateDir, keyFileName)
 
-	_, err := os.Stat(path)
-	if os.IsNotExist(err) {
-		key := make([]byte, 32)
-
-		_, err := rand.Read(key)
-		if err != nil {
-			slog.Error("Failed getting random key", "error", err)
-			return fmt.Errorf("rand: %w", err)
-		}
-
-		err = os.WriteFile(path, key, 0o600)
-		if err != nil {
-			slog.Error("Failed writing key to file", "error", err)
-			return fmt.Errorf("write key: %w", err)
-		}
-
+	key, err := os.ReadFile(path)
+	if err == nil {
 		hmacKey = key
 		return nil
 	}
 
-	key, err := os.ReadFile(path)
-	if err != nil {
+	if !os.IsNotExist(err) {
 		slog.Error("Failed reading key from file", "error", err)
 		return fmt.Errorf("read key: %w", err)
+	}
+
+	key = make([]byte, 32)
+	_, err = rand.Read(key)
+	if err != nil {
+		slog.Error("Failed getting random key", "error", err)
+		return fmt.Errorf("rand: %w", err)
+	}
+
+	err = os.WriteFile(path, key, 0o600)
+	if err != nil {
+		slog.Error("Failed writing key to file", "error", err)
+		return fmt.Errorf("write key: %w", err)
 	}
 
 	hmacKey = key
@@ -55,7 +52,7 @@ func Init(stateDir string) error {
 func ToBase64(s string) (string, error) {
 	mac := hmac.New(sha256.New, hmacKey)
 
-	_, err := io.WriteString(mac, s)
+	_, err := mac.Write([]byte(s))
 	if err != nil {
 		slog.Error("Failed writing into hash", "error", err)
 		return "", err
