@@ -18,7 +18,7 @@
                 <input type="submit" value="Upload">
             </div>
 
-            <div>
+            <div id="progress" class="hidden">
                 <progress value="0"></progress>
                 <p id="progress"></p>
             </div>
@@ -30,6 +30,7 @@
     </div>
 
     <script src="{{ .AppRoot }}js/sodium.js"></script>
+    <script src="{{ .AppRoot }}js/generic.js"></script>
     <script src="{{ .AppRoot }}js/uploadManager.js"></script>
     <script src="{{ .AppRoot }}js/upload.js"></script>
 </body>

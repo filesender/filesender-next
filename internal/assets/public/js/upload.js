@@ -1,25 +1,6 @@
-/* global sodium */
-const errorBox = document.querySelector("div.error");
-const progress = document.querySelector("progress");
+/* global sodium, showError, hideError, setProgress */
 const form = document.querySelector("form");
 const fileSelector = document.querySelector("#files-selector");
-
-/**
- * Error showing
- * @param {string} msg Message to show to use
- */
-const showError = msg => {
-    console.log(`ERROR: ${msg}`);
-    errorBox.innerText = msg;
-    errorBox.classList.remove("hidden");
-}
-
-/**
- * Hides whatever current error message is being shown
- */
-const hideError = () => {
-    errorBox.classList.add("hidden");
-}
 
 /**
  * Encodes bytes to base64
@@ -37,8 +18,6 @@ const manager = new UploadManager();
 fileSelector.addEventListener("change", () => {
     const formData = new FormData(form);
     const file = formData.get("file");
-
-    progress.max = file.size;
 
     if (file !== manager.file) {
         form.querySelector('input[type="submit"]').value = "Upload";
@@ -67,14 +46,9 @@ form.addEventListener("submit", async e => {
     }
 
     (async () => {
+        const max = file.size;
         while (true) {
-            progress.value = manager.processedBytes;
-
-            if (manager.processedBytes > 0) {
-                const loaderText = document.querySelector("p#progress");
-                loaderText.innerText = `${(Math.round(progress.value / progress.max * 10000) / 100).toFixed(2)}%`;
-            }
-
+            setProgress(manager.processedBytes, max);
             await new Promise(resolve => setTimeout(resolve, 100));
         }
     })();

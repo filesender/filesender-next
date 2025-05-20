@@ -16,7 +16,7 @@
             </button>
         </a>
 
-        <div>
+        <div id="progress" class="hidden">
             <progress max="{{ .ByteSize }}" value="0"></progress>
             <p id="progress"></p>
         </div>
@@ -27,6 +27,7 @@
     </div>
 
     <script src="{{ .AppRoot }}js/sodium.js"></script>
+    <script src="{{ .AppRoot }}js/generic.js"></script>
     <script src="{{ .AppRoot }}js/downloadManager.js"></script>
     <script src="{{ .AppRoot }}js/downloadHandlers/memoryHandler.js"></script>
     <script src="{{ .AppRoot }}js/downloadHandlers/filesystemHandler.js"></script>
