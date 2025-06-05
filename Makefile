@@ -37,7 +37,7 @@ install: filesender
 
 run:
 	mkdir -p ./data
-	STATE_DIRECTORY=./data go run ./cmd/filesender
+	FILESENDER_AUTH_METHOD=dummy STATE_DIRECTORY=./data go run ./cmd/filesender
 
 run-dev:
 	mkdir -p ./data
