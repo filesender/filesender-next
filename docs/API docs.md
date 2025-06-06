@@ -6,7 +6,9 @@
 ## Authentication
 
 > **Development-Only Notice:**
-> Authentication is currently **dummy-only**. Any authentication is ignored and the request is treated as coming from user `dev`.
+> This documentation assumes you're running the instance in with **dummy** authentication, which ignores any authentication and the request is treated as coming from user `dev`.
+>
+> If you want to test this on your production server, you'll need to use your authentication headers & cookies to access the API.
 
 ## Endpoints
 
@@ -43,11 +45,9 @@ curl -i -X POST http://localhost:8080/upload \
 | ----------------- | -------------------- | -------------------------------------------------------------- |
 | **303 See Other** | Final chunk received | `Location: /view/{userID}/{fileID}`                            |
 | **202 Accepted**  | More chunks expected | `Location: /upload/{fileID}`<br>`Upload-Offset: <next-offset>` |
-
-**Errors**
-- `401 Unauthorized` requester not authenticated.
-- `413 Payload Too Large` file exceeds server limit.
-- `500 Internal Server Error` unexpected failure while processing.
+| **401 Unauthorized** | requester not authenticated |  |
+| **413 Payload Too Large** | file exceeds server limit |  |
+| **500 Internal Server Error** | unexpected failure while processing |  |
 
 ## Chunk Upload — **`PATCH /upload/{fileID}`**
 
@@ -56,7 +56,7 @@ Appends bytes to an existing in-progress upload.
 | Header            | Required | Default | Description                                          |
 | ----------------- | :------: | :-----: | ---------------------------------------------------- |
 | `Upload-Complete` |    No    |   `1`   | Set to `1` if this is the final chunk                |
-| `Upload-Offset`   |  **Yes** |    —    | Position (in bytes) at which this chunk should start |
+| `Upload-Offset`   |  **Yes** |    —    | Position (in bytes) at which this chunk should start (should be ℕ+, natural numbers only) |
 
 #### Request Example
 ```http
@@ -82,16 +82,14 @@ curl -i -X PATCH http://localhost:8080/upload/uY3D4i7Uf5Mcocu2LCtMNw \
 ```
 
 #### Responses
-| Status            | When                 | Headers (excerpt) / Body                                       |
+| Status            | When                 | Headers                                       |
 | ----------------- | -------------------- | -------------------------------------------------------------- |
 | **303 See Other** | Final chunk received | `Location: /view/{userID}/{fileID}`                            |
 | **202 Accepted**  | More chunks expected | `Location: /upload/{fileID}`<br>`Upload-Offset: <next-offset>` |
-
-**Errors**
-- `401 Unauthorized`
-- `404 Not Found` upload ID is missing or does not belong to the user.
-- `413 Payload Too Large`
-- `500 Internal Server Error`
+| **401 Unauthorized** | requester not authenticated |  |
+| **404 Not Found** | upload ID is missing or does not belong to the user |  |
+| **413 Payload Too Large** | file exceeds server limit |  |
+| **500 Internal Server Error** | unexpected failure while processing |  |
 
 ## Download — **`GET /download/{userID}/{fileID}`**
 
