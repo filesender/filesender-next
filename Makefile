@@ -6,7 +6,7 @@ filesender: cmd/filesender/main.go
 	go build $(GOBUILDFLAGS) -o $@ codeberg.org/filesender/filesender-next/cmd/filesender
 
 test:
-	go test -v ./...
+	go test -cover -v ./...
 
 update:
 	# update Go dependencies
