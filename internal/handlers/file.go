@@ -57,7 +57,7 @@ func PartialFileUpload(stateDir string, userID string, fileID string, file multi
 	}
 
 	filePath := filepath.Join(uploadDir, fileID)
-	dst, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE, 0o600)
+	dst, err := os.OpenFile(filePath, os.O_WRONLY, 0o600)
 	if err != nil {
 		slog.Error("Failed opening destination file", "error", err)
 		return 0, err

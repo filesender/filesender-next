@@ -81,6 +81,11 @@ func UploadAPI(appRoot string, authModule auth.Auth, stateDir string, maxUploadS
 func ChunkedUploadAPI(appRoot string, authModule auth.Auth, stateDir string, maxUploadSize int64) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		fileID := r.PathValue("fileID")
+		if fileID == "" {
+			slog.Info("user did not pass file ID")
+			sendError(w, http.StatusBadRequest, "File ID expected")
+			return
+		}
 
 		userID, err := authModule.UserAuth(r)
 		if err != nil {
@@ -103,7 +108,7 @@ func ChunkedUploadAPI(appRoot string, authModule auth.Auth, stateDir string, max
 		}
 
 		uploadComplete := true
-		if completes := r.Header.Get("Upload-Complete"); completes == "0" {
+		if completed := r.Header.Get("Upload-Complete"); completed == "0" {
 			uploadComplete = false
 		}
 
@@ -136,7 +141,7 @@ func ChunkedUploadAPI(appRoot string, authModule auth.Auth, stateDir string, max
 		totalFileSize, err := PartialFileUpload(stateDir, userID, fileID, file, uploadOffset)
 		if err != nil {
 			slog.Error("Failed handling file upload", "error", err)
-			sendError(w, http.StatusInternalServerError, "Failed handling new file upload")
+			sendError(w, http.StatusInternalServerError, "Failed handling existing file upload")
 			return
 		}
 

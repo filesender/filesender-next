@@ -66,3 +66,8 @@ func ToBase64(s string) (string, error) {
 	sum := mac.Sum(nil)
 	return base64.RawURLEncoding.EncodeToString(sum), nil
 }
+
+// ResetKeyForTest is a test-only helper
+func ResetKeyForTest() {
+	hmacKey = nil
+}
