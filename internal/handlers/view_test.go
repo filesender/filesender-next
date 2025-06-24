@@ -48,7 +48,11 @@ func TestGetDownloadTemplate(t *testing.T) {
 	}
 
 	body, writer := createMultipartBody("Hello, world!")
-	writer.Close()
+	err = writer.Close()
+	if err != nil {
+		t.Fatalf("Failed closing writer: %v", err)
+	}
+
 	resp := mockUploadRequest(handler, body, writer, nil)
 	loc := resp.Header().Get("Location")
 

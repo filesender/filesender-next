@@ -68,7 +68,7 @@ func clearFolder(dir string) error {
 	return nil
 }
 
-func createFile(path string, body string) error {
+func createFile(t *testing.T, path string, body string) error {
 	dir := filepath.Dir(path)
 	err := os.MkdirAll(dir, 0755)
 	if err != nil {
@@ -79,7 +79,12 @@ func createFile(path string, body string) error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() {
+		err = f.Close()
+		if err != nil {
+			t.Fatalf("Failed closing file: %v", err)
+		}
+	}()
 
 	_, err = f.WriteString(body)
 	return err
@@ -111,7 +116,10 @@ func TestUploadAPIHandler(t *testing.T) {
 	t.Run("Fail authentication", func(t *testing.T) {
 		handler := handlers.UploadAPI("/", &auth.ProxyAuth{}, tempDir, 10*1024*1024)
 		body, writer := createMultipartBody("")
-		writer.Close()
+		err = writer.Close()
+		if err != nil {
+			t.Fatalf("Failed closing witer: %v", err)
+		}
 
 		resp := mockUploadRequest(handler, body, writer, nil)
 		if resp.Code != http.StatusUnauthorized {
@@ -126,10 +134,18 @@ func TestUploadAPIHandler(t *testing.T) {
 
 	t.Run("Fail hashing user ID", func(t *testing.T) {
 		hash.ResetKeyForTest()
-		defer hash.Init(tempDir)
+		defer func() {
+			err = hash.Init(tempDir)
+			if err != nil {
+				t.Fatalf("Failed initialising hashing package: %v", err)
+			}
+		}()
 
 		body, writer := createMultipartBody("")
-		writer.Close()
+		err = writer.Close()
+		if err != nil {
+			t.Fatalf("Failed closing writer: %v", err)
+		}
 
 		resp := mockUploadRequest(handler, body, writer, nil)
 		if resp.Code != http.StatusInternalServerError {
@@ -145,7 +161,10 @@ func TestUploadAPIHandler(t *testing.T) {
 	t.Run("Too big file size", func(t *testing.T) {
 		handler := handlers.UploadAPI("/", &auth.DummyAuth{}, tempDir, 10)
 		body, writer := createMultipartBody("Hello, world!")
-		writer.Close()
+		err = writer.Close()
+		if err != nil {
+			t.Fatalf("Failed closing writer: %v", err)
+		}
 
 		resp := mockUploadRequest(handler, body, writer, nil)
 		if resp.Code != http.StatusRequestEntityTooLarge {
@@ -175,10 +194,18 @@ func TestUploadAPIHandler(t *testing.T) {
 	})
 
 	t.Run("Successful file upload", func(t *testing.T) {
-		defer clearFolder(filepath.Join(tempDir, hashedID))
+		defer func() {
+			err = clearFolder(filepath.Join(tempDir, hashedID))
+			if err != nil {
+				t.Fatalf("Failed clearing folder: %v", err)
+			}
+		}()
 
 		body, writer := createMultipartBody("Hello, world!")
-		writer.Close()
+		err = writer.Close()
+		if err != nil {
+			t.Fatalf("Failed closing writer: %v", err)
+		}
 
 		resp := mockUploadRequest(handler, body, writer, nil)
 		if resp.Code != http.StatusSeeOther {
@@ -194,22 +221,32 @@ func TestUploadAPIHandler(t *testing.T) {
 		}
 
 		locationHeader := resp.Header().Get("Location")
-		if locationHeader == "" {
+		switch {
+		case locationHeader == "":
 			t.Errorf("There was no location header in response!")
-		} else if !strings.Contains(locationHeader, hashedID) {
+		case !strings.Contains(locationHeader, hashedID):
 			t.Errorf("Expected location header to contain \"%s\", got \"%s\"", hashedID, locationHeader)
-		} else if strings.Count(locationHeader, "/") != 3 {
+		case strings.Count(locationHeader, "/") != 3:
 			t.Errorf("Expected location header to contain 3 `/`, instead got %d: \"%s\"", strings.Count(locationHeader, "/"), locationHeader)
-		} else if !strings.Contains(locationHeader, "/view/") {
-			t.Errorf("Expected location header to contain \"/view/\", instead fot \"%s\"", locationHeader)
+		case !strings.Contains(locationHeader, "/view/"):
+			t.Errorf("Expected location header to contain \"/view/\", instead got \"%s\"", locationHeader)
 		}
+
 	})
 
 	t.Run("Successful partial file upload", func(t *testing.T) {
-		defer clearFolder(filepath.Join(tempDir, hashedID))
+		defer func() {
+			err = clearFolder(filepath.Join(tempDir, hashedID))
+			if err != nil {
+				t.Fatalf("Failed clearing folder: %v", err)
+			}
+		}()
 
 		body, writer := createMultipartBody("Hello, world!")
-		writer.Close()
+		err = writer.Close()
+		if err != nil {
+			t.Fatalf("Failed closing writer: %v", err)
+		}
 
 		resp := mockUploadRequest(handler, body, writer, map[string]string{
 			"Upload-Complete": "0",
@@ -227,11 +264,12 @@ func TestUploadAPIHandler(t *testing.T) {
 		}
 
 		locationHeader := resp.Header().Get("Location")
-		if locationHeader == "" {
+		switch {
+		case locationHeader == "":
 			t.Errorf("There was no location header in response!")
-		} else if !strings.Contains(locationHeader, "/upload/") {
+		case !strings.Contains(locationHeader, "/upload/"):
 			t.Errorf("Expected location header to contain \"/upload/\", got \"%s\"", locationHeader)
-		} else if strings.Count(locationHeader, "/") != 2 {
+		case strings.Count(locationHeader, "/") != 2:
 			t.Errorf("Expected location header to contain 2 `/`, instead got %d: \"%s\"", strings.Count(locationHeader, "/"), locationHeader)
 		}
 	})
@@ -262,7 +300,10 @@ func TestChunkedUploadAPIHandler(t *testing.T) {
 
 	t.Run("No file ID", func(t *testing.T) {
 		body, writer := createMultipartBody("")
-		writer.Close()
+		err = writer.Close()
+		if err != nil {
+			t.Fatalf("Failed closing writer: %v", err)
+		}
 
 		resp := mockPartialUploadRequest(handler, "", body, writer, nil)
 		if resp.Code != http.StatusBadRequest {
@@ -278,7 +319,10 @@ func TestChunkedUploadAPIHandler(t *testing.T) {
 	t.Run("Fail authentication", func(t *testing.T) {
 		handler := handlers.ChunkedUploadAPI("/", &auth.ProxyAuth{}, tempDir, 10*1024*1024)
 		body, writer := createMultipartBody("")
-		writer.Close()
+		err = writer.Close()
+		if err != nil {
+			t.Fatalf("Failed closing writer: %v", err)
+		}
 
 		resp := mockPartialUploadRequest(handler, "id", body, writer, nil)
 		if resp.Code != http.StatusUnauthorized {
@@ -293,10 +337,18 @@ func TestChunkedUploadAPIHandler(t *testing.T) {
 
 	t.Run("Fail hashing user ID", func(t *testing.T) {
 		hash.ResetKeyForTest()
-		defer hash.Init(tempDir)
+		defer func() {
+			err = hash.Init(tempDir)
+			if err != nil {
+				t.Fatalf("Failed initialising hashing package: %v", err)
+			}
+		}()
 
 		body, writer := createMultipartBody("")
-		writer.Close()
+		err = writer.Close()
+		if err != nil {
+			t.Fatalf("Failed closing writer: %v", err)
+		}
 
 		resp := mockPartialUploadRequest(handler, "id", body, writer, nil)
 		if resp.Code != http.StatusInternalServerError {
@@ -312,7 +364,10 @@ func TestChunkedUploadAPIHandler(t *testing.T) {
 	t.Run("Too big file size", func(t *testing.T) {
 		handler := handlers.ChunkedUploadAPI("/", &auth.DummyAuth{}, tempDir, 10)
 		body, writer := createMultipartBody("Hello, world!")
-		writer.Close()
+		err = writer.Close()
+		if err != nil {
+			t.Fatalf("Failed closing writer: %v", err)
+		}
 
 		resp := mockPartialUploadRequest(handler, "id", body, writer, nil)
 		if resp.Code != http.StatusRequestEntityTooLarge {
@@ -327,7 +382,10 @@ func TestChunkedUploadAPIHandler(t *testing.T) {
 
 	t.Run("Missing upload offset", func(t *testing.T) {
 		body, writer := createMultipartBody("Hello, world!")
-		writer.Close()
+		err = writer.Close()
+		if err != nil {
+			t.Fatalf("Failed closing writer: %v", err)
+		}
 
 		resp := mockPartialUploadRequest(handler, "id", body, writer, nil)
 		if resp.Code != http.StatusBadRequest {
@@ -342,7 +400,10 @@ func TestChunkedUploadAPIHandler(t *testing.T) {
 
 	t.Run("Invalid upload offset", func(t *testing.T) {
 		body, writer := createMultipartBody("Hello, world!")
-		writer.Close()
+		err = writer.Close()
+		if err != nil {
+			t.Fatalf("Failed closing writer: %v", err)
+		}
 
 		resp := mockPartialUploadRequest(handler, "id", body, writer, map[string]string{
 			"Upload-Offset": "fail lol",
@@ -377,7 +438,10 @@ func TestChunkedUploadAPIHandler(t *testing.T) {
 
 	t.Run("File does not exist", func(t *testing.T) {
 		body, writer := createMultipartBody("Hello, world!")
-		writer.Close()
+		err = writer.Close()
+		if err != nil {
+			t.Fatalf("Failed closing writer: %v", err)
+		}
 
 		resp := mockPartialUploadRequest(handler, "id", body, writer, map[string]string{
 			"Upload-Offset": "1",
@@ -393,11 +457,19 @@ func TestChunkedUploadAPIHandler(t *testing.T) {
 	})
 
 	t.Run("Success partial upload", func(t *testing.T) {
-		defer clearFolder(filepath.Join(tempDir, hashedID))
+		defer func() {
+			err = clearFolder(filepath.Join(tempDir, hashedID))
+			if err != nil {
+				t.Fatalf("Failed clearing folder: %v", err)
+			}
+		}()
 
-		err = createFile(filepath.Join(tempDir, hashedID, "file_id"), "Hello, ")
+		err = createFile(t, filepath.Join(tempDir, hashedID, "file_id"), "Hello, ")
 		body, writer := createMultipartBody("world!")
-		writer.Close()
+		err = writer.Close()
+		if err != nil {
+			t.Fatalf("Failed closing writer: %v", err)
+		}
 
 		resp := mockPartialUploadRequest(handler, "file_id", body, writer, map[string]string{
 			"Upload-Offset": "7",
@@ -418,14 +490,15 @@ func TestChunkedUploadAPIHandler(t *testing.T) {
 		}
 
 		locationHeader := resp.Header().Get("Location")
-		if locationHeader == "" {
+		switch {
+		case locationHeader == "":
 			t.Errorf("There was no location header in response!")
-		} else if !strings.Contains(locationHeader, hashedID) {
+		case !strings.Contains(locationHeader, hashedID):
 			t.Errorf("Expected location header to contain \"%s\", got \"%s\"", hashedID, locationHeader)
-		} else if strings.Count(locationHeader, "/") != 3 {
+		case strings.Count(locationHeader, "/") != 3:
 			t.Errorf("Expected location header to contain 3 `/`, instead got %d: \"%s\"", strings.Count(locationHeader, "/"), locationHeader)
-		} else if !strings.Contains(locationHeader, "/view/") {
-			t.Errorf("Expected location header to contain \"/view/\", instead fot \"%s\"", locationHeader)
+		case !strings.Contains(locationHeader, "/view/"):
+			t.Errorf("Expected location header to contain \"/view/\", instead got \"%s\"", locationHeader)
 		}
 
 		b, err := os.ReadFile(filepath.Join(tempDir, hashedID, files[0].Name()))
@@ -439,11 +512,19 @@ func TestChunkedUploadAPIHandler(t *testing.T) {
 	})
 
 	t.Run("Success partial upload, non complete", func(t *testing.T) {
-		defer clearFolder(filepath.Join(tempDir, hashedID))
+		defer func() {
+			err = clearFolder(filepath.Join(tempDir, hashedID))
+			if err != nil {
+				t.Fatalf("Failed clearing folder: %v", err)
+			}
+		}()
 
-		err = createFile(filepath.Join(tempDir, hashedID, "file_id"), "Hello, ")
+		err = createFile(t, filepath.Join(tempDir, hashedID, "file_id"), "Hello, ")
 		body, writer := createMultipartBody("world!")
-		writer.Close()
+		err = writer.Close()
+		if err != nil {
+			t.Fatalf("Failed closing writer: %v", err)
+		}
 
 		resp := mockPartialUploadRequest(handler, "file_id", body, writer, map[string]string{
 			"Upload-Offset":   "7",
@@ -465,11 +546,12 @@ func TestChunkedUploadAPIHandler(t *testing.T) {
 		}
 
 		locationHeader := resp.Header().Get("Location")
-		if locationHeader == "" {
+		switch {
+		case locationHeader == "":
 			t.Errorf("There was no location header in response!")
-		} else if !strings.Contains(locationHeader, "/upload/") {
+		case !strings.Contains(locationHeader, "/upload/"):
 			t.Errorf("Expected location header to contain \"/upload/\", got \"%s\"", locationHeader)
-		} else if strings.Count(locationHeader, "/") != 2 {
+		case strings.Count(locationHeader, "/") != 2:
 			t.Errorf("Expected location header to contain 2 `/`, instead got %d: \"%s\"", strings.Count(locationHeader, "/"), locationHeader)
 		}
 

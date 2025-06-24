@@ -128,7 +128,10 @@ func TestPartialFileUpload(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer cleanup()
-	handlers.FileUpload(tempDir, "user", "file", testFile)
+	err = handlers.FileUpload(tempDir, "user", "file", testFile)
+	if err != nil {
+		t.Fatalf("Failed uploading file: %v", err)
+	}
 
 	t.Run("State directory does not exist", func(t *testing.T) {
 		testFile, cleanup, err := createMultipartFile("")

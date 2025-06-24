@@ -21,15 +21,24 @@ func TestInit(t *testing.T) {
 	}()
 
 	t.Run("State is invalid", func(t *testing.T) {
-		os.Mkdir(filepath.Join(tempDir, "hmac.key"), 0755)
-		defer os.Remove(filepath.Join(tempDir, "hmac.key"))
+		err = os.Mkdir(filepath.Join(tempDir, "hmac.key"), 0755)
+		if err != nil {
+			t.Fatalf("Failed creating directory: %v", err)
+		}
+		defer func() {
+			err = os.Remove(filepath.Join(tempDir, "hmac.key"))
+			if err != nil {
+				t.Fatalf("Failed deleting file: %v", err)
+			}
+		}()
 
 		err = hash.Init(tempDir)
-		if err == nil {
+		switch {
+		case err == nil:
 			t.Errorf("Was supposed to return error, instead got nil")
-		} else if !strings.Contains(err.Error(), "read key: ") {
+		case !strings.Contains(err.Error(), "read key: "):
 			t.Errorf("Was supposed to test \"read key\" instead, got \"%s\"", strings.Split(err.Error(), ": ")[0])
-		} else if !strings.Contains(err.Error(), ": is a directory") {
+		case !strings.Contains(err.Error(), ": is a directory"):
 			t.Errorf("Expected error \"is a directory\", got \"%s\"", strings.Split(err.Error(), ": ")[2])
 		}
 	})
@@ -55,7 +64,12 @@ func TestToBase64(t *testing.T) {
 
 	t.Run("Key not initialised", func(t *testing.T) {
 		hash.ResetKeyForTest()
-		defer hash.Init(tempDir)
+		defer func() {
+			err = hash.Init(tempDir)
+			if err != nil {
+				t.Fatalf("Failed initialising hashing package: %v", err)
+			}
+		}()
 
 		_, err = hash.ToBase64("test")
 		if err == nil {
