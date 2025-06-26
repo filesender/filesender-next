@@ -25,7 +25,7 @@ This repository represents the initial stage of the rewrite effort, aiming to de
 1. **Install Dependencies**:
     - [Go](https://golang.org/dl/) (1.24 or newer)
     - [Make](https://www.gnu.org/software/make/)
-        - **Windows users** can install Make via [Gow](https://github.com/bmatzelle/gow), [Chocolatey](https://chocolatey.org/packages/make), or WSL.
+        - **Windows users** can install Make via [`winget`](https://winget.run/pkg/GnuWin32/Make), [Chocolatey](https://chocolatey.org/packages/make), or WSL.
 
 2. **Clone the Repository**:
 
