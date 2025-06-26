@@ -54,13 +54,16 @@ This repository represents the initial stage of the rewrite effort, aiming to de
 
 If you prefer containerized deployment:
 
-1. **Build the Docker Image**:
+1. **Install Dependencies**:
+    - [Docker](https://www.docker.com/) or [Podman](https://podman.io/)
+
+2. **Build the Docker Image**:
 
     ```sh
     docker build -t filesender:latest .
     ```
 
-2. **Run the Container**:
+3. **Run the Container**:
 
     ```sh
     docker run -p 8080:8080 filesender:latest
