@@ -1,5 +1,5 @@
 FROM golang:1.23-alpine AS builder
-ENV CGO_ENABLED=0 GOOS=linux GOARCH=amd64
+ENV CGO_ENABLED=0
 
 WORKDIR /src
 
@@ -10,7 +10,7 @@ COPY . .
 RUN go build -ldflags="-s -w" -o /filesender ./cmd/filesender
 
 
-FROM alpine:3.20
+FROM alpine:latest
 
 RUN addgroup -S filesender && adduser -S -G filesender filesender
 WORKDIR /app
