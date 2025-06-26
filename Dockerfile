@@ -19,7 +19,7 @@ RUN mkdir -p "$STATE_DIRECTORY" && chown -R filesender:filesender /app
 
 COPY --from=builder /filesender /usr/local/bin/filesender
 
-ENV FILESENDER_AUTH_METHOD=dummy MAX_UPLOAD_SIZE=2147483648
+ENV FILESENDER_AUTH_METHOD=proxy MAX_UPLOAD_SIZE=2147483648
 USER filesender
 EXPOSE 8080
 
