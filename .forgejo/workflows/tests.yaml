@@ -77,10 +77,10 @@ jobs:
       - name: Install podman
         run: apk add podman
 
-      # - name: Fix overlay issues
-      #   run: |
-      #     apk add --no-cache --update  fuse-overlayfs
-      #     sed -i 's/#mount_program/mount_program/' /etc/containers/storage.conf
+      - name: Fix overlay issues
+        run: |
+          apk add --no-cache --update  fuse-overlayfs
+          sed -i 's/#mount_program/mount_program/' /etc/containers/storage.conf
 
       - name: Checkout code
         uses: actions/checkout@v4
