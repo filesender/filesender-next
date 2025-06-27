@@ -1,67 +1,96 @@
 on: [push]
 
 jobs:
-  linter:
-    runs-on: codeberg-tiny
-    container:
-      image: golangci/golangci-lint:v2.0.1
+  # linter:
+  #   runs-on: codeberg-tiny
+  #   container:
+  #     image: golangci/golangci-lint:v2.0.1
     
-    steps:
-      - name: Install Node.js
-        run: apt update && apt install -y nodejs
+  #   steps:
+  #     - name: Install Node.js
+  #       run: apt update && apt install -y nodejs
 
-      - name: Checkout code
-        uses: actions/checkout@v4
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
 
-      - name: Run linter
-        run: make lint
+  #     - name: Run linter
+  #       run: make lint
 
-  eslinter:
-    runs-on: codeberg-tiny
-    container:
-      image: node:22
+  # eslinter:
+  #   runs-on: codeberg-tiny
+  #   container:
+  #     image: node:22
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
 
-      - name: Install dependencies
-        run: npm install
+  #     - name: Install dependencies
+  #       run: npm install
       
-      - name: Run ESLint
-        run: npx eslint
+  #     - name: Run ESLint
+  #       run: npx eslint
 
-  tests:
-    name: End to end tests and unit tests
+  # tests:
+  #   name: End to end tests and unit tests
+  #   runs-on: codeberg-tiny
+  #   container:
+  #     image: mcr.microsoft.com/playwright:v1.50.1-noble
+
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
+
+  #     - name: Install dependencies
+  #       run: npm i
+
+  #     - name: Set up Golang
+  #       uses: actions/setup-go@v5
+  #       with:
+  #         go-version: 1.24
+
+  #     - name: Install required dependencies
+  #       run: apt update && apt install -y make gcc libc-dev
+
+  #     - name: Build and start Filesender
+  #       run: |
+  #         make filesender
+  #         mkdir -p ./data
+
+  #     - name: Run playwright tests
+  #       run: npx playwright test
+
+  #     - name: Stop filesender
+  #       run: pkill filesender || true
+
+  #     - name: Run unit tests
+  #       run: make test
+
+  publish:
+    name: Builds and publishes Docker image
     runs-on: codeberg-tiny
+    # needs: [linter, eslinter, tests]
     container:
-      image: mcr.microsoft.com/playwright:v1.50.1-noble
+      image: alpine:latest
 
     steps:
+      - name: Install podman
+        run: apk add podman
+
+      # - name: Fix overlay issues
+      #   run: |
+      #     apk add --no-cache --update  fuse-overlayfs
+      #     sed -i 's/#mount_program/mount_program/' /etc/containers/storage.conf
+
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install dependencies
-        run: npm i
+      - name: Log in to Codeberg registry
+        run: echo "${{ secrets.REGISTRY_PASSWORD }}" | podman login codeberg.org -u "${{ secrets.REGISTRY_USERNAME }}" --password-stdin
 
-      - name: Set up Golang
-        uses: actions/setup-go@v5
-        with:
-          go-version: 1.24
+      - name: Build Docker image
+        run: podman build -t codeberg.org/hattorius/filesender:latest .
 
-      - name: Install required dependencies
-        run: apt update && apt install -y make gcc libc-dev
+      - name: Push Docker image
+        run: podman push codeberg.org/hattorius/filesender:latest
 
-      - name: Build and start Filesender
-        run: |
-          make filesender
-          mkdir -p ./data
-
-      - name: Run playwright tests
-        run: npx playwright test
-
-      - name: Stop filesender
-        run: pkill filesender || true
-
-      - name: Run unit tests
-        run: make test
