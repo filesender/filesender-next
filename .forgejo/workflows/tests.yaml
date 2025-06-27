@@ -83,6 +83,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Install Docker
+        run: |
+          sudo apt update
+          sudo apt install -y docker.io
+          sudo systemctl start docker
+          sudo usermod -aG docker $USER
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
