@@ -70,16 +70,22 @@ jobs:
     name: Builds and publishes Docker image
     runs-on: codeberg-tiny
     # needs: [linter, eslinter, tests]
+    container:
+      image: docker:dind
+      options: --privileged
 
     steps:
+      - name: Install docker
+        run: apk add --no-cache nodejs
+
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # - name: Log in to Codeberg registry
-      #   run: echo "${{ secrets.REGISTRY_PASSWORD }}" | podman login codeberg.org -u "${{ secrets.REGISTRY_USERNAME }}" --password-stdin
+      - name: Log in to Codeberg registry
+        run: echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login codeberg.org -u "${{ secrets.REGISTRY_USERNAME }}" --password-stdin
 
       - name: Build Docker image
         run: docker build -t codeberg.org/hattorius/filesender:latest .
 
-      # - name: Push Docker image
-      #   run: podman push codeberg.org/hattorius/filesender:latest
+      - name: Push Docker image
+        run: docker push codeberg.org/hattorius/filesender:latest
