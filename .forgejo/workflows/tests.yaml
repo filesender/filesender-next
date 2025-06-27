@@ -71,7 +71,7 @@ jobs:
     runs-on: codeberg-tiny
     # needs: [linter, eslinter, tests]
     container:
-      image: alpine:latest
+      image: node:24-alpine
 
     steps:
       - name: Install podman
