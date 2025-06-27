@@ -77,13 +77,10 @@ jobs:
       - name: Install podman
         run: apk add podman
 
-      - name: Run podman as root
-        run: podman --storage-driver=overlay build -t ...
-
-      # - name: Fix overlay issues
-      #   run: |
-      #     apk add --no-cache --update  fuse-overlayfs
-      #     sed -i 's/#mount_program/mount_program/' /etc/containers/storage.conf
+      - name: Fix overlay issues
+        run: |
+          apk add --no-cache --update  fuse-overlayfs
+          sed -i 's/#mount_program/mount_program/' /etc/containers/storage.conf
 
       - name: Checkout code
         uses: actions/checkout@v4
@@ -92,8 +89,8 @@ jobs:
         run: echo "${{ secrets.REGISTRY_PASSWORD }}" | podman login codeberg.org -u "${{ secrets.REGISTRY_USERNAME }}" --password-stdin
 
       - name: Build Docker image
-        run: podman build -t codeberg.org/hattorius/filesender:latest .
+        run: sudo podman build -t codeberg.org/hattorius/filesender:latest .
 
       - name: Push Docker image
-        run: podman push codeberg.org/hattorius/filesender:latest
+        run: sudo podman push codeberg.org/hattorius/filesender:latest
 
