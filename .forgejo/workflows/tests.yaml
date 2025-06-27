@@ -72,11 +72,6 @@ jobs:
     # needs: [linter, eslinter, tests]
 
     steps:
-      - name: Install docker
-        run: |
-          apt update
-          apt install -y docker.io
-
       - name: Checkout code
         uses: actions/checkout@v4
 
