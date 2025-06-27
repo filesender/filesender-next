@@ -76,7 +76,9 @@ jobs:
 
     steps:
       - name: Install docker
-        run: apt install -y docker-cli nodejs
+        run: |
+          apt update
+          apt install -y docker-cli nodejs
 
       - name: Checkout code
         uses: actions/checkout@v4
