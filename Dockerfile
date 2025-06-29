@@ -23,4 +23,4 @@ ENV FILESENDER_AUTH_METHOD=proxy MAX_UPLOAD_SIZE=2147483648
 USER filesender
 EXPOSE 8080
 
-ENTRYPOINT ["filesender", "-listen", "0.0.0.0:8080"]
+ENTRYPOINT ["filesender", "-listen", ":8080"]
