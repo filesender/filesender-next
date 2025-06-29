@@ -7,7 +7,7 @@ IMAGE_NAME="codeberg.org/hattorius/filesender:latest"
 podman image rm "${IMAGE_NAME}" --force
 
 # pull / update images needed
-podman pull "golang:1.23-alpine"
+podman pull "golang:latest"
 podman pull "alpine:latest"
 
 # build image

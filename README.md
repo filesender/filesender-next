@@ -57,10 +57,14 @@ If you prefer containerized deployment:
 1. **Install Dependencies**:
     - [Docker](https://www.docker.com/) or [Podman](https://podman.io/)
 
-2. **Build the Docker Image**:
+2. **Build (or pull) the Docker Image**:
 
     ```sh
+    // Building
     docker build -t filesender:latest .
+
+    // Pulling
+    docker pull codeberg.org/hattorius/filesender:latest
     ```
 
 3. **Run the Container**:
